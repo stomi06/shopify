@@ -103,17 +103,10 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.backgroundColor = SETTINGS.barColor;
           bar.style.color = SETTINGS.textColor;
           bar.style.textAlign = 'center';
-          bar.style.padding = '10px 0';
           bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
-          bar.style.zIndex = '9999';
-          bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+          bar.style.zIndex = '50';
           document.body.appendChild(bar);
-
-          // Dodaj padding-top do body, żeby nie nachodził na content
-          if (SETTINGS.barPosition === 'fixed') {
-            document.body.style.paddingTop = SETTINGS.barHeight + SETTINGS.barTopOffset + 'px';
-          }
         }
         bar.textContent = text;
       }
