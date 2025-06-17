@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const axios = require('axios');
 const cookieParser = require('cookie-parser');
@@ -6,11 +7,12 @@ const crypto = require('crypto');
 const app = express();
 app.use(cookieParser());
 
+app.use(express.static(path.join(__dirname, 'public')));
+
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
 const SCOPES = 'write_script_tags,read_script_tags';
-const HOST = process.env.HOST;  // np. https://twoja-domena.com
-
+const HOST = process.env.HOST; 
 function generateNonce() {
   return crypto.randomBytes(16).toString('hex');
 }
