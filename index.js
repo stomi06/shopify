@@ -91,6 +91,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       if (!SETTINGS.enabled) return;
 
+      // Funkcja tworząca lub aktualizująca pasek
       function createBar(text) {
         let bar = document.getElementById('free-shipping-bar');
         if (!bar) {
@@ -111,32 +112,74 @@ app.get('/free-shipping-bar.js', (req, res) => {
           document.body.appendChild(bar);
         }
         bar.textContent = text;
+        return bar;
       }
 
+      // Natychmiast wyświetl pasek
       if (!SETTINGS.calculateDifference) {
-        // Jeśli nie liczymy różnicy, wyświetl dokładnie to co jest w szablonie wiadomości
+        // Jeśli nie liczymy różnicy, wyświetl statyczny komunikat
         createBar(SETTINGS.messageTemplate);
-        return;
+        return; // Zakończ działanie skryptu, nie ma potrzeby pobierania danych koszyka
       }
 
-      // Pokaz placeholder od razu
-      createBar(SETTINGS.loadingMessage);
+      // Pokaż placeholder natychmiast
+      const bar = createBar(SETTINGS.loadingMessage);
 
-      fetch('/cart.js')
-        .then(r => r.json())
-        .then(data => {
+      // Funkcja aktualizująca pasek po pobraniu danych koszyka
+      function updateBarWithCartData(data) {
+        try {
           const total = data.items_subtotal_price / 100;
           if (total < SETTINGS.freeShippingThreshold) {
             const price = SETTINGS.freeShippingThreshold - total;
             const message = SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
-            createBar(message);
+            bar.textContent = message;
           } else {
-            createBar('Gratulacje! Masz darmową dostawę :)');
+            bar.textContent = 'Gratulacje! Masz darmową dostawę :)';
           }
+        } catch (e) {
+          console.error('Błąd podczas aktualizacji paska:', e);
+          bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
+        }
+      }
+
+      // Pobierz dane koszyka z priorytetem
+      const fetchCart = () => {
+        // Dodajemy priorytet do żądania
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); // Timeout po 3 sekundach
+        
+        fetch('/cart.js', { 
+          priority: 'high',
+          signal: controller.signal 
         })
-        .catch(() => {
-          createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+          .then(r => {
+            clearTimeout(timeoutId);
+            return r.json();
+          })
+          .then(data => {
+            updateBarWithCartData(data);
+          })
+          .catch(error => {
+            console.error('Błąd pobierania danych koszyka:', error);
+            bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
+          });
+      };
+
+      // Wykonaj żądanie natychmiast
+      fetchCart();
+      
+      // Nasłuchuj na zdarzenia aktualizacji koszyka (opcjonalnie)
+      try {
+        document.addEventListener('cart:updated', function(event) {
+          if (event.detail && event.detail.cart) {
+            updateBarWithCartData(event.detail.cart);
+          } else {
+            fetchCart();
+          }
         });
+      } catch (e) {
+        console.error('Błąd podczas dodawania listenera:', e);
+      }
     })();
   `);
 });
