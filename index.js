@@ -112,8 +112,8 @@ app.get('/free-shipping-bar.js', (req, res) => {
       }
 
       if (!SETTINGS.calculateDifference) {
-        // Jeśli nie liczymy różnicy, po prostu wyświetl tekst podany przez użytkownika
-        createBar(SETTINGS.loadingMessage);
+        // Jeśli nie liczymy różnicy, wyświetl szablon wiadomości zamiast placeholdera
+        createBar(SETTINGS.messageTemplate);
         return;
       }
 

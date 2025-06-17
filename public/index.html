@@ -194,14 +194,6 @@
       opacity: 1;
     }
 
-    .color-preview {
-      width: 100%;
-      height: 36px;
-      border-radius: var(--radius);
-      margin-top: 8px;
-      border: 1px solid var(--border-color);
-    }
-
     .bar-preview {
       position: relative;
       width: 100%;
@@ -274,6 +266,22 @@
           </div>
         </div>
 
+        <!-- Sekcja: Teksty (przeniesiona na 2. miejsce) -->
+        <div class="form-section">
+          <h2 class="section-title">Teksty</h2>
+          <div class="form-grid">
+            <div class="form-group span-2">
+              <label for="message">Szablon wiadomości</label>
+              <input type="text" id="message" name="message" placeholder="np. Do darmowej dostawy brakuje: {price} zł" />
+            </div>
+            
+            <div class="form-group span-2" id="loadingMessageContainer">
+              <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
+              <input type="text" id="loadingMessage" name="loadingMessage" placeholder="np. Aktualizuję dane z koszyka..." />
+            </div>
+          </div>
+        </div>
+
         <!-- Sekcja: Wygląd -->
         <div class="form-section">
           <h2 class="section-title">Wygląd paska</h2>
@@ -281,13 +289,11 @@
             <div class="form-group">
               <label for="barColor">Kolor tła paska</label>
               <input type="color" id="barColor" name="barColor" />
-              <div class="color-preview" id="barColorPreview"></div>
             </div>
             
             <div class="form-group">
               <label for="textColor">Kolor tekstu</label>
               <input type="color" id="textColor" name="textColor" />
-              <div class="color-preview" id="textColorPreview"></div>
             </div>
             
             <div class="form-group">
@@ -319,22 +325,6 @@
           </div>
         </div>
 
-        <!-- Sekcja: Teksty -->
-        <div class="form-section">
-          <h2 class="section-title">Teksty</h2>
-          <div class="form-grid">
-            <div class="form-group span-2">
-              <label for="message">Szablon wiadomości</label>
-              <input type="text" id="message" name="message" placeholder="np. Do darmowej dostawy brakuje: {price} zł" />
-            </div>
-            
-            <div class="form-group span-2" id="loadingMessageContainer">
-              <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
-              <input type="text" id="loadingMessage" name="loadingMessage" placeholder="np. Aktualizuję dane z koszyka..." />
-            </div>
-          </div>
-        </div>
-
         <div class="actions">
           <button type="submit" class="btn">Zapisz ustawienia</button>
         </div>
@@ -357,12 +347,6 @@
       previewText.style.fontSize = fontSize + 'px';
     }
     
-    // Funkcja aktualizująca próbki kolorów
-    function updateColorPreviews() {
-      document.getElementById('barColorPreview').style.backgroundColor = document.getElementById('barColor').value;
-      document.getElementById('textColorPreview').style.backgroundColor = document.getElementById('textColor').value;
-    }
-
     async function loadSettings() {
       try {
         const res = await fetch('/settings');
@@ -380,8 +364,7 @@
         document.getElementById('position').value = data.barPosition;
         document.getElementById('calculateDifference').checked = data.calculateDifference;
         
-        // Aktualizuj podglądy kolorów i paska
-        updateColorPreviews();
+        // Aktualizuj podgląd paska
         updateBarPreview();
         
         // Pokaż lub ukryj pole placeholdera w zależności od wartości checkboxa
@@ -409,8 +392,6 @@
 
     // Dodaj listenery na zmiany wartości
     document.getElementById('calculateDifference').addEventListener('change', toggleLoadingMessageField);
-    document.getElementById('barColor').addEventListener('input', updateColorPreviews);
-    document.getElementById('textColor').addEventListener('input', updateColorPreviews);
     document.getElementById('barColor').addEventListener('input', updateBarPreview);
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);
