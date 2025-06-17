@@ -119,16 +119,16 @@ app.get('/free-shipping-bar.js', (req, res) => {
       if (!SETTINGS.calculateDifference) {
         // Jeśli nie liczymy różnicy, wyświetl statyczny komunikat
         createBar(SETTINGS.messageTemplate);
-        return; // Zakończ działanie skryptu, nie ma potrzeby pobierania danych koszyka
+        return;
       }
 
       // Pokaż placeholder natychmiast
       const bar = createBar(SETTINGS.loadingMessage);
 
       // Funkcja aktualizująca pasek po pobraniu danych koszyka
-      function updateBarWithCartData(data) {
+      function updateBarWithCartData(cartData) {
         try {
-          const total = data.items_subtotal_price / 100;
+          const total = cartData.items_subtotal_price / 100;
           if (total < SETTINGS.freeShippingThreshold) {
             const price = SETTINGS.freeShippingThreshold - total;
             const message = SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
@@ -142,43 +142,129 @@ app.get('/free-shipping-bar.js', (req, res) => {
         }
       }
 
-      // Pobierz dane koszyka z priorytetem
-      const fetchCart = () => {
-        // Dodajemy priorytet do żądania
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000); // Timeout po 3 sekundach
-        
-        fetch('/cart.js', { 
-          priority: 'high',
-          signal: controller.signal 
+      // Funkcja pobierająca dane koszyka z serwera
+      function fetchCartData() {
+        const timestamp = new Date().getTime();
+        fetch('/cart.js?t=' + timestamp, { 
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
         })
-          .then(r => {
-            clearTimeout(timeoutId);
-            return r.json();
-          })
+          .then(r => r.json())
           .then(data => {
             updateBarWithCartData(data);
           })
-          .catch(error => {
-            console.error('Błąd pobierania danych koszyka:', error);
+          .catch(() => {
             bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
           });
-      };
+      }
 
-      // Wykonaj żądanie natychmiast
-      fetchCart();
-      
-      // Nasłuchuj na zdarzenia aktualizacji koszyka (opcjonalnie)
-      try {
-        document.addEventListener('cart:updated', function(event) {
-          if (event.detail && event.detail.cart) {
-            updateBarWithCartData(event.detail.cart);
-          } else {
-            fetchCart();
+      // Wywołaj natychmiast po załadowaniu
+      fetchCartData();
+
+      // Monitoruj zmiany w koszyku - kompleksowe podejście
+      function setupCartChangeMonitoring() {
+        // 1. Obserwuj zdarzenia AJAX dla śledzenia żądań związanych z koszykiem
+        const originalXHR = window.XMLHttpRequest;
+        window.XMLHttpRequest = function() {
+          const xhr = new originalXHR();
+          xhr.addEventListener('load', function() {
+            if (this.responseURL && (
+                this.responseURL.includes('/cart/add') || 
+                this.responseURL.includes('/cart/update') || 
+                this.responseURL.includes('/cart/change') ||
+                this.responseURL.includes('/cart/clear') ||
+                this.responseURL.includes('cart?') ||
+                this.responseURL.includes('/cart.js'))) {
+              // Dodaj małe opóźnienie, aby upewnić się, że dane koszyka są już zaktualizowane
+              setTimeout(fetchCartData, 100);
+            }
+          });
+          return xhr;
+        };
+
+        // 2. Nasłuchuj na wszystkie możliwe zdarzenia zmiany koszyka
+        const cartEvents = [
+          'cart:updated', 'cart:refresh', 'cart.requestComplete',
+          'cart_update', 'ajaxCart.afterCartLoad', 'cart_updation',
+          'theme:cart:change', 'cart:change', 'cart:updated',
+          'product:added', 'ajax:success'
+        ];
+
+        cartEvents.forEach(event => {
+          document.addEventListener(event, function() {
+            setTimeout(fetchCartData, 100);
+          });
+        });
+
+        // 3. Nasłuchuj na zmiany w przycisku "Dodaj do koszyka"
+        document.addEventListener('click', function(event) {
+          const target = event.target;
+          if (target && (
+              target.classList.contains('add-to-cart') ||
+              target.classList.contains('add_to_cart') ||
+              target.classList.contains('cart-add') ||
+              target.getAttribute('name') === 'add' ||
+              target.closest('form[action*="/cart/add"]')
+          )) {
+            // Dodaj opóźnienie, aby upewnić się, że żądanie dodania do koszyka zostało zakończone
+            setTimeout(fetchCartData, 1000);
           }
         });
-      } catch (e) {
-        console.error('Błąd podczas dodawania listenera:', e);
+
+        // 4. Praca z fetch API (używane przez nowsze motywy)
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+          const promise = originalFetch.apply(this, arguments);
+          if (url && typeof url === 'string' && (
+              url.includes('/cart/add') || 
+              url.includes('/cart/change') || 
+              url.includes('/cart/update') ||
+              url.includes('/cart/clear') ||
+              url.includes('cart?') ||
+              url.includes('/cart.js'))) {
+            promise.then(() => {
+              setTimeout(fetchCartData, 200);
+            });
+          }
+          return promise;
+        };
+
+        // 5. jQuery AJAX (używane przez starsze motywy)
+        if (window.jQuery) {
+          const $ = window.jQuery;
+          $(document).ajaxComplete(function(event, xhr, settings) {
+            if (settings.url && (
+                settings.url.includes('/cart/add') || 
+                settings.url.includes('/cart/change') || 
+                settings.url.includes('/cart/update') ||
+                settings.url.includes('/cart/clear') ||
+                settings.url.includes('cart?') ||
+                settings.url.includes('/cart.js'))) {
+              setTimeout(fetchCartData, 200);
+            }
+          });
+
+          // jQuery zdarzenia koszyka
+          $(document).on(
+            'cart.requestComplete cart:refresh cart_update added.ajaxCart cart.drawn', 
+            function() {
+              setTimeout(fetchCartData, 200);
+            }
+          );
+        }
+
+        // 6. Sprawdzaj koszyk co minutę na wszelki wypadek
+        setInterval(fetchCartData, 60000);
+      }
+
+      // Inicjalizuj monitorowanie zmian koszyka po załadowaniu strony
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setupCartChangeMonitoring();
+      } else {
+        document.addEventListener('DOMContentLoaded', setupCartChangeMonitoring);
       }
     })();
   `);
