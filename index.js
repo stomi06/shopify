@@ -23,8 +23,8 @@ app.get('/auth', (req, res) => {
   console.log('Generated state:', state);
   res.cookie('state', state, { httpOnly: true, secure: true, sameSite: 'lax' });
 
-  const redirectUri = encodeURIComponent(`${HOST}/auth/callback`);
-const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${redirectUri}`;
+  const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${HOST}/auth/callback`;
+
 
   res.redirect(redirectUrl);
 });
