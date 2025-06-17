@@ -40,9 +40,54 @@
 <body>
   <header>Delivery App</header>
   <div class="content">
-    <p>Witaj w panelu zarządzania aplikacją Delivery!</p>
-    <p>Tu w przyszłości możesz ustawić parametry paska darmowej dostawy.</p>
-    <button onclick="alert('Tu w przyszłości będzie ustawienia!')">Ustawienia (demo)</button>
+    <form id="settingsForm">
+    <label>Próg darmowej dostawy (PLN):
+        <input type="number" id="freeShippingThreshold" name="freeShippingThreshold" value="200" />
+    </label><br/>
+    <label>Kolor paska:
+        <input type="color" id="barColor" name="barColor" value="#4CAF50" />
+    </label><br/>
+    <label>Kolor tekstu:
+        <input type="color" id="textColor" name="textColor" value="#FFFFFF" />
+    </label><br/>
+    <label>Tekst paska:
+        <input type="text" id="messageTemplate" name="messageTemplate" value="Do darmowej dostawy brakuje: {missing} zł" />
+    </label><br/>
+    <button type="submit">Zapisz ustawienia</button>
+    </form>
+
+    <script>
+    async function loadSettings() {
+        const res = await fetch('/settings');
+        const data = await res.json();
+        document.getElementById('freeShippingThreshold').value = data.freeShippingThreshold;
+        document.getElementById('barColor').value = data.barColor;
+        document.getElementById('textColor').value = data.textColor;
+        document.getElementById('messageTemplate').value = data.messageTemplate;
+    }
+
+    async function saveSettings(event) {
+        event.preventDefault();
+        const settings = {
+        freeShippingThreshold: parseFloat(document.getElementById('freeShippingThreshold').value),
+        barColor: document.getElementById('barColor').value,
+        textColor: document.getElementById('textColor').value,
+        messageTemplate: document.getElementById('messageTemplate').value,
+        };
+
+        const res = await fetch('/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(settings)
+        });
+
+        const result = await res.json();
+        alert(result.message);
+    }
+
+    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
+    loadSettings();
+    </script>
   </div>
 </body>
 </html>
