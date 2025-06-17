@@ -414,12 +414,15 @@ app.post('/settings', (req, res) => {
     textColor,
     messageTemplate,
     loadingMessage,
+    successMessage,
     alwaysShowBar,
     barPosition,
     barTopOffset,
     barHeight,
     fontSize,
-    calculateDifference
+    calculateDifference,
+    boldText,
+    showSuccessMessage
   } = req.body;
 
   if (
@@ -429,12 +432,15 @@ app.post('/settings', (req, res) => {
     typeof textColor !== 'string' ||
     typeof messageTemplate !== 'string' ||
     typeof loadingMessage !== 'string' ||
+    typeof successMessage !== 'string' ||
     typeof alwaysShowBar !== 'boolean' ||
     (barPosition !== 'fixed' && barPosition !== 'absolute') ||
     typeof barTopOffset !== 'number' ||
     typeof barHeight !== 'number' ||
     typeof fontSize !== 'number' ||
-    typeof calculateDifference !== 'boolean'
+    typeof calculateDifference !== 'boolean' ||
+    typeof boldText !== 'boolean' ||
+    typeof showSuccessMessage !== 'boolean'
   ) {
     return res.status(400).json({ error: 'Nieprawidłowe dane' });
   }
@@ -446,12 +452,15 @@ app.post('/settings', (req, res) => {
     textColor,
     messageTemplate,
     loadingMessage,
+    successMessage,
     alwaysShowBar,
     barPosition,
     barTopOffset,
     barHeight,
     fontSize,
-    calculateDifference
+    calculateDifference,
+    boldText,
+    showSuccessMessage
   };
 
   res.json({ message: 'Ustawienia zapisane', settings });
