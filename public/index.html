@@ -4,119 +4,392 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Delivery App Panel</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 20px;
-      background: #f9fafb;
-      color: #212b36;
+    :root {
+      --primary-color: #5c6ac4;
+      --primary-hover: #4959b0;
+      --success-color: #50b83c;
+      --danger-color: #de3618;
+      --background-color: #f5f7fa;
+      --card-color: #ffffff;
+      --text-color: #212b36;
+      --text-muted: #637381;
+      --border-color: #dfe3e8;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      --radius: 8px;
     }
-    .content {
-      background: white;
-      padding: 20px;
-      border-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      max-width: 500px;
-    }
-    label {
-      display: block;
-      margin-top: 10px;
-      font-weight: bold;
-    }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 5px;
+
+    * {
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
     }
-    button {
-      margin-top: 20px;
-      background-color: #5c6ac4;
-      border: none;
-      color: white;
-      padding: 10px 16px;
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--background-color);
+      color: var(--text-color);
+      line-height: 1.6;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .header {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-weight: 600;
+      font-size: 28px;
+      color: var(--primary-color);
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      color: var(--text-muted);
       font-size: 16px;
-      border-radius: 4px;
+    }
+
+    .card {
+      background-color: var(--card-color);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 32px;
+      margin-bottom: 24px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    .form-section {
+      background-color: #f9fafc;
+      padding: 20px;
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      border: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--primary-color);
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group.span-2 {
+      grid-column: span 2;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
       cursor: pointer;
     }
-    button:hover {
-      background-color: #4a57a0;
+
+    .checkbox-label input {
+      margin-right: 8px;
+      width: auto;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(92, 106, 196, 0.2);
+    }
+
+    input[type="color"] {
+      height: 42px;
+      padding: 4px;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    .btn {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: var(--radius);
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-block;
+      text-align: center;
+      width: auto;
+    }
+
+    .btn:hover {
+      background-color: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .actions {
+      margin-top: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    #status {
+      text-align: center;
+      padding: 12px;
+      margin-top: 16px;
+      border-radius: var(--radius);
+      transition: all 0.3s;
+      opacity: 0;
+    }
+
+    #status.success {
+      background-color: #ecf9ea;
+      border: 1px solid #b7e1b0;
+      color: var(--success-color);
+      opacity: 1;
+    }
+
+    #status.error {
+      background-color: #feeceb;
+      border: 1px solid #fad4d1;
+      color: var(--danger-color);
+      opacity: 1;
+    }
+
+    .color-preview {
+      width: 100%;
+      height: 36px;
+      border-radius: var(--radius);
+      margin-top: 8px;
+      border: 1px solid var(--border-color);
+    }
+
+    .bar-preview {
+      position: relative;
+      width: 100%;
+      height: 48px;
+      border-radius: var(--radius);
+      margin-top: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .preview-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+    }
+
+    @media (max-width: 768px) {
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .form-group.span-2 {
+        grid-column: span 1;
+      }
+      
+      .card {
+        padding: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <h2>Ustawienia paska darmowej dostawy</h2>
-  <div class="content">
-    <form id="settings-form">
-      <label>
-        <input type="checkbox" id="enabled" name="enabled" />
-        Włącz pasek
-      </label>
+  <div class="container">
+    <div class="header">
+      <h1>Ustawienia paska darmowej dostawy</h1>
+      <p>Skonfiguruj wygląd i zachowanie paska darmowej dostawy w swoim sklepie Shopify</p>
+    </div>
 
-      <label for="threshold">Próg darmowej dostawy (zł)</label>
-      <input type="number" id="threshold" name="threshold" required />
+    <div class="card">
+      <form id="settings-form">
+        <!-- Sekcja: Podstawowe ustawienia -->
+        <div class="form-section">
+          <h2 class="section-title">Podstawowe ustawienia</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="enabled" name="enabled" />
+                Włącz pasek darmowej dostawy
+              </label>
+            </div>
+            
+            <div class="form-group">
+              <label for="threshold">Próg darmowej dostawy (zł)</label>
+              <input type="number" id="threshold" name="threshold" required />
+            </div>
+            
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="calculateDifference" name="calculateDifference" />
+                Licz różnicę do darmowej dostawy
+              </label>
+            </div>
+          </div>
+        </div>
 
-      <label for="barColor">Kolor tła paska</label>
-      <input type="color" id="barColor" name="barColor" />
+        <!-- Sekcja: Wygląd -->
+        <div class="form-section">
+          <h2 class="section-title">Wygląd paska</h2>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="barColor">Kolor tła paska</label>
+              <input type="color" id="barColor" name="barColor" />
+              <div class="color-preview" id="barColorPreview"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="textColor">Kolor tekstu</label>
+              <input type="color" id="textColor" name="textColor" />
+              <div class="color-preview" id="textColorPreview"></div>
+            </div>
+            
+            <div class="form-group">
+              <label for="barHeight">Wysokość paska (px)</label>
+              <input type="number" id="barHeight" name="barHeight" min="10" max="200" />
+            </div>
+            
+            <div class="form-group">
+              <label for="fontSize">Rozmiar tekstu (px)</label>
+              <input type="number" id="fontSize" name="fontSize" min="8" max="72" />
+            </div>
+            
+            <div class="form-group span-2">
+              <label for="position">Pozycjonowanie</label>
+              <select id="position" name="position">
+                <option value="fixed">fixed (zawsze widoczny)</option>
+                <option value="absolute">absolute (tylko na górze)</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="topOffset">Odległość od góry (px)</label>
+              <input type="number" id="topOffset" name="topOffset" min="0" max="300" />
+            </div>
+          </div>
 
-      <label for="textColor">Kolor tekstu</label>
-      <input type="color" id="textColor" name="textColor" />
+          <div class="bar-preview" id="barPreview">
+            <div class="preview-text" id="previewText">Podgląd paska darmowej dostawy</div>
+          </div>
+        </div>
 
-      <label for="message">Szablon wiadomości</label>
-      <input type="text" id="message" name="message" />
+        <!-- Sekcja: Teksty -->
+        <div class="form-section">
+          <h2 class="section-title">Teksty</h2>
+          <div class="form-grid">
+            <div class="form-group span-2">
+              <label for="message">Szablon wiadomości</label>
+              <input type="text" id="message" name="message" placeholder="np. Do darmowej dostawy brakuje: {price} zł" />
+            </div>
+            
+            <div class="form-group span-2" id="loadingMessageContainer">
+              <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
+              <input type="text" id="loadingMessage" name="loadingMessage" placeholder="np. Aktualizuję dane z koszyka..." />
+            </div>
+          </div>
+        </div>
 
-      <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
-      <input type="text" id="loadingMessage" name="loadingMessage" />
-
-      <label for="barHeight">Wysokość paska (px)</label>
-      <input type="number" id="barHeight" name="barHeight" min="10" max="200" />
-
-      <label for="fontSize">Rozmiar tekstu (px)</label>
-      <input type="number" id="fontSize" name="fontSize" min="8" max="72" />
-
-      <label for="topOffset">Odległość od góry (px)</label>
-      <input type="number" id="topOffset" name="topOffset" min="0" max="300" />
-
-      <label for="position">Pozycjonowanie</label>
-      <select id="position" name="position">
-        <option value="fixed">fixed (zawsze widoczny)</option>
-        <option value="absolute">absolute (tylko na górze)</option>
-      </select>
-
-      <label>
-        <input type="checkbox" id="calculateDifference" name="calculateDifference" />
-        Licz różnicę do darmowej dostawy
-      </label>
-      
-      <div id="loadingMessageContainer">
-        <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
-        <input type="text" id="loadingMessage" name="loadingMessage" />
-      </div>
-
-      <button type="submit">Zapisz ustawienia</button>
-    </form>
-    <p id="status" style="margin-top: 10px;"></p>
+        <div class="actions">
+          <button type="submit" class="btn">Zapisz ustawienia</button>
+        </div>
+      </form>
+      <div id="status"></div>
+    </div>
   </div>
 
   <script>
-    async function loadSettings() {
-      const res = await fetch('/settings');
-      const data = await res.json();
-
-      document.getElementById('enabled').checked = data.enabled;
-      document.getElementById('threshold').value = data.freeShippingThreshold;
-      document.getElementById('barColor').value = data.barColor;
-      document.getElementById('textColor').value = data.textColor;
-      document.getElementById('message').value = data.messageTemplate;
-      document.getElementById('loadingMessage').value = data.loadingMessage;
-      document.getElementById('barHeight').value = data.barHeight;
-      document.getElementById('fontSize').value = data.fontSize;
-      document.getElementById('topOffset').value = data.barTopOffset;
-      document.getElementById('position').value = data.barPosition;
-      document.getElementById('calculateDifference').checked = data.calculateDifference;
+    // Funkcja aktualizująca podgląd paska
+    function updateBarPreview() {
+      const barPreview = document.getElementById('barPreview');
+      const previewText = document.getElementById('previewText');
+      const barColor = document.getElementById('barColor').value;
+      const textColor = document.getElementById('textColor').value;
+      const fontSize = document.getElementById('fontSize').value || '16';
       
-      // Pokaż lub ukryj pole placeholdera w zależności od wartości checkboxa
-      toggleLoadingMessageField();
+      barPreview.style.backgroundColor = barColor;
+      previewText.style.color = textColor;
+      previewText.style.fontSize = fontSize + 'px';
+    }
+    
+    // Funkcja aktualizująca próbki kolorów
+    function updateColorPreviews() {
+      document.getElementById('barColorPreview').style.backgroundColor = document.getElementById('barColor').value;
+      document.getElementById('textColorPreview').style.backgroundColor = document.getElementById('textColor').value;
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await fetch('/settings');
+        const data = await res.json();
+
+        document.getElementById('enabled').checked = data.enabled;
+        document.getElementById('threshold').value = data.freeShippingThreshold;
+        document.getElementById('barColor').value = data.barColor;
+        document.getElementById('textColor').value = data.textColor;
+        document.getElementById('message').value = data.messageTemplate;
+        document.getElementById('loadingMessage').value = data.loadingMessage;
+        document.getElementById('barHeight').value = data.barHeight;
+        document.getElementById('fontSize').value = data.fontSize;
+        document.getElementById('topOffset').value = data.barTopOffset;
+        document.getElementById('position').value = data.barPosition;
+        document.getElementById('calculateDifference').checked = data.calculateDifference;
+        
+        // Aktualizuj podglądy kolorów i paska
+        updateColorPreviews();
+        updateBarPreview();
+        
+        // Pokaż lub ukryj pole placeholdera w zależności od wartości checkboxa
+        toggleLoadingMessageField();
+      } catch (error) {
+        console.error('Błąd podczas ładowania ustawień:', error);
+        showStatus('Nie udało się załadować ustawień.', 'error');
+      }
     }
 
     function toggleLoadingMessageField() {
@@ -124,8 +397,23 @@
       document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
     }
 
-    // Dodaj listener na zmianę checkboxa
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = type;
+      
+      setTimeout(() => {
+        status.style.opacity = '0';
+      }, 3000);
+    }
+
+    // Dodaj listenery na zmiany wartości
     document.getElementById('calculateDifference').addEventListener('change', toggleLoadingMessageField);
+    document.getElementById('barColor').addEventListener('input', updateColorPreviews);
+    document.getElementById('textColor').addEventListener('input', updateColorPreviews);
+    document.getElementById('barColor').addEventListener('input', updateBarPreview);
+    document.getElementById('textColor').addEventListener('input', updateBarPreview);
+    document.getElementById('fontSize').addEventListener('input', updateBarPreview);
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -145,17 +433,22 @@
         calculateDifference: document.getElementById('calculateDifference').checked
       };
 
-      const res = await fetch('/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      try {
+        const res = await fetch('/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      const result = await res.json();
-      document.getElementById('status').innerText = result.message || 'Zapisano!';
+        const result = await res.json();
+        showStatus(result.message || 'Ustawienia zostały zapisane pomyślnie!', 'success');
+      } catch (error) {
+        showStatus('Wystąpił błąd podczas zapisywania ustawień.', 'error');
+      }
     });
 
-    loadSettings();
+    // Załaduj ustawienia po załadowaniu strony
+    document.addEventListener('DOMContentLoaded', loadSettings);
   </script>
 </body>
 </html>
