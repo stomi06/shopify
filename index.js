@@ -20,7 +20,7 @@ app.get('/auth', (req, res) => {
   if (!shop) return res.status(400).send('Missing shop parameter');
 
   const state = generateNonce();
-  res.cookie('state', state, { httpOnly: true });
+  res.cookie('state', state, { httpOnly: true, secure: true, sameSite: 'lax' });
 
   const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${HOST}/auth/callback`;
 
