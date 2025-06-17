@@ -159,7 +159,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         return null;
       }
       
-      // Funkcja generująca tekst komunikatu na podstawie kwoty - NAPRAWIONA
+      // Funkcja generująca tekst komunikatu na podstawie kwoty
       function generateShippingMessage(total) {
         if (total >= SETTINGS.freeShippingThreshold) {
           // Jeśli osiągnięto próg i opcja pokazywania komunikatu jest włączona
@@ -176,7 +176,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         }
       }
 
-      // Funkcja aktualizująca pasek po pobraniu danych koszyka - NAPRAWIONA
+      // Funkcja aktualizująca pasek po pobraniu danych koszyka
       function updateBarWithCartData(cartData) {
         try {
           const total = cartData.items_subtotal_price / 100;
@@ -207,6 +207,9 @@ app.get('/free-shipping-bar.js', (req, res) => {
       
       // Zoptymalizowana funkcja pobierająca dane koszyka
       const fetchCartData = debounce(function() {
+        // Pokaż komunikat ładowania
+        createBar(SETTINGS.loadingMessage || 'Aktualizuję dane z koszyka');
+        
         // Jeśli inny request jest już w trakcie, nie wysyłaj nowego
         if (pendingRequests > 0) return;
         
@@ -217,14 +220,16 @@ app.get('/free-shipping-bar.js', (req, res) => {
           headers: { 
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
-          }
+          },
+          credentials: 'same-origin'
         })
           .then(r => r.json())
           .then(data => {
             pendingRequests--;
             updateBarWithCartData(data);
           })
-          .catch(() => {
+          .catch((error) => {
+            console.error('Error fetching cart data:', error);
             pendingRequests--;
             createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
           });
@@ -247,8 +252,98 @@ app.get('/free-shipping-bar.js', (req, res) => {
       // Pobierz aktualne dane koszyka w tle
       fetchCartData();
 
-      // Reszta kodu monitorującego zmiany koszyka - bez zmian
-      // ...
+      // Kod monitorujący zmiany koszyka
+      function setupCartChangeDetection() {
+        // Nasłuchuj zmiany w koszyku
+        const cartObserver = new MutationObserver(fetchCartData);
+        
+        // Funkcja do monitorowania formularzy dodawania do koszyka
+        function addFormListeners() {
+          // Znajdź wszystkie formularze dodawania do koszyka
+          document.querySelectorAll('form[action*="/cart/add"]').forEach(form => {
+            if (!form.dataset.shippingBarListener) {
+              form.dataset.shippingBarListener = 'true';
+              form.addEventListener('submit', () => {
+                // Daj czas na przetworzenie żądania przez Shopify
+                setTimeout(fetchCartData, 500);
+              });
+            }
+          });
+        }
+
+        // Nasłuchuj zmian ilości w koszyku
+        document.addEventListener('change', function(e) {
+          const target = e.target;
+          if (target.matches('input[name="updates[]"]') || 
+              target.matches('input[id*="Quantity"]') || 
+              target.matches('input.cart__qty-input') ||
+              target.matches('input.js-qty__input')) {
+            fetchCartData();
+          }
+        });
+
+        // Wykryj kliknięcia w przyciski usuwania z koszyka
+        document.addEventListener('click', function(e) {
+          const target = e.target;
+          if (target.matches('a[href*="cart/change"]') || 
+              target.matches('button[data-cart-remove]') ||
+              target.matches('.cart__remove') ||
+              target.matches('.cart-remove') ||
+              target.closest('[data-cart-remove]') ||
+              target.closest('.js-remove-from-cart')) {
+            setTimeout(fetchCartData, 500);
+          }
+        });
+
+        // Spróbuj znaleźć kontener koszyka
+        let cartContainer = document.querySelector('form[action*="/cart"]') || 
+                          document.querySelector('.cart') ||
+                          document.querySelector('.cart-container') ||
+                          document.getElementById('CartContainer');
+        
+        if (cartContainer) {
+          // Obserwuj zmiany w kontenerze koszyka
+          cartObserver.observe(cartContainer, { 
+            childList: true, 
+            subtree: true 
+          });
+        }
+
+        // Na stronach produktów dodaj nasłuchiwacze do formularzy
+        addFormListeners();
+
+        // Obserwuj zmiany w DOM by wykryć dynamicznie dodane formularze
+        const bodyObserver = new MutationObserver(() => {
+          addFormListeners();
+        });
+        
+        bodyObserver.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+
+        // Dodatkowe nasłuchiwanie wydarzeń AJAX (typowe dla Shopify)
+        document.addEventListener('cart:refresh', fetchCartData);
+        document.addEventListener('cart.requestComplete', fetchCartData);
+        document.addEventListener('cart:updated', fetchCartData);
+        document.addEventListener('cart_update', fetchCartData);
+        document.addEventListener('ajaxCart.afterCartLoad', fetchCartData);
+        
+        // Nasłuchiwanie zdarzeń jQuery dla kompatybilności z różnymi motywami
+        if (typeof jQuery === 'function') {
+          jQuery(document).on('cart.requestComplete cart:refresh cart:updated drawer:updated', fetchCartData);
+        }
+        
+        // Odświeżaj stan co 30 sekund na wypadek synchronizacji między kartami/oknami
+        setInterval(fetchCartData, 30000);
+      }
+
+      // Uruchom monitorowanie po załadowaniu strony
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupCartChangeDetection);
+      } else {
+        setupCartChangeDetection();
+      }
     })();
   `);
 });
