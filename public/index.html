@@ -272,7 +272,7 @@
           <div class="form-grid">
             <div class="form-group span-2">
               <label for="message">Szablon wiadomości</label>
-              <input type="text" id="message" name="message" placeholder="np. Do darmowej dostawy brakuje: {price} zł" />
+              <input type="text" id="message" name="message" placeholder="np. Darmowa dostawa od 200 zł" />
             </div>
             
             <div class="form-group span-2" id="loadingMessageContainer">
@@ -334,6 +334,12 @@
   </div>
 
   <script>
+    // Przechowaj szablony wiadomości dla obu trybów
+    const messageTemplates = {
+      static: "Darmowa dostawa od {threshold} zł",
+      dynamic: "Do darmowej dostawy brakuje: {price} zł"
+    };
+
     // Funkcja aktualizująca podgląd paska
     function updateBarPreview() {
       const barPreview = document.getElementById('barPreview');
@@ -346,6 +352,29 @@
       previewText.style.color = textColor;
       previewText.style.fontSize = fontSize + 'px';
     }
+
+    // Funkcja aktualizująca szablon wiadomości
+    function updateMessageTemplate() {
+      const calculateDifferenceChecked = document.getElementById('calculateDifference').checked;
+      const messageInput = document.getElementById('message');
+      const thresholdValue = document.getElementById('threshold').value || '200';
+      
+      // Jeśli pole było puste lub zawierało domyślną wartość dla drugiego trybu, zmieniamy je
+      const isDefaultStaticTemplate = messageInput.value === messageTemplates.static.replace('{threshold}', thresholdValue);
+      const isDefaultDynamicTemplate = messageInput.value === messageTemplates.dynamic;
+      
+      if (calculateDifferenceChecked) {
+        // Jeśli był domyślny statyczny szablon, zmień na dynamiczny
+        if (isDefaultStaticTemplate || messageInput.value.trim() === '') {
+          messageInput.value = messageTemplates.dynamic;
+        }
+      } else {
+        // Jeśli był domyślny dynamiczny szablon, zmień na statyczny
+        if (isDefaultDynamicTemplate || messageInput.value.trim() === '') {
+          messageInput.value = messageTemplates.static.replace('{threshold}', thresholdValue);
+        }
+      }
+    }
     
     async function loadSettings() {
       try {
@@ -356,13 +385,20 @@
         document.getElementById('threshold').value = data.freeShippingThreshold;
         document.getElementById('barColor').value = data.barColor;
         document.getElementById('textColor').value = data.textColor;
-        document.getElementById('message').value = data.messageTemplate;
         document.getElementById('loadingMessage').value = data.loadingMessage;
         document.getElementById('barHeight').value = data.barHeight;
         document.getElementById('fontSize').value = data.fontSize;
         document.getElementById('topOffset').value = data.barTopOffset;
         document.getElementById('position').value = data.barPosition;
         document.getElementById('calculateDifference').checked = data.calculateDifference;
+        
+        // Ustaw szablon wiadomości na podstawie stanu checkboxa
+        if (data.calculateDifference) {
+          document.getElementById('message').value = data.messageTemplate || messageTemplates.dynamic;
+        } else {
+          const threshold = data.freeShippingThreshold || '200';
+          document.getElementById('message').value = data.messageTemplate || messageTemplates.static.replace('{threshold}', threshold);
+        }
         
         // Aktualizuj podgląd paska
         updateBarPreview();
@@ -381,6 +417,8 @@
       document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
       // Pokaż/ukryj pole progu darmowej dostawy
       document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
+      // Aktualizuj szablon wiadomości
+      updateMessageTemplate();
     }
 
     function showStatus(message, type) {
@@ -395,6 +433,11 @@
 
     // Dodaj listenery na zmiany wartości
     document.getElementById('calculateDifference').addEventListener('change', toggleCalculateDifferenceFields);
+    document.getElementById('threshold').addEventListener('input', function() {
+      if (!document.getElementById('calculateDifference').checked) {
+        updateMessageTemplate();
+      }
+    });
     document.getElementById('barColor').addEventListener('input', updateBarPreview);
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);

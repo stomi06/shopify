@@ -112,8 +112,8 @@ app.get('/free-shipping-bar.js', (req, res) => {
       }
 
       if (!SETTINGS.calculateDifference) {
-        // Jeśli nie liczymy różnicy, wyświetl statyczny komunikat o darmowej dostawie
-        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+        // Jeśli nie liczymy różnicy, wyświetl dokładnie to co jest w szablonie wiadomości
+        createBar(SETTINGS.messageTemplate);
         return;
       }
 
