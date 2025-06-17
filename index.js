@@ -6,69 +6,63 @@ const crypto = require('crypto');
 
 const app = express();
 app.use(cookieParser());
-
+app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
 const SCOPES = 'write_script_tags,read_script_tags';
-const HOST = process.env.HOST; 
+const HOST = process.env.HOST;
+
 function generateNonce() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+// Domyślne ustawienia paska
 let settings = {
+    enabled: true,                    // czy pasek jest aktywny
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Do darmowej dostawy brakuje: {{missing}} zł',
-    enabled: true,
-    barHeight: '50px',
-    fontSize: '16px',
-    topOffset: '0px',
-    position: 'fixed'
+    messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł',
+    loadingMessage: 'Aktualizuję dane z koszyka',
+    alwaysShowBar: true,
+    barPosition: 'fixed',
+    barTopOffset: 0,
+    barHeight: 50,         // w px
+    fontSize: 16,          // w px
+    calculateDifference: true
 };
 
-
-
+// --- AUTH ---
 app.get('/auth', (req, res) => {
-    const shop = req.query.shop;
-    if (!shop) return res.status(400).send('Missing shop parameter');
+  const shop = req.query.shop;
+  if (!shop) return res.status(400).send('Missing shop parameter');
 
-    const state = generateNonce();
-    console.log('Generated state:', state);
-    res.cookie('state', state, { httpOnly: true, secure: true, sameSite: 'lax' });
+  const state = generateNonce();
+  res.cookie('state', state, { httpOnly: true, secure: true, sameSite: 'lax' });
 
-    const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${HOST}/auth/callback`;
-
-
-    res.redirect(redirectUrl);
+  const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${HOST}/auth/callback`;
+  res.redirect(redirectUrl);
 });
 
 app.get('/auth/callback', async (req, res) => {
-    const { shop, code, state } = req.query;
-    const stateCookie = req.cookies.state;
+  const { shop, code, state } = req.query;
+  const stateCookie = req.cookies.state;
 
-    console.log('State from query:', state);
-    console.log('State from cookie:', req.cookies.state);
+  if (!shop || !code || !state) return res.status(400).send('Missing parameters');
+  if (state !== stateCookie) return res.status(403).send('Invalid state');
 
-    if (!shop || !code || !state) {
-        return res.status(400).send('Missing parameters');
-    }
-
-    if (state !== stateCookie) {
-        return res.status(403).send('Invalid state');
-    }
-
-    try {
-        const response = await axios.post(`https://${shop}/admin/oauth/access_token`, {
-        client_id: SHOPIFY_API_KEY,
-        client_secret: SHOPIFY_API_SECRET,
-        code,
+  try {
+    const response = await axios.post(`https://${shop}/admin/oauth/access_token`, {
+      client_id: SHOPIFY_API_KEY,
+      client_secret: SHOPIFY_API_SECRET,
+      code,
     });
 
     const accessToken = response.data.access_token;
 
+    // Dodajemy script tag z paskiem
     await axios.post(`https://${shop}/admin/api/2023-04/script_tags.json`, {
       script_tag: {
         event: 'onload',
@@ -96,93 +90,117 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       if (!SETTINGS.enabled) return;
 
-      function getCartTotal(callback) {
-        fetch('/cart.js')
-          .then(r => r.json())
-          .then(data => {
-            callback(data.items_subtotal_price / 100);
-          });
-      }
+      function createBar(text) {
+        let bar = document.getElementById('free-shipping-bar');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.id = 'free-shipping-bar';
+          bar.style.position = SETTINGS.barPosition;
+          bar.style.top = SETTINGS.barTopOffset + 'px';
+          bar.style.left = '0';
+          bar.style.width = '100%';
+          bar.style.height = SETTINGS.barHeight + 'px';
+          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.color = SETTINGS.textColor;
+          bar.style.textAlign = 'center';
+          bar.style.padding = '10px 0';
+          bar.style.fontSize = SETTINGS.fontSize + 'px';
+          bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          bar.style.zIndex = '9999';
+          bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+          document.body.appendChild(bar);
 
-      function createBar(missing) {
-        let bar = document.createElement('div');
-        bar.style.position = SETTINGS.position;
-        bar.style.top = SETTINGS.topOffset;
-        bar.style.left = '0';
-        bar.style.width = '100%';
-        bar.style.backgroundColor = SETTINGS.barColor;
-        bar.style.color = SETTINGS.textColor;
-        bar.style.textAlign = 'center';
-        bar.style.fontSize = SETTINGS.fontSize;
-        bar.style.height = SETTINGS.barHeight;
-        bar.style.lineHeight = SETTINGS.barHeight;
-        bar.style.zIndex = '0';
-        bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
-        bar.textContent = SETTINGS.messageTemplate.replace('{{missing}}', missing.toFixed(2));
-        document.body.appendChild(bar);
-      }
-
-      getCartTotal(total => {
-        if (total < SETTINGS.freeShippingThreshold) {
-          createBar(SETTINGS.freeShippingThreshold - total);
+          // Dodaj padding-top do body, żeby nie nachodził na content
+          if (SETTINGS.barPosition === 'fixed') {
+            document.body.style.paddingTop = SETTINGS.barHeight + SETTINGS.barTopOffset + 'px';
+          }
         }
-      });
+        bar.textContent = text;
+      }
+
+      // Pokaz placeholder od razu
+      createBar(SETTINGS.loadingMessage);
+
+      if (!SETTINGS.calculateDifference) {
+        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+        return;
+      }
+
+      fetch('/cart.js')
+        .then(r => r.json())
+        .then(data => {
+          const total = data.items_subtotal_price / 100;
+          if (total < SETTINGS.freeShippingThreshold) {
+            const missing = SETTINGS.freeShippingThreshold - total;
+            const message = SETTINGS.messageTemplate.replace('{missing}', missing.toFixed(2));
+            createBar(message);
+          } else {
+            createBar('Gratulacje! Masz darmową dostawę :)');
+          }
+        })
+        .catch(() => {
+          createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+        });
     })();
   `);
 });
-
 
 app.get('/settings', (req, res) => {
   res.json(settings);
 });
 
-app.use(express.json()); // Umożliwia odczyt JSON z body
-
 app.post('/settings', (req, res) => {
-    const {
-            freeShippingThreshold,
-            barColor,
-            textColor,
-            messageTemplate,
-            enabled,
-            barHeight,
-            fontSize,
-            topOffset,
-            position
-        } = req.body;
+  const {
+    enabled,
+    freeShippingThreshold,
+    barColor,
+    textColor,
+    messageTemplate,
+    loadingMessage,
+    alwaysShowBar,
+    barPosition,
+    barTopOffset,
+    barHeight,
+    fontSize,
+    calculateDifference
+  } = req.body;
 
-        if (
-            typeof freeShippingThreshold !== 'number' ||
-            typeof barColor !== 'string' ||
-            typeof textColor !== 'string' ||
-            typeof messageTemplate !== 'string' ||
-            typeof enabled !== 'boolean' ||
-            typeof barHeight !== 'string' ||
-            typeof fontSize !== 'string' ||
-            typeof topOffset !== 'string' ||
-            !['fixed', 'absolute'].includes(position)
-        ) {
-        return res.status(400).json({ error: 'Nieprawidłowe dane' });
-        }
+  if (
+    typeof enabled !== 'boolean' ||
+    typeof freeShippingThreshold !== 'number' ||
+    typeof barColor !== 'string' ||
+    typeof textColor !== 'string' ||
+    typeof messageTemplate !== 'string' ||
+    typeof loadingMessage !== 'string' ||
+    typeof alwaysShowBar !== 'boolean' ||
+    (barPosition !== 'fixed' && barPosition !== 'absolute') ||
+    typeof barTopOffset !== 'number' ||
+    typeof barHeight !== 'number' ||
+    typeof fontSize !== 'number' ||
+    typeof calculateDifference !== 'boolean'
+  ) {
+    return res.status(400).json({ error: 'Nieprawidłowe dane' });
+  }
 
-        settings = {
-            freeShippingThreshold,
-            barColor,
-            textColor,
-            messageTemplate,
-            enabled,
-            barHeight,
-            fontSize,
-            topOffset,
-            position
-    };
-
-
+  settings = {
+    enabled,
+    freeShippingThreshold,
+    barColor,
+    textColor,
+    messageTemplate,
+    loadingMessage,
+    alwaysShowBar,
+    barPosition,
+    barTopOffset,
+    barHeight,
+    fontSize,
+    calculateDifference
+  };
 
   res.json({ message: 'Ustawienia zapisane', settings });
 });
 
-
+// --- SERWER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('App listening on port ' + PORT);
