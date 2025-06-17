@@ -23,7 +23,7 @@
       margin-top: 10px;
       font-weight: bold;
     }
-    input {
+    input, select {
       width: 100%;
       padding: 8px;
       margin-top: 5px;
@@ -48,6 +48,11 @@
   <h2>Ustawienia paska darmowej dostawy</h2>
   <div class="content">
     <form id="settings-form">
+      <label>
+        <input type="checkbox" id="enabled" name="enabled" />
+        Włącz pasek
+      </label>
+
       <label for="threshold">Próg darmowej dostawy (zł)</label>
       <input type="number" id="threshold" name="threshold" required />
 
@@ -60,6 +65,21 @@
       <label for="message">Szablon wiadomości</label>
       <input type="text" id="message" name="message" />
 
+      <label for="barHeight">Wysokość paska (np. 50px)</label>
+      <input type="text" id="barHeight" name="barHeight" />
+
+      <label for="fontSize">Rozmiar tekstu (np. 16px)</label>
+      <input type="text" id="fontSize" name="fontSize" />
+
+      <label for="topOffset">Odległość od góry (np. 0px)</label>
+      <input type="text" id="topOffset" name="topOffset" />
+
+      <label for="position">Pozycjonowanie</label>
+      <select id="position" name="position">
+        <option value="fixed">fixed (zawsze widoczny)</option>
+        <option value="absolute">absolute (tylko na górze)</option>
+      </select>
+
       <button type="submit">Zapisz ustawienia</button>
     </form>
     <p id="status" style="margin-top: 10px;"></p>
@@ -69,20 +89,31 @@
     async function loadSettings() {
       const res = await fetch('/settings');
       const data = await res.json();
+
+      document.getElementById('enabled').checked = data.enabled;
       document.getElementById('threshold').value = data.freeShippingThreshold;
       document.getElementById('barColor').value = data.barColor;
       document.getElementById('textColor').value = data.textColor;
       document.getElementById('message').value = data.messageTemplate;
+      document.getElementById('barHeight').value = data.barHeight;
+      document.getElementById('fontSize').value = data.fontSize;
+      document.getElementById('topOffset').value = data.topOffset;
+      document.getElementById('position').value = data.position;
     }
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const payload = {
+        enabled: document.getElementById('enabled').checked,
         freeShippingThreshold: parseFloat(document.getElementById('threshold').value),
         barColor: document.getElementById('barColor').value,
         textColor: document.getElementById('textColor').value,
-        messageTemplate: document.getElementById('message').value
+        messageTemplate: document.getElementById('message').value,
+        barHeight: document.getElementById('barHeight').value,
+        fontSize: document.getElementById('fontSize').value,
+        topOffset: document.getElementById('topOffset').value,
+        position: document.getElementById('position').value
       };
 
       const res = await fetch('/settings', {
