@@ -131,26 +131,68 @@ app.get('/free-shipping-bar.js', (req, res) => {
         return;
       }
 
-      // Pokaż placeholder natychmiast
-      const bar = createBar(SETTINGS.loadingMessage);
+      // Klucz do localStorage dla zapisania stanu koszyka
+      const CART_STORAGE_KEY = 'free_shipping_bar_cart_data_' + window.location.hostname;
+      
+      // Próba pobrania danych koszyka z localStorage
+      function getSavedCartData() {
+        try {
+          const saved = localStorage.getItem(CART_STORAGE_KEY);
+          if (saved) {
+            const cartData = JSON.parse(saved);
+            const timestamp = cartData._timestamp || 0;
+            // Sprawdź czy dane nie są starsze niż 24 godziny
+            if (Date.now() - timestamp < 24 * 60 * 60 * 1000) {
+              return cartData;
+            }
+          }
+        } catch (e) {
+          console.log('Błąd przy odczycie zapisanych danych koszyka:', e);
+        }
+        return null;
+      }
+      
+      // Zapisz dane koszyka do localStorage
+      function saveCartData(cartData) {
+        try {
+          // Dodaj timestamp do danych
+          cartData._timestamp = Date.now();
+          localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartData));
+        } catch (e) {
+          console.log('Błąd przy zapisie danych koszyka:', e);
+        }
+      }
+      
+      // Funkcja generująca tekst paska
+      function generateBarText(cartData) {
+        try {
+          const total = cartData.items_subtotal_price / 100;
+          if (total < SETTINGS.freeShippingThreshold) {
+            const price = SETTINGS.freeShippingThreshold - total;
+            return SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
+          } else {
+            return 'Gratulacje! Masz darmową dostawę :)';
+          }
+        } catch (e) {
+          return 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
+        }
+      }
+
+      // Pokaż pasek z zapisanymi lub domyślnymi danymi
+      const savedCartData = getSavedCartData();
+      const bar = createBar(
+        savedCartData ? generateBarText(savedCartData) : 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł'
+      );
 
       // Licznik aktualnych żądań, aby uniknąć nakładania się aktualizacji
       let pendingRequests = 0;
       
       // Funkcja aktualizująca pasek po pobraniu danych koszyka
       function updateBarWithCartData(cartData) {
-        try {
-          const total = cartData.items_subtotal_price / 100;
-          if (total < SETTINGS.freeShippingThreshold) {
-            const price = SETTINGS.freeShippingThreshold - total;
-            const message = SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
-            bar.textContent = message;
-          } else {
-            bar.textContent = 'Gratulacje! Masz darmową dostawę :)';
-          }
-        } catch (e) {
-          bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
-        }
+        // Zapisz dane koszyka do localStorage
+        saveCartData(cartData);
+        // Aktualizuj tekst paska
+        bar.textContent = generateBarText(cartData);
       }
 
       // Zoptymalizowana funkcja pobierająca dane koszyka
@@ -167,11 +209,10 @@ app.get('/free-shipping-bar.js', (req, res) => {
           })
           .catch(() => {
             pendingRequests--;
-            bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
           });
       }, 300); // Czekaj 300ms przed wykonaniem żądania
 
-      // Wywołaj natychmiast po załadowaniu
+      // Wywołaj pobranie aktualnych danych, ale bez pokazywania komunikatu ładowania
       fetchCartData();
 
       // Lekki system monitorowania zmian koszyka
@@ -198,7 +239,6 @@ app.get('/free-shipping-bar.js', (req, res) => {
         }
 
         // 4. Sprawdzaj koszyk po załadowaniu strony i po każdej zmianie URL (zmiana strony w SPA)
-        window.addEventListener('load', fetchCartData);
         window.addEventListener('popstate', fetchCartData);
       }
 
