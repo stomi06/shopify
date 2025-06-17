@@ -116,7 +116,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         bar.style.fontSize = SETTINGS.fontSize;
         bar.style.height = SETTINGS.barHeight;
         bar.style.lineHeight = SETTINGS.barHeight;
-        bar.style.zIndex = '9999';
+        bar.style.zIndex = '0';
         bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
         bar.textContent = SETTINGS.messageTemplate.replace('{{missing}}', missing.toFixed(2));
         document.body.appendChild(bar);
