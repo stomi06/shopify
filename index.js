@@ -20,17 +20,18 @@ function generateNonce() {
 
 // Domyślne ustawienia paska
 let settings = {
-  enabled: true,
-  useCart: true,
-  freeShippingThreshold: 200,
-  barColor: '#4CAF50',
-  textColor: '#FFFFFF',
-  messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł',
-  loadingMessage: 'Aktualizuję dane z koszyka...',
-  barHeight: '50px',
-  fontSize: '16px',
-  topOffset: '55px',
-  position: 'fixed'
+    enabled: true,                    // czy pasek jest aktywny
+    freeShippingThreshold: 200,
+    barColor: '#4CAF50',
+    textColor: '#FFFFFF',
+    messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł',
+    loadingMessage: 'Aktualizuję dane z koszyka',
+    alwaysShowBar: true,
+    barPosition: 'fixed',
+    barTopOffset: 0,
+    barHeight: 50,         // w px
+    fontSize: 16,          // w px
+    calculateDifference: true
 };
 
 // --- AUTH ---
@@ -81,7 +82,7 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-app.get('/free-shipping-bar.js', async (req, res) => {
+app.get('/free-shipping-bar.js', (req, res) => {
   res.type('application/javascript');
   res.send(`
     (function() {
@@ -90,52 +91,52 @@ app.get('/free-shipping-bar.js', async (req, res) => {
       if (!SETTINGS.enabled) return;
 
       function createBar(text) {
-        let bar = document.createElement('div');
-        bar.style.position = SETTINGS.position;
-        bar.style.top = SETTINGS.topOffset || '0';
-        bar.style.left = '0';
-        bar.style.width = '100%';
-        bar.style.backgroundColor = SETTINGS.barColor;
-        bar.style.color = SETTINGS.textColor;
-        bar.style.textAlign = 'center';
-        bar.style.padding = '10px';
-        bar.style.fontSize = SETTINGS.fontSize || '16px';
-        bar.style.height = SETTINGS.barHeight || '50px';
-        bar.style.lineHeight = SETTINGS.barHeight || '50px';
-        bar.style.zIndex = '9999';
-        bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
+        let bar = document.getElementById('free-shipping-bar');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.id = 'free-shipping-bar';
+          bar.style.position = SETTINGS.barPosition;
+          bar.style.top = SETTINGS.barTopOffset + 'px';
+          bar.style.left = '0';
+          bar.style.width = '100%';
+          bar.style.height = SETTINGS.barHeight + 'px';
+          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.color = SETTINGS.textColor;
+          bar.style.textAlign = 'center';
+          bar.style.fontSize = SETTINGS.fontSize + 'px';
+          bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          bar.style.zIndex = '50';
+          document.body.appendChild(bar);
+        }
         bar.textContent = text;
-        document.body.appendChild(bar);
       }
 
-      if (!SETTINGS.useCart) {
-        // Tryb bez koszyka
-        createBar(SETTINGS.messageTemplate);
+      // Pokaz placeholder od razu
+      createBar(SETTINGS.loadingMessage);
+
+      if (!SETTINGS.calculateDifference) {
+        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
         return;
       }
-
-      // Placeholder
-      createBar(SETTINGS.loadingMessage || 'Aktualizuję dane z koszyka...');
 
       fetch('/cart.js')
         .then(r => r.json())
         .then(data => {
           const total = data.items_subtotal_price / 100;
           if (total < SETTINGS.freeShippingThreshold) {
-            const missing = (SETTINGS.freeShippingThreshold - total).toFixed(2);
-            const message = SETTINGS.messageTemplate.replace('{missing}', missing);
-            document.body.lastChild.textContent = message;
+            const missing = SETTINGS.freeShippingThreshold - total;
+            const message = SETTINGS.messageTemplate.replace('{missing}', missing.toFixed(2));
+            createBar(message);
           } else {
-            document.body.lastChild.remove(); // Usuń placeholder
+            createBar('Gratulacje! Masz darmową dostawę :)');
           }
         })
         .catch(() => {
-          document.body.lastChild.textContent = 'Błąd pobierania koszyka';
+          createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
         });
     })();
   `);
 });
-
 
 app.get('/settings', (req, res) => {
   res.json(settings);
