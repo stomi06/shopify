@@ -53,11 +53,6 @@
         Włącz pasek
       </label>
 
-      <label>
-        <input type="checkbox" id="useCart" name="useCart" />
-        Liczyć różnicę do darmowej dostawy
-      </label>
-
       <label for="threshold">Próg darmowej dostawy (zł)</label>
       <input type="number" id="threshold" name="threshold" required />
 
@@ -70,23 +65,28 @@
       <label for="message">Szablon wiadomości</label>
       <input type="text" id="message" name="message" />
 
-      <label for="loadingMessage">Tekst ładowania danych z koszyka</label>
+      <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
       <input type="text" id="loadingMessage" name="loadingMessage" />
 
-      <label for="barHeight">Wysokość paska (np. 50px)</label>
-      <input type="text" id="barHeight" name="barHeight" />
+      <label for="barHeight">Wysokość paska (px)</label>
+      <input type="number" id="barHeight" name="barHeight" min="10" max="200" />
 
-      <label for="fontSize">Rozmiar tekstu (np. 16px)</label>
-      <input type="text" id="fontSize" name="fontSize" />
+      <label for="fontSize">Rozmiar tekstu (px)</label>
+      <input type="number" id="fontSize" name="fontSize" min="8" max="72" />
 
-      <label for="topOffset">Odległość od góry (np. 0px)</label>
-      <input type="text" id="topOffset" name="topOffset" />
+      <label for="topOffset">Odległość od góry (px)</label>
+      <input type="number" id="topOffset" name="topOffset" min="0" max="300" />
 
       <label for="position">Pozycjonowanie</label>
       <select id="position" name="position">
         <option value="fixed">fixed (zawsze widoczny)</option>
         <option value="absolute">absolute (tylko na górze)</option>
       </select>
+
+      <label>
+        <input type="checkbox" id="calculateDifference" name="calculateDifference" />
+        Licz różnicę do darmowej dostawy
+      </label>
 
       <button type="submit">Zapisz ustawienia</button>
     </form>
@@ -99,16 +99,16 @@
       const data = await res.json();
 
       document.getElementById('enabled').checked = data.enabled;
-      document.getElementById('useCart').checked = data.useCart;
       document.getElementById('threshold').value = data.freeShippingThreshold;
       document.getElementById('barColor').value = data.barColor;
       document.getElementById('textColor').value = data.textColor;
       document.getElementById('message').value = data.messageTemplate;
-      document.getElementById('loadingMessage').value = data.loadingMessage || '';
+      document.getElementById('loadingMessage').value = data.loadingMessage;
       document.getElementById('barHeight').value = data.barHeight;
       document.getElementById('fontSize').value = data.fontSize;
-      document.getElementById('topOffset').value = data.topOffset;
-      document.getElementById('position').value = data.position;
+      document.getElementById('topOffset').value = data.barTopOffset;
+      document.getElementById('position').value = data.barPosition;
+      document.getElementById('calculateDifference').checked = data.calculateDifference;
     }
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -116,16 +116,17 @@
 
       const payload = {
         enabled: document.getElementById('enabled').checked,
-        useCart: document.getElementById('useCart').checked,
         freeShippingThreshold: parseFloat(document.getElementById('threshold').value),
         barColor: document.getElementById('barColor').value,
         textColor: document.getElementById('textColor').value,
         messageTemplate: document.getElementById('message').value,
         loadingMessage: document.getElementById('loadingMessage').value,
-        barHeight: document.getElementById('barHeight').value,
-        fontSize: document.getElementById('fontSize').value,
-        topOffset: document.getElementById('topOffset').value,
-        position: document.getElementById('position').value
+        barHeight: parseInt(document.getElementById('barHeight').value, 10),
+        fontSize: parseInt(document.getElementById('fontSize').value, 10),
+        barTopOffset: parseInt(document.getElementById('topOffset').value, 10),
+        barPosition: document.getElementById('position').value,
+        alwaysShowBar: true,
+        calculateDifference: document.getElementById('calculateDifference').checked
       };
 
       const res = await fetch('/settings', {

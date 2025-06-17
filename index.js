@@ -25,7 +25,7 @@ let settings = {
   freeShippingThreshold: 200,
   barColor: '#4CAF50',
   textColor: '#FFFFFF',
-  messageTemplate: 'Do darmowej dostawy brakuje: {{missing}} zł',
+  messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł',
   loadingMessage: 'Aktualizuję dane z koszyka...',
   barHeight: '50px',
   fontSize: '16px',
@@ -81,53 +81,57 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-app.get('/free-shipping-bar.js', (req, res) => {
+app.get('/free-shipping-bar.js', async (req, res) => {
   res.type('application/javascript');
   res.send(`
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
 
-      function createBar(message) {
+      if (!SETTINGS.enabled) return;
+
+      function createBar(text) {
         let bar = document.createElement('div');
         bar.style.position = SETTINGS.position;
-        bar.style.top = SETTINGS.topOffset;
+        bar.style.top = SETTINGS.topOffset || '0';
         bar.style.left = '0';
         bar.style.width = '100%';
-        bar.style.height = SETTINGS.barHeight;
         bar.style.backgroundColor = SETTINGS.barColor;
         bar.style.color = SETTINGS.textColor;
         bar.style.textAlign = 'center';
         bar.style.padding = '10px';
-        bar.style.fontSize = SETTINGS.fontSize;
+        bar.style.fontSize = SETTINGS.fontSize || '16px';
+        bar.style.height = SETTINGS.barHeight || '50px';
+        bar.style.lineHeight = SETTINGS.barHeight || '50px';
         bar.style.zIndex = '9999';
         bar.style.boxShadow = '0 2px 4px rgba(0,0,0,0.15)';
-        bar.textContent = message;
+        bar.textContent = text;
         document.body.appendChild(bar);
       }
 
-      if (!SETTINGS.enabled) return;
-
       if (!SETTINGS.useCart) {
+        // Tryb bez koszyka
         createBar(SETTINGS.messageTemplate);
-      } else {
-        createBar(SETTINGS.loadingMessage);
-
-        fetch('/cart.js')
-          .then(res => res.json())
-          .then(data => {
-            const total = data.items_subtotal_price / 100;
-            if (total < SETTINGS.freeShippingThreshold) {
-              const missing = (SETTINGS.freeShippingThreshold - total).toFixed(2);
-              const message = SETTINGS.messageTemplate.replace('{{missing}}', missing);
-              document.querySelector('div').textContent = message;
-            } else {
-              document.querySelector('div').remove();
-            }
-          })
-          .catch(() => {
-            document.querySelector('div').textContent = 'Nie udało się pobrać koszyka';
-          });
+        return;
       }
+
+      // Placeholder
+      createBar(SETTINGS.loadingMessage || 'Aktualizuję dane z koszyka...');
+
+      fetch('/cart.js')
+        .then(r => r.json())
+        .then(data => {
+          const total = data.items_subtotal_price / 100;
+          if (total < SETTINGS.freeShippingThreshold) {
+            const missing = (SETTINGS.freeShippingThreshold - total).toFixed(2);
+            const message = SETTINGS.messageTemplate.replace('{missing}', missing);
+            document.body.lastChild.textContent = message;
+          } else {
+            document.body.lastChild.remove(); // Usuń placeholder
+          }
+        })
+        .catch(() => {
+          document.body.lastChild.textContent = 'Błąd pobierania koszyka';
+        });
     })();
   `);
 });
@@ -140,46 +144,49 @@ app.get('/settings', (req, res) => {
 app.post('/settings', (req, res) => {
   const {
     enabled,
-    useCart,
     freeShippingThreshold,
     barColor,
     textColor,
     messageTemplate,
     loadingMessage,
+    alwaysShowBar,
+    barPosition,
+    barTopOffset,
     barHeight,
     fontSize,
-    topOffset,
-    position
+    calculateDifference
   } = req.body;
 
   if (
     typeof enabled !== 'boolean' ||
-    typeof useCart !== 'boolean' ||
     typeof freeShippingThreshold !== 'number' ||
     typeof barColor !== 'string' ||
     typeof textColor !== 'string' ||
     typeof messageTemplate !== 'string' ||
     typeof loadingMessage !== 'string' ||
-    typeof barHeight !== 'string' ||
-    typeof fontSize !== 'string' ||
-    typeof topOffset !== 'string' ||
-    typeof position !== 'string'
+    typeof alwaysShowBar !== 'boolean' ||
+    (barPosition !== 'fixed' && barPosition !== 'absolute') ||
+    typeof barTopOffset !== 'number' ||
+    typeof barHeight !== 'number' ||
+    typeof fontSize !== 'number' ||
+    typeof calculateDifference !== 'boolean'
   ) {
     return res.status(400).json({ error: 'Nieprawidłowe dane' });
   }
 
   settings = {
     enabled,
-    useCart,
     freeShippingThreshold,
     barColor,
     textColor,
     messageTemplate,
     loadingMessage,
+    alwaysShowBar,
+    barPosition,
+    barTopOffset,
     barHeight,
     fontSize,
-    topOffset,
-    position
+    calculateDifference
   };
 
   res.json({ message: 'Ustawienia zapisane', settings });
