@@ -95,20 +95,35 @@
 
   <script>
     async function loadSettings() {
-      const res = await fetch('/settings');
-      const data = await res.json();
+      try {
+        const res = await fetch('/settings');
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        const data = await res.json();
 
-      document.getElementById('enabled').checked = data.enabled;
-      document.getElementById('threshold').value = data.freeShippingThreshold;
-      document.getElementById('barColor').value = data.barColor;
-      document.getElementById('textColor').value = data.textColor;
-      document.getElementById('message').value = data.messageTemplate;
-      document.getElementById('loadingMessage').value = data.loadingMessage;
-      document.getElementById('barHeight').value = data.barHeight;
-      document.getElementById('fontSize').value = data.fontSize;
-      document.getElementById('topOffset').value = data.barTopOffset;
-      document.getElementById('position').value = data.barPosition;
-      document.getElementById('calculateDifference').checked = data.calculateDifference;
+        // Wypełnij formularz danymi z serwera
+        document.getElementById('enabled').checked = data.enabled;
+        document.getElementById('threshold').value = data.freeShippingThreshold || '';
+        document.getElementById('barColor').value = data.barColor || '#000000';
+        document.getElementById('textColor').value = data.textColor || '#FFFFFF';
+        document.getElementById('message').value = data.messageTemplate || '';
+        document.getElementById('loadingMessage').value = data.loadingMessage || '';
+        document.getElementById('barHeight').value = data.barHeight || 50;
+        document.getElementById('fontSize').value = data.fontSize || 16;
+        document.getElementById('topOffset').value = data.barTopOffset || 0;
+        document.getElementById('position').value = data.barPosition || 'fixed';
+        document.getElementById('calculateDifference').checked = data.calculateDifference;
+
+        // Ukryj pole "Tekst placeholdera", jeśli calculateDifference jest odznaczone
+        const loadingMessageField = document.getElementById('loadingMessage');
+        if (!data.calculateDifference) {
+          loadingMessageField.parentElement.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Błąd podczas ładowania ustawień:', error);
+        document.getElementById('status').innerText = 'Nie udało się załadować ustawień.';
+      }
     }
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
@@ -137,6 +152,24 @@
 
       const result = await res.json();
       document.getElementById('status').innerText = result.message || 'Zapisano!';
+    });
+
+    document.getElementById('calculateDifference').addEventListener('change', (e) => {
+      const loadingMessageField = document.getElementById('loadingMessage');
+      if (e.target.checked) {
+        loadingMessageField.parentElement.style.display = 'block';
+      } else {
+        loadingMessageField.parentElement.style.display = 'none';
+      }
+    });
+
+    // Domyślnie ukryj pole "Tekst placeholdera"
+    document.addEventListener('DOMContentLoaded', () => {
+      const calculateDifference = document.getElementById('calculateDifference');
+      const loadingMessageField = document.getElementById('loadingMessage');
+      if (!calculateDifference.checked) {
+        loadingMessageField.parentElement.style.display = 'none';
+      }
     });
 
     loadSettings();
