@@ -91,7 +91,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
       function createBar(missing) {
         let bar = document.createElement('div');
         bar.style.position = 'fixed';
-        bar.style.bottom = '0';
+        bar.style.top = '0';
         bar.style.left = '0';
         bar.style.width = '100%';
         bar.style.backgroundColor = '#4CAF50';
