@@ -258,6 +258,11 @@
                 Licz różnicę do darmowej dostawy
               </label>
             </div>
+            
+            <div class="form-group" id="thresholdContainer">
+              <label for="threshold">Próg darmowej dostawy (zł)</label>
+              <input type="number" id="threshold" name="threshold" required />
+            </div>
           </div>
         </div>
 
@@ -273,11 +278,6 @@
             <div class="form-group span-2" id="loadingMessageContainer">
               <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
               <input type="text" id="loadingMessage" name="loadingMessage" placeholder="np. Aktualizuję dane z koszyka..." />
-            </div>
-
-            <div class="form-group span-2" id="thresholdContainer">
-              <label for="threshold">Próg darmowej dostawy (zł)</label>
-              <input type="number" id="threshold" name="threshold" required />
             </div>
           </div>
         </div>
@@ -306,7 +306,14 @@
               <input type="number" id="fontSize" name="fontSize" min="8" max="72" />
             </div>
             
-            <div class="form-group span-2">
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="boldText" name="boldText" />
+                Pogrubiony tekst
+              </label>
+            </div>
+            
+            <div class="form-group">
               <label for="position">Pozycjonowanie</label>
               <select id="position" name="position">
                 <option value="fixed">fixed (zawsze widoczny)</option>
@@ -347,32 +354,26 @@
       const barColor = document.getElementById('barColor').value;
       const textColor = document.getElementById('textColor').value;
       const fontSize = document.getElementById('fontSize').value || '16';
+      const boldText = document.getElementById('boldText').checked;
       
       barPreview.style.backgroundColor = barColor;
       previewText.style.color = textColor;
       previewText.style.fontSize = fontSize + 'px';
+      previewText.style.fontWeight = boldText ? 'bold' : 'normal';
     }
 
-    // Funkcja aktualizująca szablon wiadomości
-    function updateMessageTemplate() {
+    // Funkcja ustawiająca domyślny szablon wiadomości
+    function setDefaultMessageTemplate() {
       const calculateDifferenceChecked = document.getElementById('calculateDifference').checked;
       const messageInput = document.getElementById('message');
       const thresholdValue = document.getElementById('threshold').value || '200';
       
-      // Jeśli pole było puste lub zawierało domyślną wartość dla drugiego trybu, zmieniamy je
-      const isDefaultStaticTemplate = messageInput.value === messageTemplates.static.replace('{threshold}', thresholdValue);
-      const isDefaultDynamicTemplate = messageInput.value === messageTemplates.dynamic;
-      
       if (calculateDifferenceChecked) {
-        // Jeśli był domyślny statyczny szablon, zmień na dynamiczny
-        if (isDefaultStaticTemplate || messageInput.value.trim() === '') {
-          messageInput.value = messageTemplates.dynamic;
-        }
+        // Zawsze ustaw domyślny szablon dla trybu dynamicznego
+        messageInput.value = messageTemplates.dynamic;
       } else {
-        // Jeśli był domyślny dynamiczny szablon, zmień na statyczny
-        if (isDefaultDynamicTemplate || messageInput.value.trim() === '') {
-          messageInput.value = messageTemplates.static.replace('{threshold}', thresholdValue);
-        }
+        // Zawsze ustaw domyślny szablon dla trybu statycznego
+        messageInput.value = messageTemplates.static.replace('{threshold}', thresholdValue);
       }
     }
     
@@ -391,6 +392,7 @@
         document.getElementById('topOffset').value = data.barTopOffset;
         document.getElementById('position').value = data.barPosition;
         document.getElementById('calculateDifference').checked = data.calculateDifference;
+        document.getElementById('boldText').checked = data.boldText || false;
         
         // Ustaw szablon wiadomości na podstawie stanu checkboxa
         if (data.calculateDifference) {
@@ -417,8 +419,8 @@
       document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
       // Pokaż/ukryj pole progu darmowej dostawy
       document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
-      // Aktualizuj szablon wiadomości
-      updateMessageTemplate();
+      // Zawsze ustawiaj domyślny szablon wiadomości przy zmianie checkboxa
+      setDefaultMessageTemplate();
     }
 
     function showStatus(message, type) {
@@ -435,12 +437,13 @@
     document.getElementById('calculateDifference').addEventListener('change', toggleCalculateDifferenceFields);
     document.getElementById('threshold').addEventListener('input', function() {
       if (!document.getElementById('calculateDifference').checked) {
-        updateMessageTemplate();
+        setDefaultMessageTemplate();
       }
     });
     document.getElementById('barColor').addEventListener('input', updateBarPreview);
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);
+    document.getElementById('boldText').addEventListener('change', updateBarPreview);
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -457,7 +460,8 @@
         barTopOffset: parseInt(document.getElementById('topOffset').value, 10),
         barPosition: document.getElementById('position').value,
         alwaysShowBar: true,
-        calculateDifference: document.getElementById('calculateDifference').checked
+        calculateDifference: document.getElementById('calculateDifference').checked,
+        boldText: document.getElementById('boldText').checked
       };
 
       try {

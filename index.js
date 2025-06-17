@@ -31,7 +31,8 @@ let settings = {
     barTopOffset: 0,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
-    calculateDifference: false  // domyślnie odznaczone
+    calculateDifference: false,  // domyślnie odznaczone
+    boldText: false        // domyślnie bez pogrubienia
 };
 
 // --- AUTH ---
@@ -105,6 +106,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.textAlign = 'center';
           bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
           bar.style.zIndex = '50';
           document.body.appendChild(bar);
         }
