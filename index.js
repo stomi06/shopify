@@ -92,7 +92,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
       const SETTINGS = ${JSON.stringify(settings)};
 
       if (!SETTINGS.enabled) return;
-
+      
       // Funkcja pomocnicza "debounce" - zapobiega zbyt częstym wywołaniom
       function debounce(func, wait) {
         let timeout;
@@ -131,7 +131,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         createBar(SETTINGS.messageTemplate);
         return;
       }
-
+      
       // Funkcje do zarządzania zapisanym stanem koszyka
       const CART_STORAGE_KEY = 'freeShipping_lastCartState_' + window.location.hostname;
       
@@ -159,7 +159,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         return null;
       }
       
-      // Funkcja generująca tekst komunikatu na podstawie kwoty - NAPRAWIONA
+      // Funkcja generująca tekst komunikatu na podstawie kwoty
       function generateShippingMessage(total) {
         if (total >= SETTINGS.freeShippingThreshold) {
           // Jeśli osiągnięto próg i opcja pokazywania komunikatu jest włączona
@@ -176,7 +176,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
         }
       }
 
-      // Funkcja aktualizująca pasek po pobraniu danych koszyka - NAPRAWIONA
+      // Funkcja aktualizująca pasek po pobraniu danych koszyka
       function updateBarWithCartData(cartData) {
         try {
           const total = cartData.items_subtotal_price / 100;
@@ -196,59 +196,155 @@ app.get('/free-shipping-bar.js', (req, res) => {
           
           // Zapisz aktualny stan koszyka
           saveCartState(cartData);
+          
+          // Dla debugowania - usuń w wersji produkcyjnej
+          console.log('Zaktualizowano pasek dostawy. Wartość koszyka: ' + total);
         } catch (e) {
           console.error('Błąd podczas aktualizacji paska:', e);
           createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
         }
       }
 
-      // Licznik aktualnych żądań, aby uniknąć nakładania się aktualizacji
-      let pendingRequests = 0;
-      
       // Zoptymalizowana funkcja pobierająca dane koszyka
-      const fetchCartData = debounce(function() {
-        // Jeśli inny request jest już w trakcie, nie wysyłaj nowego
-        if (pendingRequests > 0) return;
-        
-        pendingRequests++;
-        
-        // Dodanie nagłówków no-cache i timestamp aby zapobiec cache'owaniu
+      const fetchCartData = function() {
+        // Wyślij żądanie z zabezpieczeniem przed cache
         fetch('/cart.js?' + new Date().getTime(), {
+          method: 'GET',
           headers: { 
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         })
           .then(r => r.json())
           .then(data => {
-            pendingRequests--;
             updateBarWithCartData(data);
           })
-          .catch(() => {
-            pendingRequests--;
+          .catch((error) => {
+            console.error('Błąd pobierania koszyka:', error);
             createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
           });
-      }, 300);
+      };
+      
+      // Debounced wersja dla zdarzeń o wysokiej częstotliwości
+      const debouncedFetchCartData = debounce(fetchCartData, 300);
 
       // Pobierz ostatni znany stan koszyka z localStorage
       const lastCartState = getLastCartState();
       
       // Utwórz pasek i wyświetl ostatni znany stan lub statyczny komunikat
-      let initialMessage;
       if (lastCartState) {
-        initialMessage = generateShippingMessage(lastCartState.total);
+        const initialMessage = generateShippingMessage(lastCartState.total);
         if (initialMessage !== null) {
           createBar(initialMessage);
         }
       } else {
         createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
       }
-
-      // Pobierz aktualne dane koszyka w tle
+      
+      // Pobierz aktualne dane koszyka od razu po załadowaniu
       fetchCartData();
 
-      // Reszta kodu monitorującego zmiany koszyka - bez zmian
-      // ...
+      // Ustawienia do monitorowania zdarzeń związanych z koszykiem
+      function setupCartMonitoring() {
+        // 1. Monitorowanie XMLHttpRequest (AJAX) - kluczowe dla wykrywania zmian koszyka
+        const originalXHR = window.XMLHttpRequest;
+        window.XMLHttpRequest = function() {
+          const xhr = new originalXHR();
+          const originalOpen = xhr.open;
+          
+          xhr.open = function() {
+            // Zapamiętaj URL żądania
+            this._url = arguments[1];
+            return originalOpen.apply(this, arguments);
+          };
+          
+          xhr.addEventListener('load', function() {
+            // Sprawdź czy to operacja związana z koszykiem
+            if (this._url && (
+                this._url.includes('/cart/add') || 
+                this._url.includes('/cart/update') || 
+                this._url.includes('/cart/change') ||
+                this._url.includes('/cart/clear') ||
+                this._url.includes('cart?') ||
+                this._url.includes('/cart.js'))) {
+              
+              // Daj chwilę na zakończenie odpowiedzi
+              setTimeout(fetchCartData, 100);
+            }
+          });
+          
+          return xhr;
+        };
+        
+        // 2. Monitorowanie fetch API - używane przez nowsze sklepy
+        const originalFetch = window.fetch;
+        window.fetch = function(resource, init) {
+          const promise = originalFetch.apply(this, arguments);
+          
+          // Sprawdź czy to operacja związana z koszykiem
+          if (typeof resource === 'string' && (
+              resource.includes('/cart/add') || 
+              resource.includes('/cart/update') || 
+              resource.includes('/cart/change') ||
+              resource.includes('/cart/clear') ||
+              resource.includes('/cart.js'))) {
+            
+            promise.then(() => {
+              setTimeout(fetchCartData, 100);
+            });
+          }
+          
+          return promise;
+        };
+
+        // 3. Nasłuchuj podstawowych zdarzeń koszyka
+        const cartEvents = [
+          'cart:updated', 'cart:refresh', 'cart.requestComplete', 
+          'cart:change', 'cart:render', 'cart.ready'
+        ];
+        
+        cartEvents.forEach(event => {
+          document.addEventListener(event, fetchCartData);
+        });
+
+        // 4. Nasłuchuj zdarzeń kliknięcia w przyciski dodawania/usuwania
+        document.addEventListener('click', function(event) {
+          // Znajduje najbliższy przodek, który pasuje do selektora
+          function closestBySelector(element, selector) {
+            while (element) {
+              if (element.matches && element.matches(selector)) {
+                return element;
+              }
+              element = element.parentElement;
+            }
+            return null;
+          }
+          
+          // Przyciski usuwania i dodawania do koszyka
+          const selectors = {
+            add: '[name="add"], .add-to-cart, .add_to_cart, form[action*="/cart/add"] button',
+            remove: '[href*="cart/change"], [onclick*="cart/change"], .cart__remove, .cart-remove, .remove-from-cart'
+          };
+          
+          // Sprawdź czy kliknięto przycisk dodawania do koszyka
+          const addButton = closestBySelector(event.target, selectors.add);
+          if (addButton) {
+            // Daj chwilę na zakończenie akcji dodawania
+            setTimeout(fetchCartData, 100);
+          }
+          
+          // Sprawdź czy kliknięto przycisk usuwania z koszyka
+          const removeButton = closestBySelector(event.target, selectors.remove);
+          if (removeButton) {
+            // Daj chwilę na zakończenie akcji usuwania
+            setTimeout(fetchCartData, 100);
+          }
+        });
+      }
+
+      // Inicjalizacja monitorowania koszyka
+      setupCartMonitoring();
     })();
   `);
 });
