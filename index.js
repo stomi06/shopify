@@ -24,14 +24,14 @@ let settings = {
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł',
+    messageTemplate: 'Do darmowej dostawy brakuje: {price} zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
     alwaysShowBar: true,
     barPosition: 'fixed',
     barTopOffset: 0,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
-    calculateDifference: true
+    calculateDifference: false  // domyślnie odznaczone
 };
 
 // --- AUTH ---
@@ -111,21 +111,22 @@ app.get('/free-shipping-bar.js', (req, res) => {
         bar.textContent = text;
       }
 
-      // Pokaz placeholder od razu
-      createBar(SETTINGS.loadingMessage);
-
       if (!SETTINGS.calculateDifference) {
-        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+        // Jeśli nie liczymy różnicy, po prostu wyświetl tekst podany przez użytkownika
+        createBar(SETTINGS.loadingMessage);
         return;
       }
+
+      // Pokaz placeholder od razu
+      createBar(SETTINGS.loadingMessage);
 
       fetch('/cart.js')
         .then(r => r.json())
         .then(data => {
           const total = data.items_subtotal_price / 100;
           if (total < SETTINGS.freeShippingThreshold) {
-            const missing = SETTINGS.freeShippingThreshold - total;
-            const message = SETTINGS.messageTemplate.replace('{missing}', missing.toFixed(2));
+            const price = SETTINGS.freeShippingThreshold - total;
+            const message = SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
             createBar(message);
           } else {
             createBar('Gratulacje! Masz darmową dostawę :)');
