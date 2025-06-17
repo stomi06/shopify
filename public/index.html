@@ -253,15 +253,15 @@
             </div>
             
             <div class="form-group">
-              <label for="threshold">Próg darmowej dostawy (zł)</label>
-              <input type="number" id="threshold" name="threshold" required />
-            </div>
-            
-            <div class="form-group">
               <label class="checkbox-label">
                 <input type="checkbox" id="calculateDifference" name="calculateDifference" />
                 Licz różnicę do darmowej dostawy
               </label>
+            </div>
+            
+            <div class="form-group" id="thresholdContainer">
+              <label for="threshold">Próg darmowej dostawy (zł)</label>
+              <input type="number" id="threshold" name="threshold" required />
             </div>
           </div>
         </div>
@@ -367,17 +367,20 @@
         // Aktualizuj podgląd paska
         updateBarPreview();
         
-        // Pokaż lub ukryj pole placeholdera w zależności od wartości checkboxa
-        toggleLoadingMessageField();
+        // Pokaż lub ukryj pola zależne od opcji "Licz różnicę"
+        toggleCalculateDifferenceFields();
       } catch (error) {
         console.error('Błąd podczas ładowania ustawień:', error);
         showStatus('Nie udało się załadować ustawień.', 'error');
       }
     }
 
-    function toggleLoadingMessageField() {
+    function toggleCalculateDifferenceFields() {
       const calculateDifferenceChecked = document.getElementById('calculateDifference').checked;
+      // Pokaż/ukryj pole placeholdera
       document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
+      // Pokaż/ukryj pole progu darmowej dostawy
+      document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
     }
 
     function showStatus(message, type) {
@@ -391,7 +394,7 @@
     }
 
     // Dodaj listenery na zmiany wartości
-    document.getElementById('calculateDifference').addEventListener('change', toggleLoadingMessageField);
+    document.getElementById('calculateDifference').addEventListener('change', toggleCalculateDifferenceFields);
     document.getElementById('barColor').addEventListener('input', updateBarPreview);
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);
