@@ -111,21 +111,22 @@ app.get('/free-shipping-bar.js', (req, res) => {
         bar.textContent = text;
       }
 
-      // Pokaz placeholder od razu
-      createBar(SETTINGS.loadingMessage);
-
+      // Jeśli calculateDifference jest false, wyświetl tylko tekst podany przez użytkownika
       if (!SETTINGS.calculateDifference) {
-        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
+        createBar(SETTINGS.loadingMessage);
         return;
       }
+
+      // Pokaz placeholder od razu
+      createBar(SETTINGS.loadingMessage);
 
       fetch('/cart.js')
         .then(r => r.json())
         .then(data => {
           const total = data.items_subtotal_price / 100;
           if (total < SETTINGS.freeShippingThreshold) {
-            const missing = SETTINGS.freeShippingThreshold - total;
-            const message = SETTINGS.messageTemplate.replace('{missing}', missing.toFixed(2));
+            const price = SETTINGS.freeShippingThreshold - total;
+            const message = SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
             createBar(message);
           } else {
             createBar('Gratulacje! Masz darmową dostawę :)');

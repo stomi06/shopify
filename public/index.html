@@ -139,6 +139,24 @@
       document.getElementById('status').innerText = result.message || 'Zapisano!';
     });
 
+    document.getElementById('calculateDifference').addEventListener('change', (e) => {
+      const loadingMessageField = document.getElementById('loadingMessage');
+      if (e.target.checked) {
+        loadingMessageField.parentElement.style.display = 'block';
+      } else {
+        loadingMessageField.parentElement.style.display = 'none';
+      }
+    });
+
+    // Domyślnie ukryj pole "Tekst placeholdera"
+    document.addEventListener('DOMContentLoaded', () => {
+      const calculateDifference = document.getElementById('calculateDifference');
+      const loadingMessageField = document.getElementById('loadingMessage');
+      if (!calculateDifference.checked) {
+        loadingMessageField.parentElement.style.display = 'none';
+      }
+    });
+
     loadSettings();
   </script>
 </body>
