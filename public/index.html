@@ -259,7 +259,8 @@
               </label>
             </div>
             
-            <div class="form-group">
+            <!-- Ten div będziemy ukrywać/pokazywać w zależności od stanu checkboxa "Licz różnicę" -->
+            <div class="form-group" id="showSuccessMessageContainer">
               <label class="checkbox-label">
                 <input type="checkbox" id="showSuccessMessage" name="showSuccessMessage" checked />
                 Wyświetl komunikat po osiągnięciu progu
@@ -268,7 +269,7 @@
           </div>
         </div>
 
-        <!-- Sekcja: Teksty (przeniesiona na 2. miejsce) -->
+        <!-- Sekcja: Teksty -->
         <div class="form-section">
           <h2 class="section-title">Teksty</h2>
           <div class="form-grid">
@@ -403,8 +404,12 @@
       // Pokaż/ukryj pole progu darmowej dostawy
       document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
       
-      // Pokaż/ukryj pole komunikatu sukcesu
-      document.getElementById('successMessageContainer').style.display = showSuccessMessageChecked ? 'block' : 'none';
+      // Pokaż/ukryj checkbox wyświetlania komunikatu sukcesu
+      document.getElementById('showSuccessMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
+      
+      // Pokaż/ukryj pole komunikatu sukcesu - tylko gdy oba warunki są spełnione
+      document.getElementById('successMessageContainer').style.display = 
+        (calculateDifferenceChecked && showSuccessMessageChecked) ? 'block' : 'none';
     }
     
     async function loadSettings() {
