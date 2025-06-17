@@ -20,6 +20,7 @@ app.get('/auth', (req, res) => {
   if (!shop) return res.status(400).send('Missing shop parameter');
 
   const state = generateNonce();
+  console.log('Generated state:', state);
   res.cookie('state', state, { httpOnly: true, secure: true, sameSite: 'lax' });
 
   const redirectUrl = `https://${shop}/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY}&scope=${SCOPES}&state=${state}&redirect_uri=${HOST}/auth/callback`;
@@ -30,6 +31,9 @@ app.get('/auth', (req, res) => {
 app.get('/auth/callback', async (req, res) => {
   const { shop, code, state } = req.query;
   const stateCookie = req.cookies.state;
+
+  console.log('State from query:', state);
+console.log('State from cookie:', req.cookies.state);
 
   if (!shop || !code || !state) {
     return res.status(400).send('Missing parameters');
