@@ -6,24 +6,31 @@
   <title>Delivery App Panel</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
-        Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+      font-family: sans-serif;
       margin: 20px;
       background: #f9fafb;
       color: #212b36;
-    }
-    header {
-      font-size: 24px;
-      font-weight: 600;
-      margin-bottom: 20px;
     }
     .content {
       background: white;
       padding: 20px;
       border-radius: 6px;
-      box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin-top: 5px;
+      box-sizing: border-box;
     }
     button {
+      margin-top: 20px;
       background-color: #5c6ac4;
       border: none;
       color: white;
@@ -38,56 +45,57 @@
   </style>
 </head>
 <body>
-  <header>Delivery App</header>
+  <h2>Ustawienia paska darmowej dostawy</h2>
   <div class="content">
-    <form id="settingsForm">
-    <label>Próg darmowej dostawy (PLN):
-        <input type="number" id="freeShippingThreshold" name="freeShippingThreshold" value="200" />
-    </label><br/>
-    <label>Kolor paska:
-        <input type="color" id="barColor" name="barColor" value="#4CAF50" />
-    </label><br/>
-    <label>Kolor tekstu:
-        <input type="color" id="textColor" name="textColor" value="#FFFFFF" />
-    </label><br/>
-    <label>Tekst paska:
-        <input type="text" id="messageTemplate" name="messageTemplate" value="Do darmowej dostawy brakuje: {missing} zł" />
-    </label><br/>
-    <button type="submit">Zapisz ustawienia</button>
-    </form>
+    <form id="settings-form">
+      <label for="threshold">Próg darmowej dostawy (zł)</label>
+      <input type="number" id="threshold" name="threshold" required />
 
-    <script>
+      <label for="barColor">Kolor tła paska</label>
+      <input type="color" id="barColor" name="barColor" />
+
+      <label for="textColor">Kolor tekstu</label>
+      <input type="color" id="textColor" name="textColor" />
+
+      <label for="message">Szablon wiadomości</label>
+      <input type="text" id="message" name="message" />
+
+      <button type="submit">Zapisz ustawienia</button>
+    </form>
+    <p id="status" style="margin-top: 10px;"></p>
+  </div>
+
+  <script>
     async function loadSettings() {
-        const res = await fetch('/settings');
-        const data = await res.json();
-        document.getElementById('freeShippingThreshold').value = data.freeShippingThreshold;
-        document.getElementById('barColor').value = data.barColor;
-        document.getElementById('textColor').value = data.textColor;
-        document.getElementById('messageTemplate').value = data.messageTemplate;
+      const res = await fetch('/settings');
+      const data = await res.json();
+      document.getElementById('threshold').value = data.freeShippingThreshold;
+      document.getElementById('barColor').value = data.barColor;
+      document.getElementById('textColor').value = data.textColor;
+      document.getElementById('message').value = data.messageTemplate;
     }
 
-    async function saveSettings(event) {
-        event.preventDefault();
-        const settings = {
-        freeShippingThreshold: parseFloat(document.getElementById('freeShippingThreshold').value),
+    document.getElementById('settings-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const payload = {
+        freeShippingThreshold: parseFloat(document.getElementById('threshold').value),
         barColor: document.getElementById('barColor').value,
         textColor: document.getElementById('textColor').value,
-        messageTemplate: document.getElementById('messageTemplate').value,
-        };
+        messageTemplate: document.getElementById('message').value
+      };
 
-        const res = await fetch('/settings', {
+      const res = await fetch('/settings', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(settings)
-        });
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-        const result = await res.json();
-        alert(result.message);
-    }
+      const result = await res.json();
+      document.getElementById('status').innerText = result.message || 'Zapisano!';
+    });
 
-    document.getElementById('settingsForm').addEventListener('submit', saveSettings);
     loadSettings();
-    </script>
-  </div>
+  </script>
 </body>
 </html>

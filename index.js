@@ -17,6 +17,13 @@ function generateNonce() {
   return crypto.randomBytes(16).toString('hex');
 }
 
+let settings = {
+  freeShippingThreshold: 200, // próg darmowej dostawy w zł
+  barColor: '#4CAF50',        // kolor tła paska
+  textColor: '#FFFFFF',       // kolor tekstu na pasku
+  messageTemplate: 'Do darmowej dostawy brakuje: {missing} zł' // szablon tekstu
+};
+
 app.get('/auth', (req, res) => {
   const shop = req.query.shop;
   if (!shop) return res.status(400).send('Missing shop parameter');
@@ -74,11 +81,11 @@ console.log('State from cookie:', req.cookies.state);
   }
 });
 
-app.get('/free-shipping-bar.js', (req, res) => {
+app.get('/free-shipping-bar.js', async (req, res) => {
   res.type('application/javascript');
   res.send(`
     (function() {
-      const FREE_SHIPPING_THRESHOLD = 200;
+      const SETTINGS = ${JSON.stringify(settings)};
 
       function getCartTotal(callback) {
         fetch('/cart.js')
@@ -91,27 +98,60 @@ app.get('/free-shipping-bar.js', (req, res) => {
       function createBar(missing) {
         let bar = document.createElement('div');
         bar.style.position = 'fixed';
-        bar.style.top = '50px';
+        bar.style.bottom = '0';
         bar.style.left = '0';
         bar.style.width = '100%';
-        bar.style.backgroundColor = '#4CAF50';
-        bar.style.color = 'white';
+        bar.style.backgroundColor = SETTINGS.barColor;
+        bar.style.color = SETTINGS.textColor;
         bar.style.textAlign = 'center';
         bar.style.padding = '10px';
         bar.style.fontSize = '16px';
         bar.style.zIndex = '9999';
-        bar.textContent = 'Do darmowej dostawy brakuje: ' + missing.toFixed(2) + ' zł';
+        bar.style.boxShadow = '0 -2px 4px rgba(0,0,0,0.15)';
+
+        const message = SETTINGS.messageTemplate.replace('{{missing}}', missing.toFixed(2));
+        bar.textContent = message;
         document.body.appendChild(bar);
       }
 
       getCartTotal(total => {
-        if (total < FREE_SHIPPING_THRESHOLD) {
-          createBar(FREE_SHIPPING_THRESHOLD - total);
+        if (total < SETTINGS.freeShippingThreshold) {
+          createBar(SETTINGS.freeShippingThreshold - total);
         }
       });
     })();
   `);
 });
+
+
+app.get('/settings', (req, res) => {
+  res.json(settings);
+});
+
+app.use(express.json()); // Umożliwia odczyt JSON z body
+
+app.post('/settings', (req, res) => {
+  const { freeShippingThreshold, barColor, textColor, messageTemplate } = req.body;
+
+  if (
+    typeof freeShippingThreshold !== 'number' ||
+    typeof barColor !== 'string' ||
+    typeof textColor !== 'string' ||
+    typeof messageTemplate !== 'string'
+  ) {
+    return res.status(400).json({ error: 'Nieprawidłowe dane' });
+  }
+
+  settings = {
+    freeShippingThreshold,
+    barColor,
+    textColor,
+    messageTemplate
+  };
+
+  res.json({ message: 'Ustawienia zapisane', settings });
+});
+
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
