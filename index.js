@@ -26,13 +26,15 @@ let settings = {
     textColor: '#FFFFFF',
     messageTemplate: 'Do darmowej dostawy brakuje: {price} zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
+    successMessage: 'Gratulacje! Masz darmową dostawę :)',
     alwaysShowBar: true,
     barPosition: 'fixed',
     barTopOffset: 0,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
     calculateDifference: false,  // domyślnie odznaczone
-    boldText: false        // domyślnie bez pogrubienia
+    boldText: false,       // domyślnie bez pogrubienia
+    showSuccessMessage: true     // domyślnie pokazuj komunikat po osiągnięciu progu
 };
 
 // --- AUTH ---
@@ -160,8 +162,16 @@ app.get('/free-shipping-bar.js', (req, res) => {
       // Funkcja generująca tekst komunikatu na podstawie kwoty
       function generateShippingMessage(total) {
         if (total >= SETTINGS.freeShippingThreshold) {
-          return 'Gratulacje! Masz darmową dostawę :)';
+          // Jeśli osiągnięto próg darmowej dostawy
+          if (SETTINGS.showSuccessMessage) {
+            // Pokaż komunikat sukcesu tylko jeśli opcja jest włączona
+            return SETTINGS.successMessage;
+          } else {
+            // Jeśli opcja jest wyłączona, ukryj pasek (zwracając null)
+            return null;
+          }
         } else {
+          // Jeśli nie osiągnięto progu, pokaż komunikat o brakującej kwocie
           const price = SETTINGS.freeShippingThreshold - total;
           return SETTINGS.messageTemplate.replace('{price}', price.toFixed(2));
         }
@@ -172,12 +182,22 @@ app.get('/free-shipping-bar.js', (req, res) => {
         try {
           const total = cartData.items_subtotal_price / 100;
           const message = generateShippingMessage(total);
-          bar.textContent = message;
+          
+          // Jeśli message jest null, ukryj pasek
+          const bar = document.getElementById('free-shipping-bar');
+          if (message === null && bar) {
+            bar.style.display = 'none';
+          } else {
+            // W przeciwnym razie pokaż pasek z odpowiednim komunikatem
+            const bar = createBar(message);
+            bar.style.display = 'block';
+          }
           
           // Zapisz aktualny stan koszyka do localStorage
           saveCartState(cartData);
         } catch (e) {
-          bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
+          console.error('Błąd podczas aktualizacji paska:', e);
+          const bar = createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
         }
       }
 
@@ -190,7 +210,9 @@ app.get('/free-shipping-bar.js', (req, res) => {
         if (pendingRequests > 0) return;
         
         pendingRequests++;
-        fetch('/cart.js?' + new Date().getTime())
+        fetch('/cart.js?' + new Date().getTime(), {
+          headers: { 'Cache-Control': 'no-cache' }
+        })
           .then(r => r.json())
           .then(data => {
             pendingRequests--;
@@ -198,7 +220,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           })
           .catch(() => {
             pendingRequests--;
-            bar.textContent = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
+            const bar = createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
           });
       }, 300); // Czekaj 300ms przed wykonaniem żądania
 
@@ -212,15 +234,19 @@ app.get('/free-shipping-bar.js', (req, res) => {
       } else {
         initialMessage = 'Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł';
       }
-      const bar = createBar(initialMessage);
+      
+      // Jeśli message jest null, nie twórz paska
+      if (initialMessage !== null) {
+        const bar = createBar(initialMessage);
+      }
 
       // Pobierz aktualne dane koszyka w tle
       fetchCartData();
 
       // Lekki system monitorowania zmian koszyka
-      function setupLightCartMonitoring() {
+      function setupCartMonitoring() {
         // 1. Nasłuchuj na najczęstsze zdarzenia koszyka
-        const cartEvents = ['cart:updated', 'cart:refresh', 'cart.requestComplete'];
+        const cartEvents = ['cart:updated', 'cart:refresh', 'cart.requestComplete', 'cart:change'];
         cartEvents.forEach(event => {
           document.addEventListener(event, fetchCartData);
         });
@@ -233,23 +259,87 @@ app.get('/free-shipping-bar.js', (req, res) => {
             // Daj trochę czasu na przetworzenie żądania
             setTimeout(fetchCartData, 1000);
           }
+          
+          // Sprawdź czy kliknięty element jest związany z usuwaniem z koszyka
+          const removeButton = event.target.closest(
+            '[href*="/cart/change"], [onclick*="cart/change"], .cart__remove, .cart-remove, .remove-from-cart, [data-cart-remove]'
+          );
+          if (removeButton) {
+            setTimeout(fetchCartData, 1000);
+          }
         }, { passive: true });
 
-        // 3. Nasłuchuj na zdarzenia jQuery jeśli dostępne (tylko najbardziej powszechne)
+        // 3. Nasłuchuj na zdarzenia jQuery jeśli dostępne
         if (window.jQuery) {
-          window.jQuery(document).on('cart.requestComplete', fetchCartData);
+          window.jQuery(document).on('cart.requestComplete ajaxCart.afterCartLoad', fetchCartData);
+          // Sprawdzaj zmiany po kliknięciu w przyciski usuwania produktów
+          window.jQuery(document).on('click', '.cart__remove, .cart-remove, [data-cart-remove]', function() {
+            setTimeout(fetchCartData, 1000);
+          });
+        }
+        
+        // 4. Reaguj na zmiany w URL (zmiana strony w SPA)
+        window.addEventListener('popstate', fetchCartData);
+        
+        // 5. Obserwuj zmiany DOM związane z koszykiem
+        if (window.MutationObserver) {
+          const cartObserver = new MutationObserver(function(mutations) {
+            let shouldUpdate = false;
+            
+            for (let mutation of mutations) {
+              // Sprawdź czy modyfikacje dotyczą koszyka
+              if (mutation.target.closest('.cart, [data-cart], #cart, [id*="cart"]')) {
+                shouldUpdate = true;
+                break;
+              }
+            }
+            
+            if (shouldUpdate) {
+              fetchCartData();
+            }
+          });
+          
+          // Znajdź elementy koszyka
+          const cartElements = document.querySelectorAll('.cart, [data-cart], #cart, [id*="cart"]');
+          cartElements.forEach(el => {
+            cartObserver.observe(el, { 
+              childList: true, 
+              subtree: true,
+              attributes: true
+            });
+          });
         }
 
-        // 4. Sprawdzaj koszyk po załadowaniu strony i po każdej zmianie URL (zmiana strony w SPA)
-        window.addEventListener('load', fetchCartData);
-        window.addEventListener('popstate', fetchCartData);
+        // 6. Sprawdzaj koszyk co 30 sekund dla pewności (ale tylko gdy strona jest aktywna)
+        let checkInterval;
+        
+        function startCartChecking() {
+          checkInterval = setInterval(fetchCartData, 30000);
+        }
+        
+        function stopCartChecking() {
+          clearInterval(checkInterval);
+        }
+        
+        // Zatrzymaj sprawdzanie gdy strona jest nieaktywna
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            stopCartChecking();
+          } else {
+            startCartChecking();
+            // Sprawdź od razu po powrocie do strony
+            fetchCartData();
+          }
+        });
+        
+        startCartChecking();
       }
 
-      // Inicjalizuj lekkie monitorowanie
+      // Inicjalizuj monitorowanie
       if (document.readyState === 'complete' || document.readyState === 'interactive') {
-        setupLightCartMonitoring();
+        setupCartMonitoring();
       } else {
-        document.addEventListener('DOMContentLoaded', setupLightCartMonitoring);
+        document.addEventListener('DOMContentLoaded', setupCartMonitoring);
       }
     })();
   `);

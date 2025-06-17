@@ -258,6 +258,13 @@
                 Licz różnicę do darmowej dostawy
               </label>
             </div>
+            
+            <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="showSuccessMessage" name="showSuccessMessage" checked />
+                Wyświetl komunikat po osiągnięciu progu
+              </label>
+            </div>
           </div>
         </div>
 
@@ -273,6 +280,11 @@
             <div class="form-group span-2" id="loadingMessageContainer">
               <label for="loadingMessage">Tekst placeholdera (ładowanie)</label>
               <input type="text" id="loadingMessage" name="loadingMessage" placeholder="np. Aktualizuję dane z koszyka..." />
+            </div>
+            
+            <div class="form-group span-2" id="successMessageContainer">
+              <label for="successMessage">Komunikat po osiągnięciu progu</label>
+              <input type="text" id="successMessage" name="successMessage" placeholder="np. Gratulacje! Masz darmową dostawę :)" />
             </div>
 
             <div class="form-group span-2" id="thresholdContainer">
@@ -346,6 +358,9 @@
       static: "Darmowa dostawa od {threshold} zł",
       dynamic: "Do darmowej dostawy brakuje: {price} zł"
     };
+    
+    // Domyślna wartość komunikatu sukcesu
+    const DEFAULT_SUCCESS_MESSAGE = "Gratulacje! Masz darmową dostawę :)";
 
     // Funkcja aktualizująca podgląd paska
     function updateBarPreview() {
@@ -377,6 +392,21 @@
       }
     }
     
+    // Funkcja aktualizująca widoczność pól
+    function toggleFields() {
+      const calculateDifferenceChecked = document.getElementById('calculateDifference').checked;
+      const showSuccessMessageChecked = document.getElementById('showSuccessMessage').checked;
+      
+      // Pokaż/ukryj pole placeholdera
+      document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
+      
+      // Pokaż/ukryj pole progu darmowej dostawy
+      document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
+      
+      // Pokaż/ukryj pole komunikatu sukcesu
+      document.getElementById('successMessageContainer').style.display = showSuccessMessageChecked ? 'block' : 'none';
+    }
+    
     async function loadSettings() {
       try {
         const res = await fetch('/settings');
@@ -393,6 +423,9 @@
         document.getElementById('position').value = data.barPosition;
         document.getElementById('calculateDifference').checked = data.calculateDifference;
         document.getElementById('boldText').checked = data.boldText || false;
+        document.getElementById('showSuccessMessage').checked = 
+          data.showSuccessMessage !== undefined ? data.showSuccessMessage : true;
+        document.getElementById('successMessage').value = data.successMessage || DEFAULT_SUCCESS_MESSAGE;
         
         // Ustaw szablon wiadomości na podstawie stanu checkboxa
         if (data.calculateDifference) {
@@ -405,22 +438,12 @@
         // Aktualizuj podgląd paska
         updateBarPreview();
         
-        // Pokaż lub ukryj pola zależne od opcji "Licz różnicę"
-        toggleCalculateDifferenceFields();
+        // Pokaż lub ukryj pola zależne od opcji
+        toggleFields();
       } catch (error) {
         console.error('Błąd podczas ładowania ustawień:', error);
         showStatus('Nie udało się załadować ustawień.', 'error');
       }
-    }
-
-    function toggleCalculateDifferenceFields() {
-      const calculateDifferenceChecked = document.getElementById('calculateDifference').checked;
-      // Pokaż/ukryj pole placeholdera
-      document.getElementById('loadingMessageContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
-      // Pokaż/ukryj pole progu darmowej dostawy
-      document.getElementById('thresholdContainer').style.display = calculateDifferenceChecked ? 'block' : 'none';
-      // Zawsze ustawiaj domyślny szablon wiadomości przy zmianie checkboxa
-      setDefaultMessageTemplate();
     }
 
     function showStatus(message, type) {
@@ -434,12 +457,19 @@
     }
 
     // Dodaj listenery na zmiany wartości
-    document.getElementById('calculateDifference').addEventListener('change', toggleCalculateDifferenceFields);
+    document.getElementById('calculateDifference').addEventListener('change', function() {
+      setDefaultMessageTemplate();
+      toggleFields();
+    });
+    
+    document.getElementById('showSuccessMessage').addEventListener('change', toggleFields);
+    
     document.getElementById('threshold').addEventListener('input', function() {
       if (!document.getElementById('calculateDifference').checked) {
         setDefaultMessageTemplate();
       }
     });
+    
     document.getElementById('barColor').addEventListener('input', updateBarPreview);
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);
@@ -455,13 +485,15 @@
         textColor: document.getElementById('textColor').value,
         messageTemplate: document.getElementById('message').value,
         loadingMessage: document.getElementById('loadingMessage').value,
+        successMessage: document.getElementById('successMessage').value,
         barHeight: parseInt(document.getElementById('barHeight').value, 10),
         fontSize: parseInt(document.getElementById('fontSize').value, 10),
         barTopOffset: parseInt(document.getElementById('topOffset').value, 10),
         barPosition: document.getElementById('position').value,
         alwaysShowBar: true,
         calculateDifference: document.getElementById('calculateDifference').checked,
-        boldText: document.getElementById('boldText').checked
+        boldText: document.getElementById('boldText').checked,
+        showSuccessMessage: document.getElementById('showSuccessMessage').checked
       };
 
       try {
