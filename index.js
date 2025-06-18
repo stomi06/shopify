@@ -121,6 +121,9 @@ app.get('/free-shipping-bar.js', (req, res) => {
         if (!bar) {
           bar = document.createElement('div');
           bar.id = 'free-shipping-bar';
+          
+          // Dodaj box-sizing: border-box, żeby ramka była wliczana do wymiarów
+          bar.style.boxSizing = 'border-box';
           bar.style.position = SETTINGS.barPosition;
           bar.style.top = SETTINGS.barTopOffset + 'px';
           bar.style.left = '0';
@@ -130,7 +133,11 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.color = SETTINGS.textColor;
           bar.style.textAlign = 'center';
           bar.style.fontSize = SETTINGS.fontSize + 'px';
+          
+          // Zawsze używaj line-height równego wysokości paska
+          // box-sizing: border-box zadba o poprawne wycentrowanie
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          
           bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
           bar.style.zIndex = '2';
           
@@ -163,6 +170,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           
           // Aktualizacja ramki
           if (SETTINGS.showBorder) {
+            bar.style.boxSizing = 'border-box';
             bar.style.borderWidth = SETTINGS.borderWidth + 'px';
             bar.style.borderStyle = 'solid';
             bar.style.borderColor = SETTINGS.borderColor;
