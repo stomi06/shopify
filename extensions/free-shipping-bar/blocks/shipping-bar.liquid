@@ -18,44 +18,42 @@
     function renderShippingBar(settings) {
       const container = document.getElementById('free-shipping-bar-container');
       
-      // Tworzenie elementów paska
+      // Utwórz pasek
       const barElement = document.createElement('div');
       barElement.id = 'free-shipping-bar';
-      barElement.style.backgroundColor = settings.transparentBackground ? 'transparent' : settings.bar_color;
-      barElement.style.color = settings.text_color;
-      barElement.style.padding = '10px';
+      barElement.style.backgroundColor = settings.bar_color || '#4CAF50';
+      barElement.style.color = settings.text_color || '#FFFFFF';
+      barElement.style.padding = '10px 0';
       barElement.style.textAlign = 'center';
-      barElement.style.position = settings.bar_position === 'top' ? 'fixed' : 'relative';
-      barElement.style.top = settings.bar_position === 'top' ? '0' : 'auto';
       barElement.style.width = '100%';
-      barElement.style.zIndex = '9999';
+      barElement.style.zIndex = 1000;
       
-      // Pobierz aktualny stan koszyka
+      // Pobierz informacje o koszyku
       fetch('/cart.js')
-        .then(res => res.json())
+        .then(response => response.json())
         .then(cart => {
           const cartTotal = cart.total_price / 100;
-          const threshold = settings.threshold;
-          let message;
+          const threshold = parseFloat(settings.threshold || 200);
+          let message = '';
           
-          if (settings.calculate_difference && cartTotal < threshold) {
-            const remaining = (threshold - cartTotal).toFixed(2);
-            message = settings.message_template.replace('{threshold}', threshold).replace('{remaining}', remaining);
-            barElement.style.backgroundColor = settings.bar_color;
-          } else if (cartTotal >= threshold) {
-            message = settings.success_message;
-            barElement.style.backgroundColor = settings.show_success_message ? settings.success_color : 'transparent';
+          if (cartTotal >= threshold) {
+            barElement.style.backgroundColor = settings.success_color || '#50b83c';
+            message = settings.success_message || "Gratulacje! Masz darmową dostawę!";
           } else {
-            message = settings.message_template.replace('{threshold}', threshold);
+            const remaining = (threshold - cartTotal).toFixed(2);
+            message = settings.message_template?.replace('{threshold}', threshold).replace('{remaining}', remaining) || 
+                     `Dodaj produkty za ${remaining} zł, aby otrzymać darmową dostawę!`;
           }
           
           barElement.textContent = message;
+          
+          // Dodaj pasek do kontenera
           container.innerHTML = '';
           container.appendChild(barElement);
         })
         .catch(error => {
-          console.error('Error fetching cart:', error);
-          barElement.textContent = settings.message_template.replace('{threshold}', settings.threshold);
+          console.error('Error loading cart:', error);
+          barElement.textContent = `Darmowa dostawa od ${settings.threshold || 200} zł!`;
           container.innerHTML = '';
           container.appendChild(barElement);
         });
