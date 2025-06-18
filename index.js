@@ -24,12 +24,12 @@ let settings = {
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Darmowa dostawa od 200zł',
+    messageTemplate: 'Darmowa dostawa od 200 zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
     successMessage: 'Gratulacje! Masz darmową dostawę :)',
     alwaysShowBar: true,
     barPosition: 'fixed',
-    barTopOffset: 0,
+    barTopOffset: 70,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
     calculateDifference: false,  // domyślnie odznaczone
@@ -44,7 +44,9 @@ let settings = {
     showShadow: false,     // domyślnie bez cienia
     shadowColor: 'rgba(0, 0, 0, 0.3)',
     shadowBlur: 5,         // w px
-    shadowOffsetY: 2       // w px
+    shadowOffsetY: 2,       // w px
+    // Nowa opcja
+    transparentBackground: false
 };
 
 // --- AUTH ---
@@ -124,13 +126,13 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.left = '0';
           bar.style.width = '100%';
           bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
           bar.style.color = SETTINGS.textColor;
           bar.style.textAlign = 'center';
           bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
           bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-          bar.style.zIndex = '1';
+          bar.style.zIndex = '2';
           
           // Dodanie stylów dla ramki
           if (SETTINGS.showBorder) {
@@ -152,7 +154,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           document.body.appendChild(bar);
         } else {
           // Aktualizacja stylów istniejącego paska
-          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
           bar.style.color = SETTINGS.textColor;
           bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.height = SETTINGS.barHeight + 'px';
@@ -489,7 +491,8 @@ app.post('/settings', (req, res) => {
     showShadow,
     shadowColor,
     shadowBlur,
-    shadowOffsetY
+    shadowOffsetY,
+    transparentBackground
   } = req.body;
 
   // Walidacja wymaganych pól
@@ -525,7 +528,8 @@ app.post('/settings', (req, res) => {
     showShadow: Boolean(showShadow),
     shadowColor: shadowColor || 'rgba(0, 0, 0, 0.3)',
     shadowBlur: Number(shadowBlur) || 5,
-    shadowOffsetY: Number(shadowOffsetY) || 2
+    shadowOffsetY: Number(shadowOffsetY) || 2,
+    transparentBackground: Boolean(transparentBackground)
   };
 
   console.log('Zapisane ustawienia:', settings);

@@ -165,10 +165,21 @@
       transform: translateY(0);
     }
 
+    .btn-secondary {
+      background-color: #e0e0e0;
+      color: var(--text-color);
+      margin-left: 10px;
+    }
+
+    .btn-secondary:hover {
+      background-color: #d0d0d0;
+    }
+
     .actions {
       margin-top: 24px;
       display: flex;
       justify-content: center;
+      gap: 12px;
     }
 
     #status {
@@ -300,6 +311,13 @@
           <h2 class="section-title">Wygląd paska</h2>
           <div class="form-grid">
             <div class="form-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="transparentBackground" name="transparentBackground">
+                Przezroczyste tło
+              </label>
+            </div>
+            
+            <div class="form-group" id="barColorContainer">
               <label for="barColor">Kolor tła paska</label>
               <input type="color" id="barColor" name="barColor" />
             </div>
@@ -398,6 +416,7 @@
 
         <div class="actions">
           <button type="submit" class="btn">Zapisz ustawienia</button>
+          <button type="button" id="resetButton" class="btn btn-secondary">Przywróć domyślne</button>
         </div>
       </form>
       <div id="status"></div>
@@ -414,16 +433,50 @@
     // Domyślna wartość komunikatu sukcesu
     const DEFAULT_SUCCESS_MESSAGE = "Gratulacje! Masz darmową dostawę :)";
 
+    // Domyślne wartości stylów
+    const DEFAULT_STYLES = {
+      barColor: '#4CAF50',
+      textColor: '#FFFFFF',
+      barHeight: 50,
+      fontSize: 16,
+      boldText: false,
+      barPosition: 'fixed',
+      barTopOffset: 70,
+      // Domyślne wartości dla ramki
+      showBorder: false,
+      borderWidth: 1,
+      borderColor: '#000000',
+      borderRadius: 0,
+      // Domyślne wartości dla cienia
+      showShadow: false,
+      shadowColor: '#000000',
+      shadowBlur: 5,
+      shadowOffsetY: 2,
+      // Nowa opcja
+      transparentBackground: false
+    };
+
     // Funkcja aktualizująca podgląd paska
     function updateBarPreview() {
       const barPreview = document.getElementById('barPreview');
       const previewText = document.getElementById('previewText');
-      const barColor = document.getElementById('barColor').value;
+      const isTransparent = document.getElementById('transparentBackground').checked;
+      const barColor = isTransparent ? 'transparent' : document.getElementById('barColor').value;
       const textColor = document.getElementById('textColor').value;
       const fontSize = document.getElementById('fontSize').value || '16';
       const boldText = document.getElementById('boldText').checked;
       
       barPreview.style.backgroundColor = barColor;
+      
+      // Jeśli tło jest przezroczyste, dodajmy tło demonstracyjne do podglądu
+      if (isTransparent) {
+        barPreview.style.backgroundImage = 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0)';
+        barPreview.style.backgroundSize = '20px 20px';
+        barPreview.style.backgroundPosition = '0 0, 10px 10px';
+      } else {
+        barPreview.style.backgroundImage = 'none';
+      }
+      
       previewText.style.color = textColor;
       previewText.style.fontSize = fontSize + 'px';
       previewText.style.fontWeight = boldText ? 'bold' : 'normal';
@@ -514,6 +567,50 @@
       updateBarPreview();
     }
 
+    // Funkcja obsługująca resetowanie stylów
+    function resetStylesToDefault() {
+      // Resetuj wartości pól do domyślnych
+      document.getElementById('barColor').value = DEFAULT_STYLES.barColor;
+      document.getElementById('textColor').value = DEFAULT_STYLES.textColor;
+      document.getElementById('barHeight').value = DEFAULT_STYLES.barHeight;
+      document.getElementById('fontSize').value = DEFAULT_STYLES.fontSize;
+      document.getElementById('boldText').checked = DEFAULT_STYLES.boldText;
+      document.getElementById('position').value = DEFAULT_STYLES.barPosition;
+      document.getElementById('topOffset').value = DEFAULT_STYLES.barTopOffset;
+      
+      // Resetuj opcje ramki
+      document.getElementById('showBorder').checked = DEFAULT_STYLES.showBorder;
+      document.getElementById('borderWidth').value = DEFAULT_STYLES.borderWidth;
+      document.getElementById('borderColor').value = DEFAULT_STYLES.borderColor;
+      document.getElementById('borderRadius').value = DEFAULT_STYLES.borderRadius;
+      
+      // Resetuj opcje cienia
+      document.getElementById('showShadow').checked = DEFAULT_STYLES.showShadow;
+      document.getElementById('shadowColor').value = DEFAULT_STYLES.shadowColor;
+      document.getElementById('shadowBlur').value = DEFAULT_STYLES.shadowBlur;
+      document.getElementById('shadowOffsetY').value = DEFAULT_STYLES.shadowOffsetY;
+      
+      // Resetuj nową opcję przezroczystego tła
+      document.getElementById('transparentBackground').checked = DEFAULT_STYLES.transparentBackground;
+
+      // Aktualizuj podgląd paska
+      updateBarPreview();
+      
+      // Aktualizuj widoczność zależnych pól
+      updateBorderFields();
+      updateShadowFields();
+      updateBackgroundField();
+      
+      showStatus('Style zostały przywrócone do ustawień domyślnych', 'success');
+    }
+
+    // Funkcja obsługująca przezroczyste tło
+    function updateBackgroundField() {
+      const isTransparent = document.getElementById('transparentBackground').checked;
+      document.getElementById('barColorContainer').style.display = isTransparent ? 'none' : 'block';
+      updateBarPreview();
+    }
+
     async function loadSettings() {
       try {
         const res = await fetch('/settings');
@@ -547,9 +644,13 @@
         document.getElementById('shadowBlur').value = data.shadowBlur || 5;
         document.getElementById('shadowOffsetY').value = data.shadowOffsetY || 2;
         
+        // Dodaj obsługę nowej opcji
+        document.getElementById('transparentBackground').checked = data.transparentBackground || false;
+        
         // Aktualizuj widoczność pól zależnych
         updateBorderFields();
         updateShadowFields();
+        updateBackgroundField();
         
         // Ustaw szablon wiadomości na podstawie stanu checkboxa
         if (data.calculateDifference) {
@@ -634,7 +735,8 @@
         showShadow: document.getElementById('showShadow').checked,
         shadowColor: document.getElementById('shadowColor').value,
         shadowBlur: parseInt(document.getElementById('shadowBlur').value, 10),
-        shadowOffsetY: parseInt(document.getElementById('shadowOffsetY').value, 10)
+        shadowOffsetY: parseInt(document.getElementById('shadowOffsetY').value, 10),
+        transparentBackground: document.getElementById('transparentBackground').checked
       };
 
       // Konwersja koloru HEX dla cienia na rgba
@@ -673,6 +775,12 @@
       updateBorderFields();
       updateShadowFields();
     });
+
+    // Dodaj listener dla przycisku resetowania
+    document.getElementById('resetButton').addEventListener('click', resetStylesToDefault);
+
+    // Dodaj listener dla opcji przezroczystego tła
+    document.getElementById('transparentBackground').addEventListener('change', updateBackgroundField);
   </script>
 </body>
 </html>
