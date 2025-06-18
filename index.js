@@ -102,12 +102,12 @@ app.get('/auth/callback', async (req, res) => {
 // Endpoint generujący skrypt paska darmowej dostawy
 app.get('/free-shipping-bar.js', (req, res) => {
   res.type('application/javascript');
-  // Dodaj nagłówki cache aby przyspieszyć ładowanie
-  res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache na 1 godzinę
   
-  res.send(`
+  // Dodaj do skryptu funkcję sprawdzającą aktualizacje ustawień
+  const scriptWithUpdates = `
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
+      const SETTINGS_VERSION = '${Date.now()}'; // Wersja ustawień
       console.log('Załadowane ustawienia paska:', SETTINGS);
 
       if (!SETTINGS.enabled) return;
@@ -541,15 +541,73 @@ app.get('/free-shipping-bar.js', (req, res) => {
           console.log('DOM teraz gotowy');
         });
       }
+      
+      // Dodaj funkcję sprawdzającą aktualizacje ustawień
+      let lastSettingsCheck = 0;
+      const SETTINGS_CHECK_INTERVAL = 5000; // co 5 sekund
+      
+      function checkForSettingsUpdates() {
+        const now = Date.now();
+        if (now - lastSettingsCheck < SETTINGS_CHECK_INTERVAL) return;
+        
+        lastSettingsCheck = now;
+        
+        fetch('/settings?' + now, {
+          headers: { 'Cache-Control': 'no-cache' }
+        })
+          .then(res => res.json())
+          .then(newSettings => {
+            // Sprawdź czy kluczowe ustawienia wyglądu się zmieniły
+            if (
+              newSettings.barColor !== SETTINGS.barColor ||
+              newSettings.textColor !== SETTINGS.textColor ||
+              newSettings.barHeight !== SETTINGS.barHeight ||
+              newSettings.fontSize !== SETTINGS.fontSize ||
+              newSettings.boldText !== SETTINGS.boldText ||
+              newSettings.showBorder !== SETTINGS.showBorder ||
+              newSettings.borderWidth !== SETTINGS.borderWidth ||
+              newSettings.borderColor !== SETTINGS.borderColor ||
+              newSettings.borderRadius !== SETTINGS.borderRadius ||
+              newSettings.showShadow !== SETTINGS.showShadow ||
+              newSettings.shadowColor !== SETTINGS.shadowColor ||
+              newSettings.shadowBlur !== SETTINGS.shadowBlur ||
+              newSettings.shadowOffsetY !== SETTINGS.shadowOffsetY ||
+              newSettings.transparentBackground !== SETTINGS.transparentBackground ||
+              newSettings.barWidth !== SETTINGS.barWidth
+            ) {
+              console.log('Wykryto zmiany w ustawieniach paska, odświeżanie strony...');
+              window.location.reload();
+            }
+          })
+          .catch(err => console.error('Błąd podczas sprawdzania aktualizacji ustawień:', err));
+      }
+      
+      // Sprawdzaj aktualizacje ustawień co jakiś czas
+      if (SETTINGS.enabled) {
+        setInterval(checkForSettingsUpdates, SETTINGS_CHECK_INTERVAL);
+      }
     })();
-  `);
+  `;
+  
+  res.send(scriptWithUpdates);
 });
 
 app.get('/settings', (req, res) => {
   res.json(settings);
 });
 
+// Popraw obsługę endpointu POST /settings
+
 app.post('/settings', (req, res) => {
+  console.log('Otrzymane dane:', req.body);
+  
+  // Sprawdzenie czy mamy jakiekolwiek dane
+  if (!req.body || Object.keys(req.body).length === 0) {
+    console.error('Brak danych w żądaniu');
+    return res.status(400).json({ error: 'Brak danych' });
+  }
+
+  // Pobierz dane z żądania
   const {
     enabled,
     freeShippingThreshold,
@@ -578,44 +636,42 @@ app.post('/settings', (req, res) => {
     barWidth
   } = req.body;
 
-  // Walidacja wymaganych pól
-  if (
-    typeof enabled !== 'boolean' ||
-    typeof freeShippingThreshold !== 'number' ||
-    !barColor || !textColor || !messageTemplate
-  ) {
-    return res.status(400).json({ error: 'Nieprawidłowe dane' });
-  }
-
+  // Aktualizuj ustawienia z bezpieczną konwersją typów
   settings = {
-    enabled,
-    freeShippingThreshold,
-    barColor,
-    textColor,
-    messageTemplate,
-    loadingMessage,
-    successMessage,
-    alwaysShowBar,
-    barPosition,
-    barTopOffset,
-    barHeight,
-    fontSize,
-    calculateDifference,
-    boldText,
-    showSuccessMessage,
-    showBorder: Boolean(showBorder),
-    borderWidth: Number(borderWidth) || 1,
-    borderColor: borderColor || '#000000',
-    borderRadius: Number(borderRadius) || 0,
-    showShadow: Boolean(showShadow),
-    shadowColor: shadowColor || 'rgba(0, 0, 0, 0.3)',
-    shadowBlur: Number(shadowBlur) || 5,
-    shadowOffsetY: Number(shadowOffsetY) || 2,
-    transparentBackground: Boolean(transparentBackground),
-    barWidth: Number(barWidth) || 100
+    enabled: enabled === true || enabled === 'true',
+    freeShippingThreshold: parseFloat(freeShippingThreshold) || settings.freeShippingThreshold,
+    barColor: barColor || settings.barColor,
+    textColor: textColor || settings.textColor,
+    messageTemplate: messageTemplate || settings.messageTemplate,
+    loadingMessage: loadingMessage || settings.loadingMessage,
+    successMessage: successMessage || settings.successMessage,
+    alwaysShowBar: alwaysShowBar === true || alwaysShowBar === 'true',
+    barPosition: barPosition || settings.barPosition,
+    barTopOffset: parseInt(barTopOffset) || settings.barTopOffset,
+    barHeight: parseInt(barHeight) || settings.barHeight,
+    fontSize: parseInt(fontSize) || settings.fontSize,
+    calculateDifference: calculateDifference === true || calculateDifference === 'true',
+    boldText: boldText === true || boldText === 'true',
+    showSuccessMessage: showSuccessMessage === true || showSuccessMessage === 'true',
+    
+    // Ustawienia ramki
+    showBorder: showBorder === true || showBorder === 'true',
+    borderWidth: parseInt(borderWidth) || settings.borderWidth,
+    borderColor: borderColor || settings.borderColor,
+    borderRadius: parseInt(borderRadius) || settings.borderRadius,
+    
+    // Ustawienia cienia
+    showShadow: showShadow === true || showShadow === 'true',
+    shadowColor: shadowColor || settings.shadowColor,
+    shadowBlur: parseInt(shadowBlur) || settings.shadowBlur,
+    shadowOffsetY: parseInt(shadowOffsetY) || settings.shadowOffsetY,
+    
+    // Pozostałe ustawienia
+    transparentBackground: transparentBackground === true || transparentBackground === 'true',
+    barWidth: parseInt(barWidth) || settings.barWidth
   };
 
-  console.log('Zapisane ustawienia:', settings);
+  console.log('Zaktualizowane ustawienia:', settings);
   res.json({ message: 'Ustawienia zapisane pomyślnie', settings });
 });
 
