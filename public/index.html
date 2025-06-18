@@ -165,21 +165,10 @@
       transform: translateY(0);
     }
 
-    .btn-secondary {
-      background-color: #e0e0e0;
-      color: var(--text-color);
-      margin-left: 10px;
-    }
-
-    .btn-secondary:hover {
-      background-color: #d0d0d0;
-    }
-
     .actions {
       margin-top: 24px;
       display: flex;
       justify-content: center;
-      gap: 12px;
     }
 
     #status {
@@ -208,22 +197,24 @@
     .bar-preview {
       position: relative;
       width: 100%;
-      height: 50px;
-      background-color: var(--primary-color);
-      color: white;
+      height: 48px;
+      border-radius: var(--radius);
       margin-top: 16px;
-      box-sizing: border-box;
+      overflow: hidden;
+      box-shadow: var(--shadow);
     }
 
     .preview-text {
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      position: absolute;
-      top: 0;
-      left: 0;
+      color: white;
+      font-size: 14px;
     }
 
     @media (max-width: 768px) {
@@ -309,13 +300,6 @@
           <h2 class="section-title">Wygląd paska</h2>
           <div class="form-grid">
             <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="transparentBackground" name="transparentBackground">
-                Przezroczyste tło
-              </label>
-            </div>
-            
-            <div class="form-group" id="barColorContainer">
               <label for="barColor">Kolor tła paska</label>
               <input type="color" id="barColor" name="barColor" />
             </div>
@@ -354,76 +338,15 @@
               <label for="topOffset">Odległość od góry (px)</label>
               <input type="number" id="topOffset" name="topOffset" min="0" max="300" />
             </div>
-            
-            <div class="form-group">
-              <label for="barWidth">Szerokość paska (%)</label>
-              <input type="range" id="barWidth" name="barWidth" min="50" max="100" value="100" oninput="document.getElementById('barWidthValue').textContent = this.value + '%'">
-              <span id="barWidthValue">100%</span>
-            </div>
           </div>
 
-          <!-- Aktualizuj strukturę podglądu paska -->
-          <div id="barPreviewContainer" style="width: 100%; display: flex; justify-content: center;">
-            <div class="bar-preview" id="barPreview">
-              <div class="preview-text" id="previewText">Twój komunikat o darmowej dostawie</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Sekcja: Dodatkowe efekty wizualne -->
-        <div class="form-section">
-          <h2 class="section-title">Dodatkowe efekty wizualne</h2>
-          <div class="form-grid">
-            <!-- Ramka -->
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="showBorder" name="showBorder">
-                Pokaż ramkę
-              </label>
-            </div>
-            
-            <div class="form-group">
-              <label class="checkbox-label">
-                <input type="checkbox" id="showShadow" name="showShadow">
-                Pokaż cień
-              </label>
-            </div>
-            
-            <div class="form-group" id="borderWidthContainer">
-              <label for="borderWidth">Grubość ramki (px)</label>
-              <input type="number" id="borderWidth" name="borderWidth" min="1" max="10" value="1">
-            </div>
-            
-            <div class="form-group" id="borderRadiusContainer">
-              <label for="borderRadius">Zaokrąglenie rogów (px)</label>
-              <input type="number" id="borderRadius" name="borderRadius" min="0" max="50" value="0">
-            </div>
-            
-            <div class="form-group" id="borderColorContainer">
-              <label for="borderColor">Kolor ramki</label>
-              <input type="color" id="borderColor" name="borderColor" value="#000000">
-            </div>
-            
-            <div class="form-group" id="shadowColorContainer">
-              <label for="shadowColor">Kolor cienia</label>
-              <input type="color" id="shadowColor" name="shadowColor" value="#000000">
-            </div>
-            
-            <div class="form-group" id="shadowBlurContainer">
-              <label for="shadowBlur">Rozmycie cienia (px)</label>
-              <input type="number" id="shadowBlur" name="shadowBlur" min="0" max="20" value="5">
-            </div>
-            
-            <div class="form-group" id="shadowOffsetYContainer">
-              <label for="shadowOffsetY">Przesunięcie cienia w dół (px)</label>
-              <input type="number" id="shadowOffsetY" name="shadowOffsetY" min="0" max="20" value="2">
-            </div>
+          <div class="bar-preview" id="barPreview">
+            <div class="preview-text" id="previewText">Podgląd paska darmowej dostawy</div>
           </div>
         </div>
 
         <div class="actions">
           <button type="submit" class="btn">Zapisz ustawienia</button>
-          <button type="button" id="resetButton" class="btn btn-secondary">Przywróć domyślne</button>
         </div>
       </form>
       <div id="status"></div>
@@ -440,116 +363,19 @@
     // Domyślna wartość komunikatu sukcesu
     const DEFAULT_SUCCESS_MESSAGE = "Gratulacje! Masz darmową dostawę :)";
 
-    // Domyślne wartości stylów
-    const DEFAULT_STYLES = {
-      barColor: '#4CAF50',
-      textColor: '#FFFFFF',
-      barHeight: 50,
-      fontSize: 16,
-      boldText: false,
-      barPosition: 'fixed',
-      barTopOffset: 70,
-      showBorder: false,
-      borderWidth: 1,
-      borderColor: '#000000',
-      borderRadius: 0,
-      showShadow: false,
-      shadowColor: '#000000',
-      shadowBlur: 5,
-      shadowOffsetY: 2,
-      transparentBackground: false,
-      barWidth: 100  // Dodane nowe pole
-    };
-
     // Funkcja aktualizująca podgląd paska
     function updateBarPreview() {
       const barPreview = document.getElementById('barPreview');
-      const previewContainer = document.getElementById('barPreviewContainer');
       const previewText = document.getElementById('previewText');
-      
-      // Jeśli kontener nie istnieje, tworzymy go
-      if (!previewContainer) {
-        const container = document.createElement('div');
-        container.id = 'barPreviewContainer';
-        container.style.width = '100%';
-        container.style.display = 'flex';
-        container.style.justifyContent = 'center';
-        container.style.alignItems = 'center';
-        
-        barPreview.parentNode.insertBefore(container, barPreview);
-        container.appendChild(barPreview);
-      }
-      
-      const isTransparent = document.getElementById('transparentBackground').checked;
-      const barColor = isTransparent ? 'transparent' : document.getElementById('barColor').value;
+      const barColor = document.getElementById('barColor').value;
       const textColor = document.getElementById('textColor').value;
       const fontSize = document.getElementById('fontSize').value || '16';
       const boldText = document.getElementById('boldText').checked;
-      const barWidth = document.getElementById('barWidth').value || '100';
       
-      // Aktualizuj kontener
-      previewContainer.style.display = 'flex';
-      previewContainer.style.justifyContent = 'center';
-      
-      // Ustaw szerokość paska
-      barPreview.style.width = barWidth + '%';
-      
-      // Ustaw box-sizing: border-box
-      barPreview.style.boxSizing = 'border-box';
       barPreview.style.backgroundColor = barColor;
-      
-      // Jeśli tło jest przezroczyste, dodajmy tło demonstracyjne do podglądu
-      if (isTransparent) {
-        barPreview.style.backgroundImage = 'linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0), linear-gradient(45deg, #f0f0f0 25%, transparent 25%, transparent 75%, #f0f0f0 75%, #f0f0f0)';
-        barPreview.style.backgroundSize = '20px 20px';
-        barPreview.style.backgroundPosition = '0 0, 10px 10px';
-      } else {
-        barPreview.style.backgroundImage = 'none';
-      }
-      
-      // Dla elementu tekstowego, wyśrodkuj go w pionie
       previewText.style.color = textColor;
       previewText.style.fontSize = fontSize + 'px';
       previewText.style.fontWeight = boldText ? 'bold' : 'normal';
-      previewText.style.height = '100%';
-      previewText.style.display = 'flex';
-      previewText.style.alignItems = 'center';
-      previewText.style.justifyContent = 'center';
-      
-      // Dodanie podglądu ramki
-      const showBorder = document.getElementById('showBorder').checked;
-      if (showBorder) {
-        const borderWidth = document.getElementById('borderWidth').value || '1';
-        const borderColor = document.getElementById('borderColor').value;
-        const borderRadius = document.getElementById('borderRadius').value || '0';
-        
-        barPreview.style.border = `${borderWidth}px solid ${borderColor}`;
-        barPreview.style.borderRadius = borderRadius + 'px';
-      } else {
-        barPreview.style.border = 'none';
-        barPreview.style.borderRadius = '0';
-      }
-      
-      // Dodanie podglądu cienia
-      const showShadow = document.getElementById('showShadow').checked;
-      if (showShadow) {
-        const shadowColor = document.getElementById('shadowColor').value;
-        const shadowBlur = document.getElementById('shadowBlur').value || '5';
-        const shadowOffsetY = document.getElementById('shadowOffsetY').value || '2';
-        
-        // Konwersja koloru HEX na rgba z przezroczystością
-        let shadowRgba = shadowColor;
-        if (shadowColor.startsWith('#')) {
-          const r = parseInt(shadowColor.slice(1, 3), 16);
-          const g = parseInt(shadowColor.slice(3, 5), 16);
-          const b = parseInt(shadowColor.slice(5, 7), 16);
-          shadowRgba = `rgba(${r}, ${g}, ${b}, 0.3)`;
-        }
-        
-        barPreview.style.boxShadow = `0 ${shadowOffsetY}px ${shadowBlur}px ${shadowRgba}`;
-      } else {
-        barPreview.style.boxShadow = 'none';
-      }
     }
 
     // Funkcja ustawiająca domyślny szablon wiadomości
@@ -586,76 +412,11 @@
         (calculateDifferenceChecked && showSuccessMessageChecked) ? 'block' : 'none';
     }
     
-    function updateBorderFields() {
-      const showBorder = document.getElementById('showBorder').checked;
-      document.getElementById('borderWidthContainer').style.display = showBorder ? 'block' : 'none';
-      document.getElementById('borderColorContainer').style.display = showBorder ? 'block' : 'none';
-      document.getElementById('borderRadiusContainer').style.display = showBorder ? 'block' : 'none';
-      updateBarPreview();
-    }
-
-    function updateShadowFields() {
-      const showShadow = document.getElementById('showShadow').checked;
-      document.getElementById('shadowColorContainer').style.display = showShadow ? 'block' : 'none';
-      document.getElementById('shadowBlurContainer').style.display = showShadow ? 'block' : 'none';
-      document.getElementById('shadowOffsetYContainer').style.display = showShadow ? 'block' : 'none';
-      updateBarPreview();
-    }
-
-    // Funkcja obsługująca resetowanie stylów
-    function resetStylesToDefault() {
-      // Resetuj wartości pól do domyślnych
-      document.getElementById('barColor').value = DEFAULT_STYLES.barColor;
-      document.getElementById('textColor').value = DEFAULT_STYLES.textColor;
-      document.getElementById('barHeight').value = DEFAULT_STYLES.barHeight;
-      document.getElementById('fontSize').value = DEFAULT_STYLES.fontSize;
-      document.getElementById('boldText').checked = DEFAULT_STYLES.boldText;
-      document.getElementById('position').value = DEFAULT_STYLES.barPosition;
-      document.getElementById('topOffset').value = DEFAULT_STYLES.barTopOffset;
-      
-      // Resetuj opcje ramki
-      document.getElementById('showBorder').checked = DEFAULT_STYLES.showBorder;
-      document.getElementById('borderWidth').value = DEFAULT_STYLES.borderWidth;
-      document.getElementById('borderColor').value = DEFAULT_STYLES.borderColor;
-      document.getElementById('borderRadius').value = DEFAULT_STYLES.borderRadius;
-      
-      // Resetuj opcje cienia
-      document.getElementById('showShadow').checked = DEFAULT_STYLES.showShadow;
-      document.getElementById('shadowColor').value = DEFAULT_STYLES.shadowColor;
-      document.getElementById('shadowBlur').value = DEFAULT_STYLES.shadowBlur;
-      document.getElementById('shadowOffsetY').value = DEFAULT_STYLES.shadowOffsetY;
-      
-      // Resetuj nową opcję przezroczystego tła
-      document.getElementById('transparentBackground').checked = DEFAULT_STYLES.transparentBackground;
-
-      // Resetuj szerokość paska
-      document.getElementById('barWidth').value = DEFAULT_STYLES.barWidth;
-      document.getElementById('barWidthValue').textContent = DEFAULT_STYLES.barWidth + '%';
-      
-      // Aktualizuj podgląd paska
-      updateBarPreview();
-      
-      // Aktualizuj widoczność zależnych pól
-      updateBorderFields();
-      updateShadowFields();
-      updateBackgroundField();
-      
-      showStatus('Style zostały przywrócone do ustawień domyślnych', 'success');
-    }
-
-    // Funkcja obsługująca przezroczyste tło
-    function updateBackgroundField() {
-      const isTransparent = document.getElementById('transparentBackground').checked;
-      document.getElementById('barColorContainer').style.display = isTransparent ? 'none' : 'block';
-      updateBarPreview();
-    }
-
     async function loadSettings() {
       try {
         const res = await fetch('/settings');
         const data = await res.json();
 
-        // Podstawowe ustawienia
         document.getElementById('enabled').checked = data.enabled;
         document.getElementById('threshold').value = data.freeShippingThreshold;
         document.getElementById('barColor').value = data.barColor;
@@ -670,30 +431,6 @@
         document.getElementById('showSuccessMessage').checked = 
           data.showSuccessMessage !== undefined ? data.showSuccessMessage : true;
         document.getElementById('successMessage').value = data.successMessage || DEFAULT_SUCCESS_MESSAGE;
-
-        // Ustawienia ramki
-        document.getElementById('showBorder').checked = data.showBorder || false;
-        document.getElementById('borderWidth').value = data.borderWidth || 1;
-        document.getElementById('borderColor').value = data.borderColor || '#000000';
-        document.getElementById('borderRadius').value = data.borderRadius || 0;
-
-        // Ustawienia cienia
-        document.getElementById('showShadow').checked = data.showShadow || false;
-        document.getElementById('shadowColor').value = data.shadowColor?.startsWith('rgba') ? '#000000' : (data.shadowColor || '#000000');
-        document.getElementById('shadowBlur').value = data.shadowBlur || 5;
-        document.getElementById('shadowOffsetY').value = data.shadowOffsetY || 2;
-        
-        // Dodaj obsługę nowej opcji
-        document.getElementById('transparentBackground').checked = data.transparentBackground || false;
-        
-        // Dodaj obsługę nowego pola
-        document.getElementById('barWidth').value = data.barWidth || 100;
-        document.getElementById('barWidthValue').textContent = (data.barWidth || 100) + '%';
-        
-        // Aktualizuj widoczność pól zależnych
-        updateBorderFields();
-        updateShadowFields();
-        updateBackgroundField();
         
         // Ustaw szablon wiadomości na podstawie stanu checkboxa
         if (data.calculateDifference) {
@@ -742,24 +479,11 @@
     document.getElementById('textColor').addEventListener('input', updateBarPreview);
     document.getElementById('fontSize').addEventListener('input', updateBarPreview);
     document.getElementById('boldText').addEventListener('change', updateBarPreview);
-    document.getElementById('showBorder').addEventListener('change', updateBorderFields);
-    document.getElementById('showShadow').addEventListener('change', updateShadowFields);
-    document.getElementById('borderWidth').addEventListener('input', updateBarPreview);
-    document.getElementById('borderColor').addEventListener('input', updateBarPreview);
-    document.getElementById('borderRadius').addEventListener('input', updateBarPreview);
-    document.getElementById('shadowColor').addEventListener('input', updateBarPreview);
-    document.getElementById('shadowBlur').addEventListener('input', updateBarPreview);
-    document.getElementById('shadowOffsetY').addEventListener('input', updateBarPreview);
-    // Dodaj listener na element suwaka szerokości
-    document.getElementById('barWidth').addEventListener('input', updateBarPreview);
 
-    // Funkcja wysyłająca formularz
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      console.log('Wysyłanie formularza...');
-      
-      // Zbierz wszystkie dane formularza
-      const formData = {
+
+      const payload = {
         enabled: document.getElementById('enabled').checked,
         freeShippingThreshold: parseFloat(document.getElementById('threshold').value),
         barColor: document.getElementById('barColor').value,
@@ -767,69 +491,32 @@
         messageTemplate: document.getElementById('message').value,
         loadingMessage: document.getElementById('loadingMessage').value,
         successMessage: document.getElementById('successMessage').value,
-        barHeight: parseInt(document.getElementById('barHeight').value),
-        fontSize: parseInt(document.getElementById('fontSize').value),
-        barTopOffset: parseInt(document.getElementById('topOffset').value),
+        barHeight: parseInt(document.getElementById('barHeight').value, 10),
+        fontSize: parseInt(document.getElementById('fontSize').value, 10),
+        barTopOffset: parseInt(document.getElementById('topOffset').value, 10),
         barPosition: document.getElementById('position').value,
         alwaysShowBar: true,
         calculateDifference: document.getElementById('calculateDifference').checked,
         boldText: document.getElementById('boldText').checked,
-        showSuccessMessage: document.getElementById('showSuccessMessage').checked,
-        // Ustawienia ramki
-        showBorder: document.getElementById('showBorder').checked,
-        borderWidth: parseInt(document.getElementById('borderWidth').value),
-        borderColor: document.getElementById('borderColor').value,
-        borderRadius: parseInt(document.getElementById('borderRadius').value),
-        // Ustawienia cienia
-        showShadow: document.getElementById('showShadow').checked,
-        shadowColor: document.getElementById('shadowColor').value,
-        shadowBlur: parseInt(document.getElementById('shadowBlur').value),
-        shadowOffsetY: parseInt(document.getElementById('shadowOffsetY').value),
-        // Ustawienia tła
-        transparentBackground: document.getElementById('transparentBackground').checked,
-        // Szerokość paska
-        barWidth: parseInt(document.getElementById('barWidth').value)
+        showSuccessMessage: document.getElementById('showSuccessMessage').checked
       };
-      
-      console.log('Dane do wysłania:', formData);
 
       try {
         const res = await fetch('/settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
+          body: JSON.stringify(payload)
         });
 
         const result = await res.json();
-        console.log('Odpowiedź serwera:', result);
-        
-        if (res.ok) {
-          showStatus('Ustawienia zostały zapisane pomyślnie!', 'success');
-          // Przeładuj stronę po 1 sekundzie, aby zastosować nowe ustawienia
-          setTimeout(() => window.location.reload(), 1000);
-        } else {
-          showStatus(result.error || 'Wystąpił błąd podczas zapisywania ustawień', 'error');
-        }
+        showStatus(result.message || 'Ustawienia zostały zapisane pomyślnie!', 'success');
       } catch (error) {
-        console.error('Błąd podczas zapisywania ustawień:', error);
-        showStatus('Błąd połączenia z serwerem', 'error');
+        showStatus('Wystąpił błąd podczas zapisywania ustawień.', 'error');
       }
     });
 
-    // Inicjalizacja - ukryj pola zależne po załadowaniu strony
-    document.addEventListener('DOMContentLoaded', () => {
-      loadSettings();
-      
-      // Ukryj pola, które będą pokazywane tylko gdy odpowiednie opcje są włączone
-      updateBorderFields();
-      updateShadowFields();
-    });
-
-    // Dodaj listener dla przycisku resetowania
-    document.getElementById('resetButton').addEventListener('click', resetStylesToDefault);
-
-    // Dodaj listener dla opcji przezroczystego tła
-    document.getElementById('transparentBackground').addEventListener('change', updateBackgroundField);
+    // Załaduj ustawienia po załadowaniu strony
+    document.addEventListener('DOMContentLoaded', loadSettings);
   </script>
 </body>
 </html>

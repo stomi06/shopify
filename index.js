@@ -24,31 +24,17 @@ let settings = {
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Darmowa dostawa od 200 zł',
+    messageTemplate: 'Do darmowej dostawy brakuje: {price} zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
     successMessage: 'Gratulacje! Masz darmową dostawę :)',
     alwaysShowBar: true,
     barPosition: 'fixed',
-    barTopOffset: 70,
+    barTopOffset: 0,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
     calculateDifference: false,  // domyślnie odznaczone
     boldText: false,       // domyślnie bez pogrubienia
-    showSuccessMessage: true,    // domyślnie pokazuj komunikat po osiągnięciu progu
-    // Ramka
-    showBorder: false,     // domyślnie bez ramki
-    borderWidth: 1,        // w px
-    borderColor: '#000000',
-    borderRadius: 0,       // w px
-    // Cień
-    showShadow: false,     // domyślnie bez cienia
-    shadowColor: 'rgba(0, 0, 0, 0.3)',
-    shadowBlur: 5,         // w px
-    shadowOffsetY: 2,      // w px
-    // Tło
-    transparentBackground: false,
-    // Szerokość paska
-    barWidth: 100          // szerokość w procentach
+    showSuccessMessage: true     // domyślnie pokazuj komunikat po osiągnięciu progu
 };
 
 // --- AUTH ---
@@ -99,20 +85,63 @@ app.get('/auth/callback', async (req, res) => {
   }
 });
 
-// Endpoint generujący skrypt paska darmowej dostawy
 app.get('/free-shipping-bar.js', (req, res) => {
   res.type('application/javascript');
-  
-  // Dodaj do skryptu funkcję sprawdzającą aktualizacje ustawień
-  const scriptWithUpdates = `
+  res.send(`
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
-      const SETTINGS_VERSION = '${Date.now()}'; // Wersja ustawień
-      console.log('Załadowane ustawienia paska:', SETTINGS);
 
       if (!SETTINGS.enabled) return;
-      
-      // Funkcje do zarządzania zapisanym stanem koszyka - przeniesione na górę
+
+      // Funkcja pomocnicza "debounce" - zapobiega zbyt częstym wywołaniom
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(this, args), wait);
+        };
+      }
+
+      // Funkcja tworząca lub aktualizująca pasek
+      function createBar(text) {
+        let bar = document.getElementById('free-shipping-bar');
+        if (!bar) {
+          bar = document.createElement('div');
+          bar.id = 'free-shipping-bar';
+          bar.style.position = SETTINGS.barPosition;
+          bar.style.top = SETTINGS.barTopOffset + 'px';
+          bar.style.left = '0';
+          bar.style.width = '100%';
+          bar.style.height = SETTINGS.barHeight + 'px';
+          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.color = SETTINGS.textColor;
+          bar.style.textAlign = 'center';
+          bar.style.fontSize = SETTINGS.fontSize + 'px';
+          bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+          bar.style.zIndex = '50';
+          document.body.appendChild(bar);
+        }
+        bar.textContent = text;
+        bar.style.display = 'block';
+        return bar;
+      }
+
+      // Funkcja ukrywająca pasek
+      function hideBar() {
+        const bar = document.getElementById('free-shipping-bar');
+        if (bar) {
+          bar.style.display = 'none';
+        }
+      }
+
+      // Jeśli nie liczymy różnicy, wyświetl statyczny komunikat
+      if (!SETTINGS.calculateDifference) {
+        createBar(SETTINGS.messageTemplate);
+        return;
+      }
+
+      // Funkcje do zarządzania zapisanym stanem koszyka
       const CART_STORAGE_KEY = 'freeShipping_lastCartState_' + window.location.hostname;
       
       function saveCartState(cartData) {
@@ -155,158 +184,6 @@ app.get('/free-shipping-bar.js', (req, res) => {
         }
       }
 
-      // Funkcja pomocnicza "debounce"
-      function debounce(func, wait) {
-        let timeout;
-        return function(...args) {
-          clearTimeout(timeout);
-          timeout = setTimeout(() => func.apply(this, args), wait);
-        };
-      }
-
-      // Funkcja tworząca lub aktualizująca pasek
-      function createBar(text) {
-        // Utworzenie kontenera zewnętrznego, jeśli jeszcze nie istnieje
-        let outerContainer = document.getElementById('free-shipping-bar-container');
-        if (!outerContainer) {
-          outerContainer = document.createElement('div');
-          outerContainer.id = 'free-shipping-bar-container';
-          outerContainer.style.position = SETTINGS.barPosition;
-          outerContainer.style.top = SETTINGS.barTopOffset + 'px';
-          outerContainer.style.left = '0';
-          outerContainer.style.width = '100%';
-          outerContainer.style.display = 'flex';
-          outerContainer.style.justifyContent = 'center';
-          outerContainer.style.zIndex = '9999';
-          document.body.appendChild(outerContainer);
-        }
-
-        // Utworzenie lub pobranie głównego paska
-        let bar = document.getElementById('free-shipping-bar');
-        let textElement = document.getElementById('free-shipping-bar-text');
-        
-        if (!bar) {
-          // Tworzymy główny pasek
-          bar = document.createElement('div');
-          bar.id = 'free-shipping-bar';
-          
-          // Tworzymy element do tekstu
-          textElement = document.createElement('div');
-          textElement.id = 'free-shipping-bar-text';
-          
-          // Konfiguracja głównego paska
-          bar.style.width = SETTINGS.barWidth + '%';
-          bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.boxSizing = 'border-box';
-          
-          // Dodanie stylów dla ramki
-          if (SETTINGS.showBorder) {
-            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
-            bar.style.borderStyle = 'solid';
-            bar.style.borderColor = SETTINGS.borderColor;
-            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-          }
-          
-          // Dodanie stylów dla cienia
-          if (SETTINGS.showShadow) {
-            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
-          }
-          
-          // Konfiguracja elementu tekstowego - używamy flexbox do doskonałego centrowania
-          textElement.style.display = 'flex';
-          textElement.style.alignItems = 'center';
-          textElement.style.justifyContent = 'center';
-          textElement.style.width = '100%';
-          textElement.style.height = '100%';
-          textElement.style.color = SETTINGS.textColor;
-          textElement.style.fontSize = SETTINGS.fontSize + 'px';
-          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-          textElement.style.textAlign = 'center';
-          textElement.style.boxSizing = 'border-box';
-          
-          // Składamy strukturę
-          bar.appendChild(textElement);
-          outerContainer.appendChild(bar);
-        } else {
-          // Pobierz lub utwórz element tekstowy, jeśli nie istnieje
-          if (!textElement) {
-            textElement = document.createElement('div');
-            textElement.id = 'free-shipping-bar-text';
-            textElement.style.display = 'flex';
-            textElement.style.alignItems = 'center';
-            textElement.style.justifyContent = 'center';
-            textElement.style.width = '100%';
-            textElement.style.height = '100%';
-            textElement.style.textAlign = 'center';
-            textElement.style.boxSizing = 'border-box';
-            bar.appendChild(textElement);
-          }
-          
-          // Aktualizacja stylów istniejącego paska
-          bar.style.width = SETTINGS.barWidth + '%';
-          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.boxSizing = 'border-box';
-          
-          // Aktualizacja ramki
-          if (SETTINGS.showBorder) {
-            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
-            bar.style.borderStyle = 'solid';
-            bar.style.borderColor = SETTINGS.borderColor;
-            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-          } else {
-            bar.style.border = 'none';
-          }
-          
-          // Aktualizacja cienia
-          if (SETTINGS.showShadow) {
-            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
-          } else {
-            bar.style.boxShadow = 'none';
-          }
-          
-          // Aktualizacja stylów tekstu
-          textElement.style.color = SETTINGS.textColor;
-          textElement.style.fontSize = SETTINGS.fontSize + 'px';
-          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-        }
-        
-        // Ustawiamy tekst
-        textElement.textContent = text;
-        outerContainer.style.display = 'flex';
-        
-        return bar;
-      }
-
-      // Funkcja ukrywająca pasek
-      function hideBar() {
-        const container = document.getElementById('free-shipping-bar-container');
-        if (container) {
-          container.style.display = 'none';
-        }
-      }
-
-      // WAŻNE: Pokaż pasek natychmiast, bez czekania na ładowanie DOM
-      const lastCartState = getLastCartState();
-      
-      // Stwórz pasek na podstawie ostatniego znanego stanu lub komunikatu domyślnego
-      if (!SETTINGS.calculateDifference) {
-        // Tryb statyczny: Po prostu pokaż skonfigurowany komunikat
-        createBar(SETTINGS.messageTemplate);
-      } else if (lastCartState) {
-        // Tryb dynamiczny z zapisanymi danymi
-        const initialMessage = generateShippingMessage(lastCartState.total);
-        if (initialMessage !== null) {
-          createBar(initialMessage);
-        } else {
-          hideBar();
-        }
-      } else {
-        // Brak zapisanych danych dla trybu dynamicznego
-        createBar(SETTINGS.loadingMessage || 'Sprawdzanie koszyka...');
-      }
-
       // Funkcja aktualizująca pasek po pobraniu danych koszyka
       function updateBarWithCartData(cartData) {
         try {
@@ -325,9 +202,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           saveCartState(cartData);
         } catch (e) {
           console.error('Błąd podczas aktualizacji paska:', e);
-          if (!document.getElementById('free-shipping-bar')) {
-            createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
-          }
+          createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
         }
       }
 
@@ -342,8 +217,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache'
           },
-          cache: 'no-store',
-          credentials: 'same-origin'
+          cache: 'no-store'
         })
           .then(r => {
             console.log('Odpowiedź z serwera:', r.status);
@@ -355,24 +229,28 @@ app.get('/free-shipping-bar.js', (req, res) => {
           })
           .catch(error => {
             console.error('Błąd pobierania danych koszyka:', error);
-            // Nie twórz nowego paska jeśli wystąpił błąd - użyj istniejącego
-            if (!document.getElementById('free-shipping-bar')) {
-              createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
-            }
+            createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
           });
       }
 
-      // Pobierz nowe dane tylko jeśli potrzebujemy dynamicznych obliczeń
-      if (SETTINGS.calculateDifference) {
-        // Pobierz aktualne dane koszyka trochę później, aby strona mogła się najpierw załadować
-        setTimeout(fetchCartData, 300);
+      // Pobierz ostatni znany stan koszyka z localStorage
+      const lastCartState = getLastCartState();
+      
+      // Utwórz pasek i wyświetl ostatni znany stan
+      if (lastCartState) {
+        const initialMessage = generateShippingMessage(lastCartState.total);
+        if (initialMessage !== null) {
+          createBar(initialMessage);
+        }
+      } else {
+        createBar('Darmowa dostawa od ' + SETTINGS.freeShippingThreshold + ' zł');
       }
+
+      // Pobierz aktualne dane koszyka natychmiast
+      fetchCartData();
 
       // System monitorowania zmian koszyka
       function setupCartMonitoring() {
-        // Pomijamy monitorowanie jeśli nie używamy dynamicznych obliczeń
-        if (!SETTINGS.calculateDifference) return;
-        
         console.log('Inicjalizacja monitorowania koszyka...');
         
         // Debounce z krótszym czasem oczekiwania
@@ -395,11 +273,9 @@ app.get('/free-shipping-bar.js', (req, res) => {
         document.addEventListener('submit', function(event) {
           const form = event.target;
           if (form && (
-            form.action && (
-              form.action.includes('/cart/add') ||
-              form.action.includes('/cart/change') ||
-              form.action.includes('/cart/update')
-            ) ||
+            form.action.includes('/cart/add') ||
+            form.action.includes('/cart/change') ||
+            form.action.includes('/cart/update') ||
             form.classList.contains('cart') ||
             form.closest('[data-cart]')
           )) {
@@ -444,73 +320,59 @@ app.get('/free-shipping-bar.js', (req, res) => {
         });
 
         // 5. Przechwytywanie żądań AJAX
-        try {
-          const originalSend = XMLHttpRequest.prototype.send;
-          XMLHttpRequest.prototype.send = function(data) {
-            this.addEventListener('load', function() {
-              if (this.responseURL && (
-                this.responseURL.includes('/cart/add') || 
-                this.responseURL.includes('/cart/change') || 
-                this.responseURL.includes('/cart/update') ||
-                this.responseURL.includes('/cart/clear')
-              )) {
-                console.log('Wykryto żądanie AJAX do koszyka:', this.responseURL);
-                setTimeout(debouncedFetch, 300);
-              }
-            });
-            return originalSend.apply(this, arguments);
-          };
-        } catch (e) {
-          console.error('Nie udało się zmodyfikować XMLHttpRequest:', e);
-        }
+        const originalSend = XMLHttpRequest.prototype.send;
+        XMLHttpRequest.prototype.send = function(data) {
+          this.addEventListener('load', function() {
+            if (this.responseURL && (
+              this.responseURL.includes('/cart/add') || 
+              this.responseURL.includes('/cart/change') || 
+              this.responseURL.includes('/cart/update') ||
+              this.responseURL.includes('/cart/clear')
+            )) {
+              console.log('Wykryto żądanie AJAX do koszyka:', this.responseURL);
+              setTimeout(debouncedFetch, 300);
+            }
+          });
+          return originalSend.apply(this, arguments);
+        };
 
         // 6. Przechwytywanie fetch API
-        try {
-          if (window.fetch) {
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options) {
-              const promise = originalFetch.apply(this, arguments);
-              if (url && typeof url === 'string' && (
-                url.includes('/cart/add') || 
-                url.includes('/cart/change') || 
-                url.includes('/cart/update') ||
-                url.includes('/cart/clear')
-              )) {
-                promise.then(() => {
-                  console.log('Wykryto żądanie fetch do koszyka:', url);
-                  setTimeout(debouncedFetch, 300);
-                });
-              }
-              return promise;
-            };
+        const originalFetch = window.fetch;
+        window.fetch = function(url, options) {
+          const promise = originalFetch.apply(this, arguments);
+          if (url && typeof url === 'string' && (
+            url.includes('/cart/add') || 
+            url.includes('/cart/change') || 
+            url.includes('/cart/update') ||
+            url.includes('/cart/clear')
+          )) {
+            promise.then(() => {
+              console.log('Wykryto żądanie fetch do koszyka:', url);
+              setTimeout(debouncedFetch, 300);
+            });
           }
-        } catch (e) {
-          console.error('Nie udało się zmodyfikować fetch API:', e);
-        }
+          return promise;
+        };
 
         // 7. jQuery AJAX
-        try {
-          if (window.jQuery) {
-            const $ = window.jQuery;
-            $(document).ajaxComplete(function(event, xhr, settings) {
-              if (settings.url && (
-                settings.url.includes('/cart/add') || 
-                settings.url.includes('/cart/change') || 
-                settings.url.includes('/cart/update') ||
-                settings.url.includes('/cart/clear')
-              )) {
-                console.log('Wykryto żądanie jQuery AJAX do koszyka:', settings.url);
-                setTimeout(debouncedFetch, 300);
-              }
-            });
+        if (window.jQuery) {
+          const $ = window.jQuery;
+          $(document).ajaxComplete(function(event, xhr, settings) {
+            if (settings.url && (
+              settings.url.includes('/cart/add') || 
+              settings.url.includes('/cart/change') || 
+              settings.url.includes('/cart/update') ||
+              settings.url.includes('/cart/clear')
+            )) {
+              console.log('Wykryto żądanie jQuery AJAX do koszyka:', settings.url);
+              setTimeout(debouncedFetch, 300);
+            }
+          });
 
-            $(document).on('cart.requestComplete cart:refresh cart_update added.ajaxCart', function() {
-              console.log('Wykryto zdarzenie jQuery koszyka');
-              debouncedFetch();
-            });
-          }
-        } catch (e) {
-          console.error('Nie udało się zmodyfikować jQuery:', e);
+          $(document).on('cart.requestComplete cart:refresh cart_update added.ajaxCart', function() {
+            console.log('Wykryto zdarzenie jQuery koszyka');
+            debouncedFetch();
+          });
         }
 
         // 8. Sprawdzaj koszyk co 10 sekund gdy strona jest aktywna
@@ -530,84 +392,21 @@ app.get('/free-shipping-bar.js', (req, res) => {
         });
       }
 
-      // Inicjalizuj monitorowanie - możemy to zrobić od razu
-      setupCartMonitoring();
-      
-      // Zainicjuj również przy załadowaniu DOM, aby upewnić się, że wszystko jest poprawnie skonfigurowane
-      if (document.readyState !== 'loading') {
-        console.log('DOM już gotowy');
+      // Inicjalizuj monitorowanie
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setupCartMonitoring();
       } else {
-        document.addEventListener('DOMContentLoaded', function() {
-          console.log('DOM teraz gotowy');
-        });
-      }
-      
-      // Dodaj funkcję sprawdzającą aktualizacje ustawień
-      let lastSettingsCheck = 0;
-      const SETTINGS_CHECK_INTERVAL = 5000; // co 5 sekund
-      
-      function checkForSettingsUpdates() {
-        const now = Date.now();
-        if (now - lastSettingsCheck < SETTINGS_CHECK_INTERVAL) return;
-        
-        lastSettingsCheck = now;
-        
-        fetch('/settings?' + now, {
-          headers: { 'Cache-Control': 'no-cache' }
-        })
-          .then(res => res.json())
-          .then(newSettings => {
-            // Sprawdź czy kluczowe ustawienia wyglądu się zmieniły
-            if (
-              newSettings.barColor !== SETTINGS.barColor ||
-              newSettings.textColor !== SETTINGS.textColor ||
-              newSettings.barHeight !== SETTINGS.barHeight ||
-              newSettings.fontSize !== SETTINGS.fontSize ||
-              newSettings.boldText !== SETTINGS.boldText ||
-              newSettings.showBorder !== SETTINGS.showBorder ||
-              newSettings.borderWidth !== SETTINGS.borderWidth ||
-              newSettings.borderColor !== SETTINGS.borderColor ||
-              newSettings.borderRadius !== SETTINGS.borderRadius ||
-              newSettings.showShadow !== SETTINGS.showShadow ||
-              newSettings.shadowColor !== SETTINGS.shadowColor ||
-              newSettings.shadowBlur !== SETTINGS.shadowBlur ||
-              newSettings.shadowOffsetY !== SETTINGS.shadowOffsetY ||
-              newSettings.transparentBackground !== SETTINGS.transparentBackground ||
-              newSettings.barWidth !== SETTINGS.barWidth
-            ) {
-              console.log('Wykryto zmiany w ustawieniach paska, odświeżanie strony...');
-              window.location.reload();
-            }
-          })
-          .catch(err => console.error('Błąd podczas sprawdzania aktualizacji ustawień:', err));
-      }
-      
-      // Sprawdzaj aktualizacje ustawień co jakiś czas
-      if (SETTINGS.enabled) {
-        setInterval(checkForSettingsUpdates, SETTINGS_CHECK_INTERVAL);
+        document.addEventListener('DOMContentLoaded', setupCartMonitoring);
       }
     })();
-  `;
-  
-  res.send(scriptWithUpdates);
+  `);
 });
 
 app.get('/settings', (req, res) => {
   res.json(settings);
 });
 
-// Popraw obsługę endpointu POST /settings
-
 app.post('/settings', (req, res) => {
-  console.log('Otrzymane dane:', req.body);
-  
-  // Sprawdzenie czy mamy jakiekolwiek dane
-  if (!req.body || Object.keys(req.body).length === 0) {
-    console.error('Brak danych w żądaniu');
-    return res.status(400).json({ error: 'Brak danych' });
-  }
-
-  // Pobierz dane z żądania
   const {
     enabled,
     freeShippingThreshold,
@@ -623,60 +422,52 @@ app.post('/settings', (req, res) => {
     fontSize,
     calculateDifference,
     boldText,
-    showSuccessMessage,
-    showBorder,
-    borderWidth,
-    borderColor,
-    borderRadius,
-    showShadow,
-    shadowColor,
-    shadowBlur,
-    shadowOffsetY,
-    transparentBackground,
-    barWidth
+    showSuccessMessage
   } = req.body;
 
-  // Aktualizuj ustawienia z bezpieczną konwersją typów
+  if (
+    typeof enabled !== 'boolean' ||
+    typeof freeShippingThreshold !== 'number' ||
+    typeof barColor !== 'string' ||
+    typeof textColor !== 'string' ||
+    typeof messageTemplate !== 'string' ||
+    typeof loadingMessage !== 'string' ||
+    typeof successMessage !== 'string' ||
+    typeof alwaysShowBar !== 'boolean' ||
+    (barPosition !== 'fixed' && barPosition !== 'absolute') ||
+    typeof barTopOffset !== 'number' ||
+    typeof barHeight !== 'number' ||
+    typeof fontSize !== 'number' ||
+    typeof calculateDifference !== 'boolean' ||
+    typeof boldText !== 'boolean' ||
+    typeof showSuccessMessage !== 'boolean'
+  ) {
+    return res.status(400).json({ error: 'Nieprawidłowe dane' });
+  }
+
   settings = {
-    enabled: enabled === true || enabled === 'true',
-    freeShippingThreshold: parseFloat(freeShippingThreshold) || settings.freeShippingThreshold,
-    barColor: barColor || settings.barColor,
-    textColor: textColor || settings.textColor,
-    messageTemplate: messageTemplate || settings.messageTemplate,
-    loadingMessage: loadingMessage || settings.loadingMessage,
-    successMessage: successMessage || settings.successMessage,
-    alwaysShowBar: alwaysShowBar === true || alwaysShowBar === 'true',
-    barPosition: barPosition || settings.barPosition,
-    barTopOffset: parseInt(barTopOffset) || settings.barTopOffset,
-    barHeight: parseInt(barHeight) || settings.barHeight,
-    fontSize: parseInt(fontSize) || settings.fontSize,
-    calculateDifference: calculateDifference === true || calculateDifference === 'true',
-    boldText: boldText === true || boldText === 'true',
-    showSuccessMessage: showSuccessMessage === true || showSuccessMessage === 'true',
-    
-    // Ustawienia ramki
-    showBorder: showBorder === true || showBorder === 'true',
-    borderWidth: parseInt(borderWidth) || settings.borderWidth,
-    borderColor: borderColor || settings.borderColor,
-    borderRadius: parseInt(borderRadius) || settings.borderRadius,
-    
-    // Ustawienia cienia
-    showShadow: showShadow === true || showShadow === 'true',
-    shadowColor: shadowColor || settings.shadowColor,
-    shadowBlur: parseInt(shadowBlur) || settings.shadowBlur,
-    shadowOffsetY: parseInt(shadowOffsetY) || settings.shadowOffsetY,
-    
-    // Pozostałe ustawienia
-    transparentBackground: transparentBackground === true || transparentBackground === 'true',
-    barWidth: parseInt(barWidth) || settings.barWidth
+    enabled,
+    freeShippingThreshold,
+    barColor,
+    textColor,
+    messageTemplate,
+    loadingMessage,
+    successMessage,
+    alwaysShowBar,
+    barPosition,
+    barTopOffset,
+    barHeight,
+    fontSize,
+    calculateDifference,
+    boldText,
+    showSuccessMessage
   };
 
-  console.log('Zaktualizowane ustawienia:', settings);
-  res.json({ message: 'Ustawienia zapisane pomyślnie', settings });
+  res.json({ message: 'Ustawienia zapisane', settings });
 });
 
 // --- SERWER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Serwer uruchomiony na porcie ${PORT}`);
+  console.log('App listening on port ' + PORT);
 });
