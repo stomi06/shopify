@@ -35,24 +35,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Catch-all dla debugging app-proxy
-app.all('/free-delivery*', (req, res, next) => {
-  console.log('🚨 CATCH-ALL HIT:', req.method, req.originalUrl);
-  
-  if (req.path === '/free-delivery/settings') {
-    next(); // Przekaż do właściwego routera
-  } else {
-    res.json({ 
-      debug: 'Catch-all endpoint', 
-      method: req.method,
-      path: req.path,
-      originalUrl: req.originalUrl,
-      query: req.query,
-      timestamp: new Date().toISOString()
-    });
-  }
-});
-
 // Middleware
 app.use(cookieParser());
 app.use(express.json());
@@ -66,6 +48,20 @@ app.use('/', apiRoutes);            // /api/settings, /api/settings/update
 app.use('/', subscriptionRoutes);   // /api/subscription/*
 app.use('/', javascriptRoutes);     // /free-shipping-bar.js
 app.use('/', webhookRoutes);        // /webhooks/*
+
+// Catch-all dla debugging (na końcu)
+app.all('/free-delivery*', (req, res) => {
+  console.log('🚨 CATCH-ALL HIT (nie znaleziono route):', req.method, req.originalUrl);
+  res.status(404).json({ 
+    error: 'Route not found',
+    debug: 'Catch-all endpoint', 
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    query: req.query,
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Health check endpoint
 app.get('/health', (req, res) => {
