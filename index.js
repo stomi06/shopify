@@ -24,7 +24,7 @@ let settings = {
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Do darmowej dostawy brakuje: {price} zł',
+    messageTemplate: 'Darmowa dostawa od 200zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
     successMessage: 'Gratulacje! Masz darmową dostawę :)',
     alwaysShowBar: true,
@@ -100,6 +100,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
   res.send(`
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
+      console.log('Załadowane ustawienia paska:', SETTINGS);
 
       if (!SETTINGS.enabled) return;
 
@@ -129,13 +130,15 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
           bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-          bar.style.zIndex = '50';
+          bar.style.zIndex = '1';
           
           // Dodanie stylów dla ramki
           if (SETTINGS.showBorder) {
-            bar.style.border = \`\${SETTINGS.borderWidth}px solid \${SETTINGS.borderColor}\`;
+            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
+            bar.style.borderStyle = 'solid';
+            bar.style.borderColor = SETTINGS.borderColor;
             bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-            // Usuń dolną ramkę, jeśli pasek jest na górze
+            // Usuń górną ramkę, jeśli pasek jest na górze strony
             if (SETTINGS.barPosition === 'fixed' && SETTINGS.barTopOffset === 0) {
               bar.style.borderTop = 'none';
             }
@@ -147,7 +150,36 @@ app.get('/free-shipping-bar.js', (req, res) => {
           }
           
           document.body.appendChild(bar);
+        } else {
+          // Aktualizacja stylów istniejącego paska
+          bar.style.backgroundColor = SETTINGS.barColor;
+          bar.style.color = SETTINGS.textColor;
+          bar.style.fontSize = SETTINGS.fontSize + 'px';
+          bar.style.height = SETTINGS.barHeight + 'px';
+          bar.style.lineHeight = SETTINGS.barHeight + 'px';
+          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+          
+          // Aktualizacja ramki
+          if (SETTINGS.showBorder) {
+            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
+            bar.style.borderStyle = 'solid';
+            bar.style.borderColor = SETTINGS.borderColor;
+            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
+            if (SETTINGS.barPosition === 'fixed' && SETTINGS.barTopOffset === 0) {
+              bar.style.borderTop = 'none';
+            }
+          } else {
+            bar.style.border = 'none';
+          }
+          
+          // Aktualizacja cienia
+          if (SETTINGS.showShadow) {
+            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
+          } else {
+            bar.style.boxShadow = 'none';
+          }
         }
+        
         bar.textContent = text;
         bar.style.display = 'block';
         return bar;
@@ -460,31 +492,11 @@ app.post('/settings', (req, res) => {
     shadowOffsetY
   } = req.body;
 
+  // Walidacja wymaganych pól
   if (
     typeof enabled !== 'boolean' ||
     typeof freeShippingThreshold !== 'number' ||
-    typeof barColor !== 'string' ||
-    typeof textColor !== 'string' ||
-    typeof messageTemplate !== 'string' ||
-    typeof loadingMessage !== 'string' ||
-    typeof successMessage !== 'string' ||
-    typeof alwaysShowBar !== 'boolean' ||
-    (barPosition !== 'fixed' && barPosition !== 'absolute') ||
-    typeof barTopOffset !== 'number' ||
-    typeof barHeight !== 'number' ||
-    typeof fontSize !== 'number' ||
-    typeof calculateDifference !== 'boolean' ||
-    typeof boldText !== 'boolean' ||
-    typeof showSuccessMessage !== 'boolean' ||
-    // Walidacja nowych parametrów
-    typeof showBorder !== 'boolean' ||
-    typeof borderWidth !== 'number' ||
-    typeof borderColor !== 'string' ||
-    typeof borderRadius !== 'number' ||
-    typeof showShadow !== 'boolean' ||
-    typeof shadowColor !== 'string' ||
-    typeof shadowBlur !== 'number' ||
-    typeof shadowOffsetY !== 'number'
+    !barColor || !textColor || !messageTemplate
   ) {
     return res.status(400).json({ error: 'Nieprawidłowe dane' });
   }
@@ -506,17 +518,18 @@ app.post('/settings', (req, res) => {
     boldText,
     showSuccessMessage,
     // Nowe parametry
-    showBorder,
-    borderWidth,
-    borderColor,
-    borderRadius,
-    showShadow,
-    shadowColor,
-    shadowBlur,
-    shadowOffsetY
+    showBorder: Boolean(showBorder),
+    borderWidth: Number(borderWidth) || 1,
+    borderColor: borderColor || '#000000',
+    borderRadius: Number(borderRadius) || 0,
+    showShadow: Boolean(showShadow),
+    shadowColor: shadowColor || 'rgba(0, 0, 0, 0.3)',
+    shadowBlur: Number(shadowBlur) || 5,
+    shadowOffsetY: Number(shadowOffsetY) || 2
   };
 
-  res.json({ message: 'Ustawienia zapisane', settings });
+  console.log('Zapisane ustawienia:', settings);
+  res.json({ message: 'Ustawienia zapisane pomyślnie', settings });
 });
 
 // --- SERWER ---
