@@ -108,46 +108,6 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       if (!SETTINGS.enabled) return;
 
-      // Natychmiast twórz pasek - najwyższy priorytet
-      const initialMessage = SETTINGS.calculateDifference 
-        ? (SETTINGS.loadingMessage || "Sprawdzam koszyk...") 
-        : SETTINGS.messageTemplate;
-      
-      // Funkcja tworząca pasek - przyspieszona wersja
-      function createBar(text) {
-        // Szybko sprawdź czy pasek już istnieje
-        if (document.getElementById('free-shipping-bar')) {
-          document.getElementById('free-shipping-bar-text').textContent = text;
-          return;
-        }
-
-        // Utworzenie całej struktury paska za jednym razem
-        const containerHTML = \`
-          <div id="free-shipping-bar-container" style="position: ${SETTINGS.barPosition}; top: ${SETTINGS.barTopOffset}px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 999999;">
-            <div id="free-shipping-bar" style="width: ${SETTINGS.barWidth}%; height: ${SETTINGS.barHeight}px; background-color: ${SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor}; box-sizing: border-box; ${SETTINGS.showBorder} ? \`border: ${SETTINGS.borderWidth}px solid ${SETTINGS.borderColor}; border-radius: ${SETTINGS.borderRadius}px;\` : ''} ${SETTINGS.showShadow} ? \`box-shadow: 0 ${SETTINGS.shadowOffsetY}px ${SETTINGS.shadowBlur}px ${SETTINGS.shadowColor};\` : ''}">
-              <div id="free-shipping-bar-text" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: ${SETTINGS.textColor}; font-size: ${SETTINGS.fontSize}px; font-weight: ${SETTINGS.boldText ? 'bold' : 'normal'}; text-align: center;">${text}</div>
-            </div>
-          </div>
-        \`;
-        
-        // Wstaw pasek na początku body
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = containerHTML;
-        if (document.body.firstChild) {
-          document.body.insertBefore(tempDiv.firstChild, document.body.firstChild);
-        } else {
-          document.body.appendChild(tempDiv.firstChild);
-        }
-      }
-
-      // NATYCHMIAST utwórz pasek - bez żadnych opóźnień
-      if (document.body) {
-        createBar(initialMessage);
-      } else {
-        // W rzadkim przypadku gdy body jeszcze nie istnieje
-        document.addEventListener('DOMContentLoaded', () => createBar(initialMessage), {once: true});
-      }
-
       // Funkcja pomocnicza "debounce"
       function debounce(func, wait) {
         let timeout;
