@@ -100,13 +100,21 @@ app.get('/auth/callback', async (req, res) => {
 });
 
 app.get('/free-shipping-bar.js', (req, res) => {
-  res.type('application/javascript');
+  // Ustawienia dla szybszego ładowania
+  res.set('Cache-Control', 'public, max-age=3600');
+  res.set('Content-Type', 'application/javascript');
+  
   res.send(`
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
       console.log('Załadowane ustawienia paska:', SETTINGS);
 
       if (!SETTINGS.enabled) return;
+
+      // Przygotuj początkowy komunikat - bez czekania
+      const initialMessage = SETTINGS.calculateDifference 
+        ? (SETTINGS.loadingMessage || "Sprawdzam koszyk...") 
+        : SETTINGS.messageTemplate;
 
       // Funkcja pomocnicza "debounce"
       function debounce(func, wait) {
@@ -115,121 +123,112 @@ app.get('/free-shipping-bar.js', (req, res) => {
           clearTimeout(timeout);
           timeout = setTimeout(() => func.apply(this, args), wait);
         };
-      }
-
-      // Funkcja tworząca lub aktualizująca pasek
+      }      // Funkcja tworząca lub aktualizująca pasek - zoptymalizowana
       function createBar(text) {
-        // Utworzenie kontenera zewnętrznego, jeśli jeszcze nie istnieje
+        // Sprawdź czy pasek już istnieje
         let outerContainer = document.getElementById('free-shipping-bar-container');
-        if (!outerContainer) {
-          outerContainer = document.createElement('div');
-          outerContainer.id = 'free-shipping-bar-container';
-          outerContainer.style.position = SETTINGS.barPosition;
-          outerContainer.style.top = SETTINGS.barTopOffset + 'px';
-          outerContainer.style.left = '0';
-          outerContainer.style.width = '100%';
-          outerContainer.style.display = 'flex';
-          outerContainer.style.justifyContent = 'center';
-          outerContainer.style.zIndex = '2';
-          document.body.appendChild(outerContainer);
-        }
-
-        // Utworzenie lub pobranie głównego paska
         let bar = document.getElementById('free-shipping-bar');
         let textElement = document.getElementById('free-shipping-bar-text');
         
-        if (!bar) {
-          // Tworzymy główny pasek
-          bar = document.createElement('div');
-          bar.id = 'free-shipping-bar';
-          
-          // Tworzymy element do tekstu
-          textElement = document.createElement('div');
-          textElement.id = 'free-shipping-bar-text';
-          
-          // Konfiguracja głównego paska
-          bar.style.width = SETTINGS.barWidth + '%';
-          bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.boxSizing = 'border-box';
-          
-          // Dodanie stylów dla ramki
-          if (SETTINGS.showBorder) {
-            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
-            bar.style.borderStyle = 'solid';
-            bar.style.borderColor = SETTINGS.borderColor;
-            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-          }
-          
-          // Dodanie stylów dla cienia
-          if (SETTINGS.showShadow) {
-            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
-          }
-          
-          // Konfiguracja elementu tekstowego - używamy flexbox do doskonałego centrowania
-          textElement.style.display = 'flex';
-          textElement.style.alignItems = 'center';
-          textElement.style.justifyContent = 'center';
-          textElement.style.width = '100%';
-          textElement.style.height = '100%';
-          textElement.style.color = SETTINGS.textColor;
-          textElement.style.fontSize = SETTINGS.fontSize + 'px';
-          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-          textElement.style.textAlign = 'center';
-          textElement.style.boxSizing = 'border-box';
-          
-          // Składamy strukturę
-          bar.appendChild(textElement);
-          outerContainer.appendChild(bar);
-        } else {
-          // Pobierz lub utwórz element tekstowy, jeśli nie istnieje
-          if (!textElement) {
-            textElement = document.createElement('div');
-            textElement.id = 'free-shipping-bar-text';
-            textElement.style.display = 'flex';
-            textElement.style.alignItems = 'center';
-            textElement.style.justifyContent = 'center';
-            textElement.style.width = '100%';
-            textElement.style.height = '100%';
-            textElement.style.textAlign = 'center';
-            textElement.style.boxSizing = 'border-box';
-            bar.appendChild(textElement);
-          }
-          
-          // Aktualizacja stylów istniejącego paska
-          bar.style.width = SETTINGS.barWidth + '%';
-          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.boxSizing = 'border-box';
-          
-          // Aktualizacja ramki
-          if (SETTINGS.showBorder) {
-            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
-            bar.style.borderStyle = 'solid';
-            bar.style.borderColor = SETTINGS.borderColor;
-            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-          } else {
-            bar.style.border = 'none';
-          }
-          
-          // Aktualizacja cienia
-          if (SETTINGS.showShadow) {
-            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
-          } else {
-            bar.style.boxShadow = 'none';
-          }
-          
-          // Aktualizacja stylów tekstu
-          textElement.style.color = SETTINGS.textColor;
-          textElement.style.fontSize = SETTINGS.fontSize + 'px';
-          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+        if (bar && textElement) {
+          // Pasek istnieje - tylko aktualizuj tekst i style
+          textElement.textContent = text;
+          updateBarStyles(bar, textElement);
+          outerContainer.style.display = 'flex';
+          return bar;
         }
+
+        // Tworzenie nowego paska
+        if (!outerContainer) {
+          outerContainer = document.createElement('div');
+          outerContainer.id = 'free-shipping-bar-container';
+          Object.assign(outerContainer.style, {
+            position: SETTINGS.barPosition,
+            top: SETTINGS.barTopOffset + 'px',
+            left: '0',
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'center',
+            zIndex: '999999'
+          });
+          
+          // Wstaw na początku body dla maksymalnej szybkości
+          if (document.body.firstChild) {
+            document.body.insertBefore(outerContainer, document.body.firstChild);
+          } else {
+            document.body.appendChild(outerContainer);
+          }
+        }
+
+        // Utwórz główny pasek
+        bar = document.createElement('div');
+        bar.id = 'free-shipping-bar';
         
-        // Ustawiamy tekst
+        // Utwórz element tekstowy
+        textElement = document.createElement('div');
+        textElement.id = 'free-shipping-bar-text';
         textElement.textContent = text;
-        outerContainer.style.display = 'flex';
+        
+        // Zastosuj style
+        updateBarStyles(bar, textElement);
+        
+        // Składaj strukturę
+        bar.appendChild(textElement);
+        outerContainer.appendChild(bar);
         
         return bar;
+      }
+
+      // Funkcja pomocnicza do aktualizacji stylów
+      function updateBarStyles(bar, textElement) {
+        // Style głównego paska
+        Object.assign(bar.style, {
+          width: SETTINGS.barWidth + '%',
+          height: SETTINGS.barHeight + 'px',
+          backgroundColor: SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor,
+          boxSizing: 'border-box'
+        });
+        
+        // Ramka
+        if (SETTINGS.showBorder) {
+          Object.assign(bar.style, {
+            borderWidth: SETTINGS.borderWidth + 'px',
+            borderStyle: 'solid',
+            borderColor: SETTINGS.borderColor,
+            borderRadius: SETTINGS.borderRadius + 'px'
+          });
+        } else {
+          bar.style.border = 'none';
+        }
+        
+        // Cień
+        if (SETTINGS.showShadow) {
+          bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
+        } else {
+          bar.style.boxShadow = 'none';
+        }
+        
+        // Style tekstu
+        Object.assign(textElement.style, {
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: '100%',
+          height: '100%',
+          color: SETTINGS.textColor,
+          fontSize: SETTINGS.fontSize + 'px',
+          fontWeight: SETTINGS.boldText ? 'bold' : 'normal',
+          textAlign: 'center',
+          boxSizing: 'border-box'
+        });
+      }
+
+      // NATYCHMIAST utwórz pasek - najwyższy priorytet
+      if (document.body) {
+        createBar(initialMessage);
+      } else {
+        // W rzadkim przypadku gdy body jeszcze nie istnieje
+        document.addEventListener('DOMContentLoaded', () => createBar(initialMessage), {once: true});
       }
 
       // Funkcja ukrywająca pasek
