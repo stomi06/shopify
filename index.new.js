@@ -15,6 +15,44 @@ const webhookRoutes = require('./src/routes/webhooks');
 
 const app = express();
 
+// DEBUGGING - dodaj to na samym początku
+app.use((req, res, next) => {
+  console.log(`🔍 [${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  
+  if (req.path.includes('free-delivery')) {
+    console.log('🎯 FREE-DELIVERY REQUEST DETECTED:', {
+      method: req.method,
+      path: req.path,
+      originalUrl: req.originalUrl,
+      headers: {
+        'user-agent': req.headers['user-agent'],
+        'x-shopify-shop-domain': req.headers['x-shopify-shop-domain'],
+        'x-shopify-hmac-sha256': req.headers['x-shopify-hmac-sha256']
+      },
+      query: req.query
+    });
+  }
+  next();
+});
+
+// Catch-all dla debugging app-proxy
+app.all('/free-delivery*', (req, res, next) => {
+  console.log('🚨 CATCH-ALL HIT:', req.method, req.originalUrl);
+  
+  if (req.path === '/free-delivery/settings') {
+    next(); // Przekaż do właściwego routera
+  } else {
+    res.json({ 
+      debug: 'Catch-all endpoint', 
+      method: req.method,
+      path: req.path,
+      originalUrl: req.originalUrl,
+      query: req.query,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Middleware
 app.use(cookieParser());
 app.use(express.json());
