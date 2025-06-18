@@ -24,17 +24,31 @@ let settings = {
     freeShippingThreshold: 200,
     barColor: '#4CAF50',
     textColor: '#FFFFFF',
-    messageTemplate: 'Do darmowej dostawy brakuje: {price} zł',
+    messageTemplate: 'Darmowa dostawa od 200 zł',
     loadingMessage: 'Aktualizuję dane z koszyka',
     successMessage: 'Gratulacje! Masz darmową dostawę :)',
     alwaysShowBar: true,
     barPosition: 'fixed',
-    barTopOffset: 0,
+    barTopOffset: 70,
     barHeight: 50,         // w px
     fontSize: 16,          // w px
     calculateDifference: false,  // domyślnie odznaczone
     boldText: false,       // domyślnie bez pogrubienia
-    showSuccessMessage: true     // domyślnie pokazuj komunikat po osiągnięciu progu
+    showSuccessMessage: true,    // domyślnie pokazuj komunikat po osiągnięciu progu
+    // Nowe ustawienia dla ramki
+    showBorder: false,     // domyślnie bez ramki
+    borderWidth: 1,        // w px
+    borderColor: '#000000',
+    borderRadius: 0,       // w px
+    // Nowe ustawienia dla cienia
+    showShadow: false,     // domyślnie bez cienia
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowBlur: 5,         // w px
+    shadowOffsetY: 2,       // w px
+    // Nowa opcja
+    transparentBackground: false,
+    // Szerokość paska
+    barWidth: 100  // szerokość paska w procentach (domyślnie 100%)
 };
 
 // --- AUTH ---
@@ -90,10 +104,11 @@ app.get('/free-shipping-bar.js', (req, res) => {
   res.send(`
     (function() {
       const SETTINGS = ${JSON.stringify(settings)};
+      console.log('Załadowane ustawienia paska:', SETTINGS);
 
       if (!SETTINGS.enabled) return;
 
-      // Funkcja pomocnicza "debounce" - zapobiega zbyt częstym wywołaniom
+      // Funkcja pomocnicza "debounce"
       function debounce(func, wait) {
         let timeout;
         return function(...args) {
@@ -104,34 +119,124 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       // Funkcja tworząca lub aktualizująca pasek
       function createBar(text) {
+        // Utworzenie kontenera zewnętrznego, jeśli jeszcze nie istnieje
+        let outerContainer = document.getElementById('free-shipping-bar-container');
+        if (!outerContainer) {
+          outerContainer = document.createElement('div');
+          outerContainer.id = 'free-shipping-bar-container';
+          outerContainer.style.position = SETTINGS.barPosition;
+          outerContainer.style.top = SETTINGS.barTopOffset + 'px';
+          outerContainer.style.left = '0';
+          outerContainer.style.width = '100%';
+          outerContainer.style.display = 'flex';
+          outerContainer.style.justifyContent = 'center';
+          outerContainer.style.zIndex = '2';
+          document.body.appendChild(outerContainer);
+        }
+
+        // Utworzenie lub pobranie głównego paska
         let bar = document.getElementById('free-shipping-bar');
+        let textElement = document.getElementById('free-shipping-bar-text');
+        
         if (!bar) {
+          // Tworzymy główny pasek
           bar = document.createElement('div');
           bar.id = 'free-shipping-bar';
-          bar.style.position = SETTINGS.barPosition;
-          bar.style.top = SETTINGS.barTopOffset + 'px';
-          bar.style.left = '0';
-          bar.style.width = '100%';
+          
+          // Tworzymy element do tekstu
+          textElement = document.createElement('div');
+          textElement.id = 'free-shipping-bar-text';
+          
+          // Konfiguracja głównego paska
+          bar.style.width = SETTINGS.barWidth + '%';
           bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.backgroundColor = SETTINGS.barColor;
-          bar.style.color = SETTINGS.textColor;
-          bar.style.textAlign = 'center';
-          bar.style.fontSize = SETTINGS.fontSize + 'px';
-          bar.style.lineHeight = SETTINGS.barHeight + 'px';
-          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
-          bar.style.zIndex = '50';
-          document.body.appendChild(bar);
+          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
+          bar.style.boxSizing = 'border-box';
+          
+          // Dodanie stylów dla ramki
+          if (SETTINGS.showBorder) {
+            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
+            bar.style.borderStyle = 'solid';
+            bar.style.borderColor = SETTINGS.borderColor;
+            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
+          }
+          
+          // Dodanie stylów dla cienia
+          if (SETTINGS.showShadow) {
+            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
+          }
+          
+          // Konfiguracja elementu tekstowego - używamy flexbox do doskonałego centrowania
+          textElement.style.display = 'flex';
+          textElement.style.alignItems = 'center';
+          textElement.style.justifyContent = 'center';
+          textElement.style.width = '100%';
+          textElement.style.height = '100%';
+          textElement.style.color = SETTINGS.textColor;
+          textElement.style.fontSize = SETTINGS.fontSize + 'px';
+          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+          textElement.style.textAlign = 'center';
+          textElement.style.boxSizing = 'border-box';
+          
+          // Składamy strukturę
+          bar.appendChild(textElement);
+          outerContainer.appendChild(bar);
+        } else {
+          // Pobierz lub utwórz element tekstowy, jeśli nie istnieje
+          if (!textElement) {
+            textElement = document.createElement('div');
+            textElement.id = 'free-shipping-bar-text';
+            textElement.style.display = 'flex';
+            textElement.style.alignItems = 'center';
+            textElement.style.justifyContent = 'center';
+            textElement.style.width = '100%';
+            textElement.style.height = '100%';
+            textElement.style.textAlign = 'center';
+            textElement.style.boxSizing = 'border-box';
+            bar.appendChild(textElement);
+          }
+          
+          // Aktualizacja stylów istniejącego paska
+          bar.style.width = SETTINGS.barWidth + '%';
+          bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
+          bar.style.height = SETTINGS.barHeight + 'px';
+          bar.style.boxSizing = 'border-box';
+          
+          // Aktualizacja ramki
+          if (SETTINGS.showBorder) {
+            bar.style.borderWidth = SETTINGS.borderWidth + 'px';
+            bar.style.borderStyle = 'solid';
+            bar.style.borderColor = SETTINGS.borderColor;
+            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
+          } else {
+            bar.style.border = 'none';
+          }
+          
+          // Aktualizacja cienia
+          if (SETTINGS.showShadow) {
+            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
+          } else {
+            bar.style.boxShadow = 'none';
+          }
+          
+          // Aktualizacja stylów tekstu
+          textElement.style.color = SETTINGS.textColor;
+          textElement.style.fontSize = SETTINGS.fontSize + 'px';
+          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
         }
-        bar.textContent = text;
-        bar.style.display = 'block';
+        
+        // Ustawiamy tekst
+        textElement.textContent = text;
+        outerContainer.style.display = 'flex';
+        
         return bar;
       }
 
       // Funkcja ukrywająca pasek
       function hideBar() {
-        const bar = document.getElementById('free-shipping-bar');
-        if (bar) {
-          bar.style.display = 'none';
+        const container = document.getElementById('free-shipping-bar-container');
+        if (container) {
+          container.style.display = 'none';
         }
       }
 
@@ -422,25 +527,25 @@ app.post('/settings', (req, res) => {
     fontSize,
     calculateDifference,
     boldText,
-    showSuccessMessage
+    showSuccessMessage,
+    // Nowe parametry
+    showBorder,
+    borderWidth,
+    borderColor,
+    borderRadius,
+    showShadow,
+    shadowColor,
+    shadowBlur,
+    shadowOffsetY,
+    transparentBackground,
+    barWidth
   } = req.body;
 
+  // Walidacja wymaganych pól
   if (
     typeof enabled !== 'boolean' ||
     typeof freeShippingThreshold !== 'number' ||
-    typeof barColor !== 'string' ||
-    typeof textColor !== 'string' ||
-    typeof messageTemplate !== 'string' ||
-    typeof loadingMessage !== 'string' ||
-    typeof successMessage !== 'string' ||
-    typeof alwaysShowBar !== 'boolean' ||
-    (barPosition !== 'fixed' && barPosition !== 'absolute') ||
-    typeof barTopOffset !== 'number' ||
-    typeof barHeight !== 'number' ||
-    typeof fontSize !== 'number' ||
-    typeof calculateDifference !== 'boolean' ||
-    typeof boldText !== 'boolean' ||
-    typeof showSuccessMessage !== 'boolean'
+    !barColor || !textColor || !messageTemplate
   ) {
     return res.status(400).json({ error: 'Nieprawidłowe dane' });
   }
@@ -460,10 +565,22 @@ app.post('/settings', (req, res) => {
     fontSize,
     calculateDifference,
     boldText,
-    showSuccessMessage
+    showSuccessMessage,
+    // Nowe parametry
+    showBorder: Boolean(showBorder),
+    borderWidth: Number(borderWidth) || 1,
+    borderColor: borderColor || '#000000',
+    borderRadius: Number(borderRadius) || 0,
+    showShadow: Boolean(showShadow),
+    shadowColor: shadowColor || 'rgba(0, 0, 0, 0.3)',
+    shadowBlur: Number(shadowBlur) || 5,
+    shadowOffsetY: Number(shadowOffsetY) || 2,
+    transparentBackground: Boolean(transparentBackground),
+    barWidth: Number(barWidth) || 100
   };
 
-  res.json({ message: 'Ustawienia zapisane', settings });
+  console.log('Zapisane ustawienia:', settings);
+  res.json({ message: 'Ustawienia zapisane pomyślnie', settings });
 });
 
 // --- SERWER ---
