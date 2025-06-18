@@ -1,9 +1,9 @@
 {
   "name": "free-delivery-app",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "1.0.0",  "main": "index.new.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node index.new.js",
+    "start:old": "node index.js",
     "dev": "shopify app dev",
     "deploy": "shopify app deploy",
     "build": "shopify app build"

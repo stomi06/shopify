@@ -26,6 +26,6 @@ dev_store_url = "freedelivery-test.myshopify.com"
 include_config_on_deploy = true
 
 [app_proxy]
-url = "https://shopify-ige3.onrender.com/app-proxy"
+url = "https://shopify-ige3.onrender.com"
 subpath = "free-delivery"
 prefix = "apps"
