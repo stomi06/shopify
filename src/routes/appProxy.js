@@ -1,8 +1,7 @@
 const express = require('express');
+const router = express.Router();
 const { getSettings } = require('../../db');
 const { getDefaultSettings } = require('../utils/defaultSettings');
-
-const router = express.Router();
 
 /**
  * App-proxy endpoint dla Theme Extension

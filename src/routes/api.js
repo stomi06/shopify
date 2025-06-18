@@ -1,9 +1,9 @@
 const express = require('express');
-const { getSettings, saveSettings, hasActiveSubscription } = require('../../db');
+const router = express.Router();
+const { pool } = require('../../db'); // Upewnij się że to jest '../../db'
+const { getSettings, saveSettings } = require('../../db'); // Zmień na '../../db'
 const { getDefaultSettings } = require('../utils/defaultSettings');
 const { requireSession } = require('../middleware/auth');
-
-const router = express.Router();
 
 /**
  * API do pobierania ustawień przez panel administracyjny

@@ -1,8 +1,7 @@
 const express = require('express');
-const { getDefaultSettingsForJS } = require('../utils/defaultSettings');
-const pool = require('../db'); // Zakładam, że masz moduł do połączenia z bazą danych
-
 const router = express.Router();
+const { pool } = require('../../db'); // Zmienione z '../db' na '../../db'
+const { getDefaultSettingsForJS } = require('../utils/defaultSettings');
 
 /**
  * Endpoint dostarczający JavaScript dla ScriptTag (legacy)

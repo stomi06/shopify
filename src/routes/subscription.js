@@ -1,10 +1,9 @@
 const express = require('express');
+const router = express.Router();
+const { pool, hasActiveSubscription } = require('../../db'); // Zmień na '../../db'
 const { shopifyApi } = require('@shopify/shopify-api');
 const { getSessionFromStorage } = require('../auth/shopifyAuth');
-const { hasActiveSubscription } = require('../../db');
 const { SUBSCRIPTION_PRICE_BASIC } = require('../config/shopify');
-
-const router = express.Router();
 
 /**
  * Sprawdzanie statusu subskrypcji
