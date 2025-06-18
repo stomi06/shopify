@@ -9,8 +9,11 @@ const pool = new Pool({
   database: process.env.PGDATABASE,
   password: process.env.PGPASSWORD,
   ssl: {
-    rejectUnauthorized: false // może być potrzebne dla Azure PostgreSQL
-  }
+    rejectUnauthorized: false, // Wymagane dla Azure PostgreSQL
+    require: true
+  },
+  connectionTimeoutMillis: 10000, // 10 sekund timeout
+  idleTimeoutMillis: 30000
 });
 
 // Testowe połączenie przy starcie aplikacji

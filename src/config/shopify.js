@@ -13,5 +13,18 @@ module.exports = {
   
   // Environment
   NODE_ENV: process.env.NODE_ENV || 'development',
-  IS_PRODUCTION: process.env.NODE_ENV === 'production'
+  IS_PRODUCTION: process.env.NODE_ENV === 'production',
+
+  // Database configuration
+  db: {
+    host: process.env.PGHOST,
+    user: process.env.PGUSER,
+    port: process.env.PGPORT,
+    database: process.env.PGDATABASE,
+    password: process.env.PGPASSWORD,
+    ssl: {
+      rejectUnauthorized: false,
+      require: true
+    }
+  }
 };
