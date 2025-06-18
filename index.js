@@ -106,7 +106,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       if (!SETTINGS.enabled) return;
 
-      // Funkcja pomocnicza "debounce" - zapobiega zbyt częstym wywołaniom
+      // Funkcja pomocnicza "debounce"
       function debounce(func, wait) {
         let timeout;
         return function(...args) {
@@ -118,28 +118,26 @@ app.get('/free-shipping-bar.js', (req, res) => {
       // Funkcja tworząca lub aktualizująca pasek
       function createBar(text) {
         let bar = document.getElementById('free-shipping-bar');
+        let textElement = document.getElementById('free-shipping-bar-text');
+        
         if (!bar) {
+          // Tworzymy główny kontener
           bar = document.createElement('div');
           bar.id = 'free-shipping-bar';
           
-          // Dodaj box-sizing: border-box, żeby ramka była wliczana do wymiarów
-          bar.style.boxSizing = 'border-box';
+          // Tworzymy element do tekstu
+          textElement = document.createElement('div');
+          textElement.id = 'free-shipping-bar-text';
+          
+          // Konfiguracja głównego kontenera
           bar.style.position = SETTINGS.barPosition;
           bar.style.top = SETTINGS.barTopOffset + 'px';
           bar.style.left = '0';
           bar.style.width = '100%';
           bar.style.height = SETTINGS.barHeight + 'px';
           bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.color = SETTINGS.textColor;
-          bar.style.textAlign = 'center';
-          bar.style.fontSize = SETTINGS.fontSize + 'px';
-          
-          // Zawsze używaj line-height równego wysokości paska
-          // box-sizing: border-box zadba o poprawne wycentrowanie
-          bar.style.lineHeight = SETTINGS.barHeight + 'px';
-          
-          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
           bar.style.zIndex = '2';
+          bar.style.boxSizing = 'border-box';
           
           // Dodanie stylów dla ramki
           if (SETTINGS.showBorder) {
@@ -158,19 +156,43 @@ app.get('/free-shipping-bar.js', (req, res) => {
             bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
           }
           
+          // Konfiguracja elementu tekstowego - używamy flexbox do doskonałego centrowania
+          textElement.style.display = 'flex';
+          textElement.style.alignItems = 'center';
+          textElement.style.justifyContent = 'center';
+          textElement.style.width = '100%';
+          textElement.style.height = '100%';
+          textElement.style.color = SETTINGS.textColor;
+          textElement.style.fontSize = SETTINGS.fontSize + 'px';
+          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+          textElement.style.textAlign = 'center';
+          textElement.style.boxSizing = 'border-box';
+          
+          // Dodajemy element tekstowy do kontenera
+          bar.appendChild(textElement);
           document.body.appendChild(bar);
         } else {
+          // Pobierz lub utwórz element tekstowy, jeśli nie istnieje
+          if (!textElement) {
+            textElement = document.createElement('div');
+            textElement.id = 'free-shipping-bar-text';
+            textElement.style.display = 'flex';
+            textElement.style.alignItems = 'center';
+            textElement.style.justifyContent = 'center';
+            textElement.style.width = '100%';
+            textElement.style.height = '100%';
+            textElement.style.textAlign = 'center';
+            textElement.style.boxSizing = 'border-box';
+            bar.appendChild(textElement);
+          }
+          
           // Aktualizacja stylów istniejącego paska
           bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.color = SETTINGS.textColor;
-          bar.style.fontSize = SETTINGS.fontSize + 'px';
           bar.style.height = SETTINGS.barHeight + 'px';
-          bar.style.lineHeight = SETTINGS.barHeight + 'px';
-          bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
+          bar.style.boxSizing = 'border-box';
           
           // Aktualizacja ramki
           if (SETTINGS.showBorder) {
-            bar.style.boxSizing = 'border-box';
             bar.style.borderWidth = SETTINGS.borderWidth + 'px';
             bar.style.borderStyle = 'solid';
             bar.style.borderColor = SETTINGS.borderColor;
@@ -188,10 +210,17 @@ app.get('/free-shipping-bar.js', (req, res) => {
           } else {
             bar.style.boxShadow = 'none';
           }
+          
+          // Aktualizacja stylów tekstu
+          textElement.style.color = SETTINGS.textColor;
+          textElement.style.fontSize = SETTINGS.fontSize + 'px';
+          textElement.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
         }
         
-        bar.textContent = text;
+        // Ustawiamy tekst
+        textElement.textContent = text;
         bar.style.display = 'block';
+        
         return bar;
       }
 
