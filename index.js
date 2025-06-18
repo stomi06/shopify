@@ -46,7 +46,9 @@ let settings = {
     shadowBlur: 5,         // w px
     shadowOffsetY: 2,       // w px
     // Nowa opcja
-    transparentBackground: false
+    transparentBackground: false,
+    // Szerokość paska
+    barWidth: 100  // szerokość paska w procentach (domyślnie 100%)
 };
 
 // --- AUTH ---
@@ -117,11 +119,27 @@ app.get('/free-shipping-bar.js', (req, res) => {
 
       // Funkcja tworząca lub aktualizująca pasek
       function createBar(text) {
+        // Utworzenie kontenera zewnętrznego, jeśli jeszcze nie istnieje
+        let outerContainer = document.getElementById('free-shipping-bar-container');
+        if (!outerContainer) {
+          outerContainer = document.createElement('div');
+          outerContainer.id = 'free-shipping-bar-container';
+          outerContainer.style.position = SETTINGS.barPosition;
+          outerContainer.style.top = SETTINGS.barTopOffset + 'px';
+          outerContainer.style.left = '0';
+          outerContainer.style.width = '100%';
+          outerContainer.style.display = 'flex';
+          outerContainer.style.justifyContent = 'center';
+          outerContainer.style.zIndex = '2';
+          document.body.appendChild(outerContainer);
+        }
+
+        // Utworzenie lub pobranie głównego paska
         let bar = document.getElementById('free-shipping-bar');
         let textElement = document.getElementById('free-shipping-bar-text');
         
         if (!bar) {
-          // Tworzymy główny kontener
+          // Tworzymy główny pasek
           bar = document.createElement('div');
           bar.id = 'free-shipping-bar';
           
@@ -129,14 +147,10 @@ app.get('/free-shipping-bar.js', (req, res) => {
           textElement = document.createElement('div');
           textElement.id = 'free-shipping-bar-text';
           
-          // Konfiguracja głównego kontenera
-          bar.style.position = SETTINGS.barPosition;
-          bar.style.top = SETTINGS.barTopOffset + 'px';
-          bar.style.left = '0';
-          bar.style.width = '100%';
+          // Konfiguracja głównego paska
+          bar.style.width = SETTINGS.barWidth + '%';
           bar.style.height = SETTINGS.barHeight + 'px';
           bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
-          bar.style.zIndex = '2';
           bar.style.boxSizing = 'border-box';
           
           // Dodanie stylów dla ramki
@@ -145,10 +159,6 @@ app.get('/free-shipping-bar.js', (req, res) => {
             bar.style.borderStyle = 'solid';
             bar.style.borderColor = SETTINGS.borderColor;
             bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-            // Usuń górną ramkę, jeśli pasek jest na górze strony
-            if (SETTINGS.barPosition === 'fixed' && SETTINGS.barTopOffset === 0) {
-              bar.style.borderTop = 'none';
-            }
           }
           
           // Dodanie stylów dla cienia
@@ -168,9 +178,9 @@ app.get('/free-shipping-bar.js', (req, res) => {
           textElement.style.textAlign = 'center';
           textElement.style.boxSizing = 'border-box';
           
-          // Dodajemy element tekstowy do kontenera
+          // Składamy strukturę
           bar.appendChild(textElement);
-          document.body.appendChild(bar);
+          outerContainer.appendChild(bar);
         } else {
           // Pobierz lub utwórz element tekstowy, jeśli nie istnieje
           if (!textElement) {
@@ -187,6 +197,7 @@ app.get('/free-shipping-bar.js', (req, res) => {
           }
           
           // Aktualizacja stylów istniejącego paska
+          bar.style.width = SETTINGS.barWidth + '%';
           bar.style.backgroundColor = SETTINGS.transparentBackground ? 'transparent' : SETTINGS.barColor;
           bar.style.height = SETTINGS.barHeight + 'px';
           bar.style.boxSizing = 'border-box';
@@ -197,9 +208,6 @@ app.get('/free-shipping-bar.js', (req, res) => {
             bar.style.borderStyle = 'solid';
             bar.style.borderColor = SETTINGS.borderColor;
             bar.style.borderRadius = SETTINGS.borderRadius + 'px';
-            if (SETTINGS.barPosition === 'fixed' && SETTINGS.barTopOffset === 0) {
-              bar.style.borderTop = 'none';
-            }
           } else {
             bar.style.border = 'none';
           }
@@ -219,16 +227,16 @@ app.get('/free-shipping-bar.js', (req, res) => {
         
         // Ustawiamy tekst
         textElement.textContent = text;
-        bar.style.display = 'block';
+        outerContainer.style.display = 'flex';
         
         return bar;
       }
 
       // Funkcja ukrywająca pasek
       function hideBar() {
-        const bar = document.getElementById('free-shipping-bar');
-        if (bar) {
-          bar.style.display = 'none';
+        const container = document.getElementById('free-shipping-bar-container');
+        if (container) {
+          container.style.display = 'none';
         }
       }
 
@@ -529,7 +537,8 @@ app.post('/settings', (req, res) => {
     shadowColor,
     shadowBlur,
     shadowOffsetY,
-    transparentBackground
+    transparentBackground,
+    barWidth
   } = req.body;
 
   // Walidacja wymaganych pól
@@ -566,7 +575,8 @@ app.post('/settings', (req, res) => {
     shadowColor: shadowColor || 'rgba(0, 0, 0, 0.3)',
     shadowBlur: Number(shadowBlur) || 5,
     shadowOffsetY: Number(shadowOffsetY) || 2,
-    transparentBackground: Boolean(transparentBackground)
+    transparentBackground: Boolean(transparentBackground),
+    barWidth: Number(barWidth) || 100
   };
 
   console.log('Zapisane ustawienia:', settings);

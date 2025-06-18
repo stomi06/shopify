@@ -354,10 +354,19 @@
               <label for="topOffset">Odległość od góry (px)</label>
               <input type="number" id="topOffset" name="topOffset" min="0" max="300" />
             </div>
+            
+            <div class="form-group">
+              <label for="barWidth">Szerokość paska (%)</label>
+              <input type="range" id="barWidth" name="barWidth" min="50" max="100" value="100" oninput="document.getElementById('barWidthValue').textContent = this.value + '%'">
+              <span id="barWidthValue">100%</span>
+            </div>
           </div>
 
-          <div class="bar-preview" id="barPreview">
-            <div class="preview-text" id="previewText">Twój komunikat o darmowej dostawie</div>
+          <!-- Aktualizuj strukturę podglądu paska -->
+          <div id="barPreviewContainer" style="width: 100%; display: flex; justify-content: center;">
+            <div class="bar-preview" id="barPreview">
+              <div class="preview-text" id="previewText">Twój komunikat o darmowej dostawie</div>
+            </div>
           </div>
         </div>
 
@@ -440,29 +449,50 @@
       boldText: false,
       barPosition: 'fixed',
       barTopOffset: 70,
-      // Domyślne wartości dla ramki
       showBorder: false,
       borderWidth: 1,
       borderColor: '#000000',
       borderRadius: 0,
-      // Domyślne wartości dla cienia
       showShadow: false,
       shadowColor: '#000000',
       shadowBlur: 5,
       shadowOffsetY: 2,
-      // Nowa opcja
-      transparentBackground: false
+      transparentBackground: false,
+      barWidth: 100  // Dodane nowe pole
     };
 
     // Funkcja aktualizująca podgląd paska
     function updateBarPreview() {
       const barPreview = document.getElementById('barPreview');
+      const previewContainer = document.getElementById('barPreviewContainer');
       const previewText = document.getElementById('previewText');
+      
+      // Jeśli kontener nie istnieje, tworzymy go
+      if (!previewContainer) {
+        const container = document.createElement('div');
+        container.id = 'barPreviewContainer';
+        container.style.width = '100%';
+        container.style.display = 'flex';
+        container.style.justifyContent = 'center';
+        container.style.alignItems = 'center';
+        
+        barPreview.parentNode.insertBefore(container, barPreview);
+        container.appendChild(barPreview);
+      }
+      
       const isTransparent = document.getElementById('transparentBackground').checked;
       const barColor = isTransparent ? 'transparent' : document.getElementById('barColor').value;
       const textColor = document.getElementById('textColor').value;
       const fontSize = document.getElementById('fontSize').value || '16';
       const boldText = document.getElementById('boldText').checked;
+      const barWidth = document.getElementById('barWidth').value || '100';
+      
+      // Aktualizuj kontener
+      previewContainer.style.display = 'flex';
+      previewContainer.style.justifyContent = 'center';
+      
+      // Ustaw szerokość paska
+      barPreview.style.width = barWidth + '%';
       
       // Ustaw box-sizing: border-box
       barPreview.style.boxSizing = 'border-box';
@@ -481,7 +511,6 @@
       previewText.style.color = textColor;
       previewText.style.fontSize = fontSize + 'px';
       previewText.style.fontWeight = boldText ? 'bold' : 'normal';
-      // Ustaw previewText na 100% wysokości i wyśrodkuj verticalnie
       previewText.style.height = '100%';
       previewText.style.display = 'flex';
       previewText.style.alignItems = 'center';
@@ -599,6 +628,10 @@
       // Resetuj nową opcję przezroczystego tła
       document.getElementById('transparentBackground').checked = DEFAULT_STYLES.transparentBackground;
 
+      // Resetuj szerokość paska
+      document.getElementById('barWidth').value = DEFAULT_STYLES.barWidth;
+      document.getElementById('barWidthValue').textContent = DEFAULT_STYLES.barWidth + '%';
+      
       // Aktualizuj podgląd paska
       updateBarPreview();
       
@@ -652,6 +685,10 @@
         
         // Dodaj obsługę nowej opcji
         document.getElementById('transparentBackground').checked = data.transparentBackground || false;
+        
+        // Dodaj obsługę nowego pola
+        document.getElementById('barWidth').value = data.barWidth || 100;
+        document.getElementById('barWidthValue').textContent = (data.barWidth || 100) + '%';
         
         // Aktualizuj widoczność pól zależnych
         updateBorderFields();
@@ -713,6 +750,8 @@
     document.getElementById('shadowColor').addEventListener('input', updateBarPreview);
     document.getElementById('shadowBlur').addEventListener('input', updateBarPreview);
     document.getElementById('shadowOffsetY').addEventListener('input', updateBarPreview);
+    // Dodaj listener na element suwaka szerokości
+    document.getElementById('barWidth').addEventListener('input', updateBarPreview);
 
     document.getElementById('settings-form').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -733,7 +772,7 @@
         calculateDifference: document.getElementById('calculateDifference').checked,
         boldText: document.getElementById('boldText').checked,
         showSuccessMessage: document.getElementById('showSuccessMessage').checked,
-        // Nowe pola
+        // Istniejące nowe pola
         showBorder: document.getElementById('showBorder').checked,
         borderWidth: parseInt(document.getElementById('borderWidth').value, 10),
         borderColor: document.getElementById('borderColor').value,
@@ -742,7 +781,9 @@
         shadowColor: document.getElementById('shadowColor').value,
         shadowBlur: parseInt(document.getElementById('shadowBlur').value, 10),
         shadowOffsetY: parseInt(document.getElementById('shadowOffsetY').value, 10),
-        transparentBackground: document.getElementById('transparentBackground').checked
+        transparentBackground: document.getElementById('transparentBackground').checked,
+        // Nowe pole szerokości
+        barWidth: parseInt(document.getElementById('barWidth').value, 10)
       };
 
       // Konwersja koloru HEX dla cienia na rgba
