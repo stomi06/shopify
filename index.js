@@ -1,13 +1,22 @@
+require('dotenv').config();
+const { 
+  getSettings,
+  saveSettings, 
+  hasActiveSubscription
+} = require('./db');
+
 const path = require('path');
 const express = require('express');
 const axios = require('axios');
 const cookieParser = require('cookie-parser');
 const crypto = require('crypto');
+const fs = require('fs');
+const { shopifyApi, LATEST_API_VERSION } = require('@shopify/shopify-api');
 
 const app = express();
 app.use(cookieParser());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET;
@@ -583,8 +592,360 @@ app.post('/settings', (req, res) => {
   res.json({ message: 'Ustawienia zapisane pomyślnie', settings });
 });
 
+// Nowy endpoint do synchronizacji ustawień z Theme Extension
+app.get('/api/theme-settings/:shop', (req, res) => {
+  const shop = req.params.shop;
+  
+  // Konwertuj obecne ustawienia na format Theme Extension
+  const themeSettings = {
+    enabled: settings.enabled,
+    threshold: settings.freeShippingThreshold,
+    calculate_difference: settings.calculateDifference,
+    show_success_message: settings.showSuccessMessage,
+    message_template: settings.messageTemplate,
+    loading_message: settings.loadingMessage,
+    success_message: settings.successMessage,
+    bar_color: settings.barColor,
+    text_color: settings.textColor,
+    font_size: settings.fontSize,
+    bold_text: settings.boldText,
+    bar_position: settings.barPosition,
+    bar_top_offset: settings.barTopOffset,
+    bar_height: settings.barHeight,
+    bar_width: settings.barWidth,
+    transparent_background: settings.transparentBackground,
+    show_border: settings.showBorder,
+    border_width: settings.borderWidth,
+    border_color: settings.borderColor,
+    border_radius: settings.borderRadius,
+    show_shadow: settings.showShadow,
+    shadow_color: settings.shadowColor,
+    shadow_blur: settings.shadowBlur,
+    shadow_offset_y: settings.shadowOffsetY
+  };
+  
+  res.json(themeSettings);
+});
+
+// Endpoint do aktualizacji ustawień z Theme Extension
+app.post('/api/theme-settings/:shop', (req, res) => {
+  const shop = req.params.shop;
+  const newSettings = req.body;
+  
+  // Aktualizuj globalne ustawienia na podstawie Theme Extension
+  Object.assign(settings, {
+    enabled: newSettings.enabled,
+    freeShippingThreshold: newSettings.threshold,
+    calculateDifference: newSettings.calculate_difference,
+    showSuccessMessage: newSettings.show_success_message,
+    messageTemplate: newSettings.message_template,
+    loadingMessage: newSettings.loading_message,
+    successMessage: newSettings.success_message,
+    barColor: newSettings.bar_color,
+    textColor: newSettings.text_color,
+    fontSize: newSettings.font_size,
+    boldText: newSettings.bold_text,
+    barPosition: newSettings.bar_position,
+    barTopOffset: newSettings.bar_top_offset,
+    barHeight: newSettings.bar_height,
+    barWidth: newSettings.bar_width,
+    transparentBackground: newSettings.transparent_background,
+    showBorder: newSettings.show_border,
+    borderWidth: newSettings.border_width,
+    borderColor: newSettings.border_color,
+    borderRadius: newSettings.border_radius,
+    showShadow: newSettings.show_shadow,
+    shadowColor: newSettings.shadow_color,
+    shadowBlur: newSettings.shadow_blur,
+    shadowOffsetY: newSettings.shadow_offset_y
+  });
+  
+  console.log('Settings updated from Theme Extension:', settings);
+  res.json({ success: true });
+});
+
+// Stałe dla planów subskrypcji
+const SUBSCRIPTION_PLAN_BASIC = 'BASIC_PLAN';
+const SUBSCRIPTION_PRICE_BASIC = 4.99;
+
+// Funkcja sprawdzająca subskrypcję
+async function checkSubscription(shop) {
+  // Podczas testów zawsze zwracaj true
+  if (process.env.NODE_ENV !== 'production' || true) { // Dodaj "|| true" dla testów
+    return true;
+  }
+  
+  try {
+    // Tu normalnie sprawdzałbyś rzeczywistą subskrypcję
+    return false;
+  } catch (error) {
+    console.error('Błąd sprawdzania subskrypcji:', error);
+    return false;
+  }
+}
+
+const sessionStore = {};
+
+// Funkcja pobierająca sesję dla sklepu
+const getSessionFromStorage = async (shop) => {
+  if (!shop) return null;
+  
+  // W fazie rozwojowej, zawsze zwracaj testową sesję
+  if (process.env.NODE_ENV !== 'production') {
+    return {
+      shop: shop,
+      accessToken: 'test_token',
+      isActive: () => true,
+      isOnline: true
+    };
+  }
+  
+  // W rzeczywistej aplikacji, pobierz sesję z SessionStorage
+  return sessionStore[shop] || null;
+};
+
+// Endpoint do sprawdzania subskrypcji
+app.get('/api/subscription/check', async (req, res) => {
+  const session = await getSessionFromStorage(req.query.shop);
+  if (!session) {
+    return res.status(401).json({ active: false, message: 'Brak sesji' });
+  }
+  
+  const isActive = await hasActiveSubscription(session);
+  res.json({ active: isActive });
+});
+
+// Tworzenie nowej subskrypcji
+app.post('/api/subscription/create', async (req, res) => {
+  const session = await getSessionFromStorage(req.body.shop);
+  if (!session) {
+    return res.status(401).json({ error: 'Brak sesji' });
+  }
+  
+  try {
+    const client = new shopifyApi.clients.Rest({session});
+    const response = await client.post({
+      path: 'recurring_application_charges',
+      data: {
+        recurring_application_charge: {
+          name: "Free Delivery Bar",
+          price: SUBSCRIPTION_PRICE_BASIC,
+          return_url: `https://${req.body.shop}/admin/apps/free-delivery-app`,
+          test: process.env.NODE_ENV !== 'production',
+          trial_days: 7
+        }
+      }
+    });
+    
+    const charge = response.body.recurring_application_charge;
+    res.json({ success: true, confirmationUrl: charge.confirmation_url });
+  } catch (error) {
+    console.error('Błąd tworzenia subskrypcji:', error);
+    res.status(500).json({ error: "Błąd tworzenia subskrypcji" });
+  }
+});
+
+// Middleware do sprawdzania subskrypcji
+const requireSubscription = async (req, res, next) => {
+  const shop = req.query.shop || req.body.shop;
+  if (!shop) {
+    return res.status(400).json({ error: 'Brak parametru shop' });
+  }
+  
+  const session = await getSessionFromStorage(shop);
+  if (!session) {
+    return res.status(401).json({ error: 'Brak autoryzacji' });
+  }
+  
+  const isActive = await hasActiveSubscription(session);
+  
+  if (!isActive) {
+    return res.status(403).json({ 
+      error: 'Brak aktywnej subskrypcji',
+      subscriptionRequired: true
+    });
+  }
+  
+  next();
+};
+/*
+// Zabezpiecz endpointy, które wymagają subskrypcji
+app.get('/api/settings', requireSubscription, (req, res) => {
+  // Istniejący kod obsługi ustawień
+});
+
+app.post('/api/settings/update', requireSubscription, (req, res) => {
+  // Istniejący kod aktualizacji ustawień
+});
+*/
+// Przechowywanie ustawień (w rzeczywistości użyłbyś bazy danych)
+const settingsStore = {};
+
+// Endpoint do pobierania ustawień przez sklep
+app.get('/apps/free-delivery/settings', async (req, res) => {
+  const shop = req.query.shop;
+  
+  if (!shop) {
+    return res.status(400).json({ error: 'Brak parametru shop' });
+  }
+  
+  try {
+    // Pobierz ustawienia z bazy danych
+    let settings = await getSettings(shop);
+    
+    // Sprawdź czy sklep ma aktywną subskrypcję
+    const hasSubscription = await hasActiveSubscription(shop);
+    
+    if (!hasSubscription && process.env.NODE_ENV === 'production') {
+      // Jeśli nie ma subskrypcji (w produkcji), zwróć tylko podstawowe ustawienia
+      return res.json({
+        active: false,
+        message: "Aktywuj subskrypcję aby włączyć pasek darmowej dostawy"
+      });
+    }
+    
+    // Jeśli nie ma ustawień, zwróć domyślne
+    if (!settings) {
+      settings = getDefaultSettings();
+    }
+    
+    return res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings for shop:', shop, error);
+    return res.status(500).json({ 
+      error: 'Server error',
+      message: 'Problem z pobieraniem ustawień'
+    });
+  }
+});
+
+// Dodaj przed app.post('/api/settings/update', requireSession, async (req, res) => { ... })
+
+// Middleware do sprawdzania sesji Shopify
+const requireSession = (req, res, next) => {
+  try {
+    // W trybie testowym zawsze pozwalaj na dostęp
+    if (!res.locals) res.locals = {};
+    if (!res.locals.shopify) res.locals.shopify = {};
+    
+    // Ustaw testową sesję
+    res.locals.shopify.session = {
+      shop: req.query.shop || req.body.shop || 'test-shop.myshopify.com',
+      accessToken: 'test_token',
+      isActive: () => true
+    };
+    
+    // Kontynuuj
+    next();
+  } catch (error) {
+    console.error('Session error:', error);
+    res.status(401).json({ 
+      error: 'Authentication error',
+      message: error.message 
+    });
+  }
+};
+
+// API do aktualizacji ustawień przez panel administracyjny
+app.post('/api/settings/update', requireSession, async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const shop = session.shop;
+    const settings = req.body;
+    
+    // Sprawdź subskrypcję (możesz wykomentować na czas testów)
+    // const isSubscriptionActive = await hasActiveSubscription(shop);
+    // if (!isSubscriptionActive) {
+    //   return res.status(403).json({ 
+    //     error: 'Brak aktywnej subskrypcji',
+    //     subscriptionRequired: true
+    //   });
+    // }
+    
+    // Zapisz ustawienia do bazy danych
+    await saveSettings(shop, settings);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ error: 'Failed to update settings' });
+  }
+});
+
+// Znajdź i zamień endpoint API settings - około linia 686
+app.get('/api/settings', requireSession, async (req, res) => {
+  try {
+    const session = res.locals.shopify.session;
+    const shop = session.shop;
+    
+    // Sprawdź subskrypcję
+    const isSubscriptionActive = await hasActiveSubscription(shop);
+    if (!isSubscriptionActive) {
+      return res.status(403).json({ 
+        error: 'Brak aktywnej subskrypcji',
+        subscriptionRequired: true
+      });
+    }
+    
+    // Pobierz ustawienia z bazy danych
+    let settings = await getSettings(shop);
+    
+    // Jeśli nie ma ustawień, zwróć domyślne
+    if (!settings) {
+      settings = getDefaultSettings();
+      await saveSettings(shop, settings);
+    }
+    
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ error: 'Failed to fetch settings' });
+  }
+});
+
+// Funkcja zwracająca domyślne ustawienia
+function getDefaultSettings() {
+  return {
+    active: true,
+    threshold: 200,
+    calculate_difference: false,
+    show_success_message: true,
+    message_template: "Darmowa dostawa od {threshold} zł",
+    loading_message: "Sprawdzam koszyk...",
+    success_message: "Gratulacje! Masz darmową dostawę :)",
+    bar_color: "#4CAF50",
+    text_color: "#FFFFFF",
+    font_size: 16,
+    bar_position: "top",
+    bar_height: 50
+    // inne ustawienia...
+  };
+}
+
 // --- SERWER ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log('App listening on port ' + PORT);
+});
+
+// Dodaj webhook dla app/uninstalled
+
+app.post('/webhooks/app-uninstalled', express.raw({ type: 'application/json' }), async (req, res) => {
+  try {
+    const { uninstallShop } = require('./db');
+    // Weryfikacja Shopify HMAC (w prawdziwej implementacji)
+    
+    const shop = req.get('x-shopify-shop-domain');
+    console.log(`App uninstall webhook received for shop: ${shop}`);
+    
+    if (shop) {
+      await uninstallShop(shop);
+      console.log(`Shop ${shop} marked as uninstalled`);
+    }
+    
+    res.status(200).send();
+  } catch (error) {
+    console.error('Error processing app uninstall webhook:', error);
+    res.status(500).send();
+  }
 });

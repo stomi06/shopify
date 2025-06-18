@@ -1,13 +1,19 @@
 {
-  "name": "shopify-app-simple",
+  "name": "free-delivery-app",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "shopify app dev",
+    "deploy": "shopify app deploy",
+    "build": "shopify app build"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "axios": "^1.4.0",
-    "cookie-parser": "^1.4.6"
+    "@shopify/shopify-api": "^7.0.0",
+    "axios": "^1.6.0",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.0",
+    "pg": "^8.11.1"
   }
 }

@@ -1,0 +1,103 @@
+<!-- filepath: c:\Users\Michał\Desktop\freedelivery\extensions\free-shipping-bar\blocks\shipping-bar.liquid -->
+{%- if block.settings.enabled -%}
+  <div id="free-shipping-bar-container" data-shop="{{ shop.permanent_domain }}"></div>
+  
+  <script>
+    // Skrypt pobierający ustawienia z API aplikacji i renderujący pasek
+    document.addEventListener('DOMContentLoaded', function() {
+      fetch('/apps/free-delivery/settings?shop={{ shop.permanent_domain }}')
+        .then(response => response.json())
+        .then(settings => {
+          if (settings && settings.active) {
+            renderShippingBar(settings);
+          }
+        })
+        .catch(error => console.error('Error loading free shipping bar settings:', error));
+    });
+    
+    function renderShippingBar(settings) {
+      const container = document.getElementById('free-shipping-bar-container');
+      
+      // Tworzenie elementów paska
+      const barElement = document.createElement('div');
+      barElement.id = 'free-shipping-bar';
+      barElement.style.backgroundColor = settings.transparentBackground ? 'transparent' : settings.bar_color;
+      barElement.style.color = settings.text_color;
+      barElement.style.padding = '10px';
+      barElement.style.textAlign = 'center';
+      barElement.style.position = settings.bar_position === 'top' ? 'fixed' : 'relative';
+      barElement.style.top = settings.bar_position === 'top' ? '0' : 'auto';
+      barElement.style.width = '100%';
+      barElement.style.zIndex = '9999';
+      
+      // Pobierz aktualny stan koszyka
+      fetch('/cart.js')
+        .then(res => res.json())
+        .then(cart => {
+          const cartTotal = cart.total_price / 100;
+          const threshold = settings.threshold;
+          let message;
+          
+          if (settings.calculate_difference && cartTotal < threshold) {
+            const remaining = (threshold - cartTotal).toFixed(2);
+            message = settings.message_template.replace('{threshold}', threshold).replace('{remaining}', remaining);
+            barElement.style.backgroundColor = settings.bar_color;
+          } else if (cartTotal >= threshold) {
+            message = settings.success_message;
+            barElement.style.backgroundColor = settings.show_success_message ? settings.success_color : 'transparent';
+          } else {
+            message = settings.message_template.replace('{threshold}', threshold);
+          }
+          
+          barElement.textContent = message;
+          container.innerHTML = '';
+          container.appendChild(barElement);
+        })
+        .catch(error => {
+          console.error('Error fetching cart:', error);
+          barElement.textContent = settings.message_template.replace('{threshold}', settings.threshold);
+          container.innerHTML = '';
+          container.appendChild(barElement);
+        });
+    }
+  </script>
+  
+  <style>
+    /* Podstawowe style */
+    #free-shipping-bar-container {
+      width: 100%;
+      z-index: 999;
+    }
+  </style>
+{%- endif -%}
+
+{% schema %}
+{
+  "name": "Free Shipping Bar",
+  "target": "body",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Włączanie paska darmowej dostawy"
+    },
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Włącz pasek",
+      "default": true,
+      "info": "Wszystkie szczegółowe ustawienia dostosuj w panelu aplikacji"
+    },
+    {
+      "type": "select",
+      "id": "position",
+      "label": "Pozycja paska",
+      "options": [
+        {"value": "top", "label": "Góra strony"},
+        {"value": "under_header", "label": "Pod nagłówkiem"},
+        {"value": "bottom", "label": "Dół strony"}
+      ],
+      "default": "top"
+    }
+  ]
+}
+{% endschema %}

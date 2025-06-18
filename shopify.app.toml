@@ -1,0 +1,31 @@
+# This file stores configurations for your Shopify app.
+
+name = "Free Delivery Bar"
+client_id = "af5fdc6ed476b155ac76757a55b89c2a"
+application_url = "https://shopify-ige3.onrender.com"
+embedded = true
+
+[access_scopes]
+# Dodaj uprawnienia do obsługi płatności
+scopes = "write_script_tags,read_script_tags,write_themes,read_themes,write_products,read_products,write_orders,read_orders"
+
+[auth]
+redirect_urls = [
+  "https://shopify-ige3.onrender.com/auth/callback"
+]
+
+[webhooks]
+api_version = "2023-10"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "freedelivery-test.myshopify.com"
+include_config_on_deploy = true
+
+[app_proxy]
+url = "https://shopify-ige3.onrender.com/app-proxy"
+subpath = "free-delivery"
+prefix = "apps"
