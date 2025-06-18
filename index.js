@@ -34,7 +34,17 @@ let settings = {
     fontSize: 16,          // w px
     calculateDifference: false,  // domyślnie odznaczone
     boldText: false,       // domyślnie bez pogrubienia
-    showSuccessMessage: true     // domyślnie pokazuj komunikat po osiągnięciu progu
+    showSuccessMessage: true,    // domyślnie pokazuj komunikat po osiągnięciu progu
+    // Nowe ustawienia dla ramki
+    showBorder: false,     // domyślnie bez ramki
+    borderWidth: 1,        // w px
+    borderColor: '#000000',
+    borderRadius: 0,       // w px
+    // Nowe ustawienia dla cienia
+    showShadow: false,     // domyślnie bez cienia
+    shadowColor: 'rgba(0, 0, 0, 0.3)',
+    shadowBlur: 5,         // w px
+    shadowOffsetY: 2       // w px
 };
 
 // --- AUTH ---
@@ -120,6 +130,22 @@ app.get('/free-shipping-bar.js', (req, res) => {
           bar.style.lineHeight = SETTINGS.barHeight + 'px';
           bar.style.fontWeight = SETTINGS.boldText ? 'bold' : 'normal';
           bar.style.zIndex = '50';
+          
+          // Dodanie stylów dla ramki
+          if (SETTINGS.showBorder) {
+            bar.style.border = \`\${SETTINGS.borderWidth}px solid \${SETTINGS.borderColor}\`;
+            bar.style.borderRadius = SETTINGS.borderRadius + 'px';
+            // Usuń dolną ramkę, jeśli pasek jest na górze
+            if (SETTINGS.barPosition === 'fixed' && SETTINGS.barTopOffset === 0) {
+              bar.style.borderTop = 'none';
+            }
+          }
+          
+          // Dodanie stylów dla cienia
+          if (SETTINGS.showShadow) {
+            bar.style.boxShadow = \`0 \${SETTINGS.shadowOffsetY}px \${SETTINGS.shadowBlur}px \${SETTINGS.shadowColor}\`;
+          }
+          
           document.body.appendChild(bar);
         }
         bar.textContent = text;
@@ -422,7 +448,16 @@ app.post('/settings', (req, res) => {
     fontSize,
     calculateDifference,
     boldText,
-    showSuccessMessage
+    showSuccessMessage,
+    // Nowe parametry
+    showBorder,
+    borderWidth,
+    borderColor,
+    borderRadius,
+    showShadow,
+    shadowColor,
+    shadowBlur,
+    shadowOffsetY
   } = req.body;
 
   if (
@@ -440,7 +475,16 @@ app.post('/settings', (req, res) => {
     typeof fontSize !== 'number' ||
     typeof calculateDifference !== 'boolean' ||
     typeof boldText !== 'boolean' ||
-    typeof showSuccessMessage !== 'boolean'
+    typeof showSuccessMessage !== 'boolean' ||
+    // Walidacja nowych parametrów
+    typeof showBorder !== 'boolean' ||
+    typeof borderWidth !== 'number' ||
+    typeof borderColor !== 'string' ||
+    typeof borderRadius !== 'number' ||
+    typeof showShadow !== 'boolean' ||
+    typeof shadowColor !== 'string' ||
+    typeof shadowBlur !== 'number' ||
+    typeof shadowOffsetY !== 'number'
   ) {
     return res.status(400).json({ error: 'Nieprawidłowe dane' });
   }
@@ -460,7 +504,16 @@ app.post('/settings', (req, res) => {
     fontSize,
     calculateDifference,
     boldText,
-    showSuccessMessage
+    showSuccessMessage,
+    // Nowe parametry
+    showBorder,
+    borderWidth,
+    borderColor,
+    borderRadius,
+    showShadow,
+    shadowColor,
+    shadowBlur,
+    shadowOffsetY
   };
 
   res.json({ message: 'Ustawienia zapisane', settings });
