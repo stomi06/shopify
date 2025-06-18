@@ -31,16 +31,11 @@
 </div>
 
 <script>
-  // DEBUGGING - tymczasowy alert
-  alert('🔧 Theme Extension Script Started!');
-  
   document.addEventListener('DOMContentLoaded', function() {
-    alert('🔧 DOM Content Loaded!');
-    
     const container = document.getElementById('free-shipping-bar-container');
     const shop = container.getAttribute('data-shop');
-    
-    console.log('🚀 Loading Free Shipping Bar for shop:', shop);
+      console.log('🚀 Loading Free Shipping Bar for shop:', shop);
+    console.log('🔧 NEW VERSION 2.0 - BYPASS APP-PROXY');
     
     // Bezpośrednie żądanie do serwera (bypass app-proxy)
     fetch(`https://shopify-ige3.onrender.com/free-delivery/settings?shop=${shop}`, {
