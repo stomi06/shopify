@@ -336,48 +336,100 @@ app.get("/", (req, res) => {
   res.sendFile(path.resolve("views/admin.html"));
 });
 
-// API endpoint do zapisywania ustawień
+// API endpoint do zapisywania ustawień do Metafields
 app.post('/api/settings', async (req, res) => {
-  const client = await pool.connect();
   try {
     const { shop, settings } = req.body;
-    console.log('Zapisuję ustawienia dla sklepu:', shop);
+    console.log('Zapisuję ustawienia do metafields dla sklepu:', shop);
     console.log('Ustawienia:', settings);
     
-    const query = `
-      INSERT INTO app_settings (shop, settings) 
-      VALUES ($1, $2)
-      ON CONFLICT (shop) DO UPDATE SET 
-        settings = EXCLUDED.settings,
-        updated_at = NOW()
-    `;
+    // Pobierz access token dla tego sklepu
+    const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
     
-    await client.query(query, [shop, JSON.stringify(settings)]);
-    console.log('✅ Ustawienia zapisane pomyślnie');
-    res.json({ success: true });
+    if (sessionResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Brak autoryzacji dla tego sklepu' });
+    }
+    
+    const accessToken = sessionResult.rows[0].access_token;
+    
+    // Zapisz ustawienia do Shop Metafields
+    const metafieldData = {
+      metafield: {
+        namespace: "free_delivery_app",
+        key: "settings",
+        value: JSON.stringify(settings),
+        type: "json"
+      }
+    };
+    
+    const response = await fetch(`https://${shop}/admin/api/2023-10/metafields.json`, {
+      method: 'POST',
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(metafieldData)
+    });
+    
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Błąd Shopify API:', error);
+      return res.status(500).json({ error: 'Błąd zapisywania do Shopify' });
+    }
+    
+    const result = await response.json();
+    console.log('✅ Ustawienia zapisane do metafields:', result);
+    
+    res.json({ success: true, metafield: result });
   } catch (err) {
     console.error('❌ Błąd zapisywania ustawień:', err.message);
     res.status(500).json({ error: 'Błąd serwera: ' + err.message });
-  } finally {
-    client.release();
   }
 });
 
-// API endpoint do pobierania ustawień
+// API endpoint do pobierania ustawień z Metafields
 app.get('/api/settings/:shop', async (req, res) => {
-  const client = await pool.connect();
   try {
     const { shop } = req.params;
-    console.log('Pobieram ustawienia dla sklepu:', shop);
+    console.log('Pobieram ustawienia z metafields dla sklepu:', shop);
     
-    const result = await client.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    // Pobierz access token dla tego sklepu
+    const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
     
-    if (result.rows.length > 0) {
-      console.log('✅ Znaleziono ustawienia');
-      res.json(result.rows[0].settings);
+    if (sessionResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Brak autoryzacji dla tego sklepu' });
+    }
+    
+    const accessToken = sessionResult.rows[0].access_token;
+    
+    // Pobierz metafields z Shopify
+    const response = await fetch(`https://${shop}/admin/api/2023-10/metafields.json?namespace=free_delivery_app&key=settings`, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      console.log('⚠️ Brak metafields, zwracam domyślne ustawienia');
+      return res.json({
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
+        min_amount: 199,
+        background_color: "#4CAF50",
+        text_color: "#FFFFFF",
+        position: "top",
+        closeable: true
+      });
+    }
+    
+    const metafields = await response.json();
+    
+    if (metafields.metafields && metafields.metafields.length > 0) {
+      const settings = JSON.parse(metafields.metafields[0].value);
+      console.log('✅ Znaleziono ustawienia w metafields:', settings);
+      res.json(settings);
     } else {
-      console.log('⚠️ Brak ustawień, zwracam domyślne');
-      // Domyślne ustawienia
+      console.log('⚠️ Pusty metafield, zwracam domyślne');
       res.json({
         message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
         min_amount: 199,
@@ -390,49 +442,6 @@ app.get('/api/settings/:shop', async (req, res) => {
   } catch (err) {
     console.error('❌ Błąd pobierania ustawień:', err.message);
     res.status(500).json({ error: 'Błąd serwera: ' + err.message });
-  } finally {
-    client.release();
-  }
-});
-
-// Endpoint dla rozszerzenia do pobierania ustawień
-app.get('/api/delivery-bar/:shop', async (req, res) => {
-  const client = await pool.connect();
-  try {
-    const { shop } = req.params;
-    console.log(`Pobieranie ustawień dla sklepu: ${shop}`);
-    
-    const result = await client.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
-    
-    if (result.rows.length > 0) {
-      const settings = result.rows[0].settings;
-      console.log(`✅ Znalezione ustawienia:`, settings);
-      res.json(settings);
-    } else {
-      const defaultSettings = {
-        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount}!",
-        min_amount: 199,
-        background_color: "#4CAF50",
-        text_color: "#FFFFFF",
-        position: "top",
-        closeable: true
-      };
-      console.log(`⚠️ Brak ustawień, zwracam domyślne`);
-      res.json(defaultSettings);
-    }
-  } catch (err) {
-    console.error('❌ Błąd pobierania ustawień dla rozszerzenia:', err.message);
-    res.status(500).json({ 
-      error: 'Błąd serwera',
-      message: "🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!",
-      min_amount: 199,
-      background_color: "#4CAF50", 
-      text_color: "#FFFFFF",
-      position: "top",
-      closeable: true
-    });
-  } finally {
-    client.release();
   }
 });
 
