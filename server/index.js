@@ -1,15 +1,24 @@
 import '@shopify/shopify-api/adapters/node';
-import { MemorySessionStorage } from "@shopify/shopify-api";
+import { shopifyApi, LATEST_API_VERSION, PostgreSQLSessionStorage } from "@shopify/shopify-api";
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-import { shopifyApi, LATEST_API_VERSION } from "@shopify/shopify-api";
 import bodyParser from "body-parser";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Konfiguracja PostgreSQLSessionStorage z parametrami
+const sessionStorage = new PostgreSQLSessionStorage({
+  host: process.env.DB_HOST,       // Adres hosta bazy danych
+  port: process.env.DB_PORT,       // Port bazy danych
+  database: process.env.DB_NAME,   // Nazwa bazy danych
+  user: process.env.DB_USER,       // Użytkownik bazy danych
+  password: process.env.DB_PASS,   // Hasło użytkownika
+});
+
+// Konfiguracja Shopify API
 const shopify = shopifyApi({
   apiKey: process.env.SHOPIFY_API_KEY,
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
@@ -17,7 +26,7 @@ const shopify = shopifyApi({
   hostName: process.env.HOST.replace(/^https?:\/\//, ""),
   isEmbeddedApp: true,
   apiVersion: LATEST_API_VERSION,
-  sessionStorage: new MemorySessionStorage(),
+  sessionStorage, // Użycie PostgreSQLSessionStorage
 });
 
 app.use(bodyParser.urlencoded({ extended: true }));
