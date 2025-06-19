@@ -83,13 +83,27 @@ const shopify = shopifyApi({
 });
 
 app.use(cookieParser());
+
+app.use((req, res, next) => {
+  res.cookie("shopifyOAuth", "value", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", // Ustaw na true w środowisku produkcyjnym
+    sameSite: "none", // Wymagane dla Shopify
+  });
+  next();
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
 app.get("/auth", async (req, res) => {
+  console.log("Cookies before redirect:", req.cookies);
+
   const shop = req.query.shop;
-  if (!shop) return res.status(400).send("Brakuje parametru shop");
+  if (!shop) {
+    return res.status(400).send("Missing shop parameter");
+  }
 
   const redirectUrl = await shopify.auth.begin({
     shop,
@@ -99,33 +113,23 @@ app.get("/auth", async (req, res) => {
     rawResponse: res,
   });
 
+  console.log("Redirecting to:", redirectUrl);
   return res.redirect(redirectUrl);
 });
 
 app.get("/auth/callback", async (req, res) => {
+  console.log("Callback query params:", req.query);
+
   try {
     const session = await shopify.auth.callback({
-        rawRequest: req,
-        rawResponse: res,
-        query: req.query,
+      rawRequest: req,
+      rawResponse: res,
     });
 
-    // Dodaj ScriptTag (linkujący do Twojego paska)
-    const client = new shopify.clients.Rest({ session });
-    await client.post({
-      path: "script_tags",
-      data: {
-        script_tag: {
-          event: "onload",
-          src: `${process.env.HOST}/bar.js`,
-        },
-      },
-      type: "application/json",
-    });
-
+    console.log("Session created:", session);
     res.redirect(`/admin?shop=${session.shop}`);
   } catch (err) {
-    console.error(err);
+    console.error("Błąd autoryzacji:", err);
     res.status(500).send("Błąd autoryzacji");
   }
 });
