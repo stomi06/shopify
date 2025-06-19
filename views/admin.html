@@ -284,6 +284,22 @@
       color: #742a2a;
     }
 
+    input[type="checkbox"] {
+      width: auto;
+      margin-right: 8px;
+      transform: scale(1.2);
+    }
+
+    .form-group label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .form-group label input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
     @media (max-width: 1200px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -345,8 +361,17 @@
           </div>
 
           <div class="form-group">
-            <label for="opacity">Przezroczystość tła: <span class="range-value" id="opacityValue">100%</span></label>
+            <label>
+              <input type="checkbox" id="transparentBg" style="margin-right: 8px;">
+              Przezroczyste tło (tylko tekst widoczny)
+            </label>
+            <div class="help-text">Gdy włączone, tło paska będzie całkowicie przezroczyste</div>
+          </div>
+
+          <div class="form-group">
+            <label for="opacity">Przezroczystość paska: <span class="range-value" id="opacityValue">100%</span></label>
             <input type="range" id="opacity" min="0" max="100" value="100" step="5" />
+            <div class="help-text">Kontroluje przezroczystość całego paska (tekst + tło)</div>
           </div>
         </div>
 
@@ -504,7 +529,9 @@
       const minAmount = document.getElementById('minAmount').value || 199;
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
+      const transparentBg = document.getElementById('transparentBg').checked; // 👈 DODANE
       const opacity = document.getElementById('opacity').value / 100;
+      const width = document.getElementById('width').value;
       const fontSize = document.getElementById('fontSize').value;
       const fontWeight = document.getElementById('fontWeight').value;
       const borderWidth = document.getElementById('borderWidth').value;
@@ -514,7 +541,6 @@
       const shadowOpacity = document.getElementById('shadowOpacity').value / 100;
       const shadowBlur = document.getElementById('shadowBlur').value;
       const shadowDistance = document.getElementById('shadowDistance').value;
-      const width = document.getElementById('width').value;
       
       // Konwertuj hex na rgba dla przezroczystości
       function hexToRgba(hex, alpha) {
@@ -529,14 +555,20 @@
       previewMessage.textContent = finalMessage;
       
       // Zastosuj style
-      previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
+      if (transparentBg) {
+        previewBar.style.backgroundColor = 'transparent'; // 👈 DODANE
+      } else {
+        previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
+      }
+      
       previewBar.style.color = textColor;
       previewBar.style.fontSize = fontSize + 'px';
       previewBar.style.fontWeight = fontWeight;
+      previewBar.style.width = width + '%';
+      previewBar.style.maxWidth = '400px';
       previewBar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
       previewBar.style.borderRadius = borderRadius + 'px';
-      previewBar.style.width = width + '%'; // 👈 DODANE
-      previewBar.style.maxWidth = '400px'; // 👈 DODANE (zmniejszone dla podglądu)
+      previewBar.style.opacity = opacity; // 👈 Przezroczystość całego paska
       
       // Cień
       if (shadowBlur > 0 || shadowDistance > 0) {
@@ -566,8 +598,9 @@
         min_amount: parseInt(document.getElementById('minAmount').value),
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
+        transparent_bg: document.getElementById('transparentBg').checked, // 👈 DODANE
         position: document.getElementById('position').value,
-        width: parseInt(document.getElementById('width').value), // 👈 DODANE
+        width: parseInt(document.getElementById('width').value),
         opacity: parseInt(document.getElementById('opacity').value),
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
@@ -581,6 +614,9 @@
         closeable: true
       };
 
+      console.log('Zapisuję szerokość:', settings.width);
+      console.log('Przezroczyste tło:', settings.transparent_bg); // 👈 DODANE
+      
       try {
         const shop = getShopFromUrl();
         const response = await fetch('/api/settings', {
@@ -629,6 +665,7 @@
         document.getElementById('minAmount').value = settings.min_amount || 199;
         document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
         document.getElementById('textColor').value = settings.text_color || "#FFFFFF";
+        document.getElementById('transparentBg').checked = settings.transparent_bg || false; // 👈 DODANE
         document.getElementById('position').value = settings.position || "fixed";
         
         // Załaduj nowe ustawienia z domyślnymi wartościami
@@ -667,6 +704,7 @@
         document.getElementById('minAmount').value = 199;
         document.getElementById('backgroundColor').value = "#4CAF50";
         document.getElementById('textColor').value = "#FFFFFF";
+        document.getElementById('transparentBg').checked = false; // 👈 DODANE
         document.getElementById('position').value = "fixed";
         document.getElementById('opacity').value = 100;
         document.getElementById('fontSize').value = 14;
@@ -698,6 +736,9 @@
       loadSettings();
       updatePreview();
     });
+
+    // Dodaj nasłuchiwacz dla checkbox'a:
+    document.getElementById('transparentBg').addEventListener('change', updatePreview);
   </script>
 </body>
 </html>

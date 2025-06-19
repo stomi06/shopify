@@ -13,14 +13,20 @@
     z-index: 3;
     transition: all 0.3s ease;
     
-    /* Podstawowe style z ustawień */
-    background-color: {{ settings.background_color | default: '#4CAF50' }};
+    /* TŁO - przezroczyste lub kolorowe */
+    {% if settings.transparent_bg == true %}
+      background-color: transparent;
+    {% else %}
+      background-color: {{ settings.background_color | default: '#4CAF50' }};
+    {% endif %}
+    
+    /* Pozostałe style */
     color: {{ settings.text_color | default: '#ffffff' }};
     font-size: {{ settings.font_size | default: 14 }}px;
     font-weight: {{ settings.font_weight | default: 600 }};
     border-radius: {{ settings.border_radius | default: 6 }}px;
     
-    /* Przezroczystość */
+    /* Przezroczystość całego paska */
     {% assign opacity = settings.opacity | default: 100 | divided_by: 100.0 %}
     opacity: {{ opacity }};
     
@@ -41,8 +47,13 @@
       box-shadow: none;
     {% endif %}
     
+    /* Pozycja i rozmiar */
+    max-width: 500px;
+    min-width: 300px;
+    
     {% if settings.position == 'fixed' %}
       position: fixed;
+      top: 20px;
       left: 50%;
       transform: translateX(-50%);
     {% else %}
@@ -79,7 +90,8 @@
      data-threshold="{{ settings.min_amount | default: 199 }}"
      data-message="{{ settings.message | default: 'Darmowa dostawa przy zamówieniu powyżej 199 zł!' }}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
-     data-width="{{ settings.width | default: 90 }}">
+     data-width="{{ settings.width | default: 90 }}"
+     data-transparent-bg="{{ settings.transparent_bg }}">
   <span id="delivery-message">
     {% assign message = settings.message | default: "Darmowa dostawa przy zamówieniu powyżej 199 zł!" %}
     {{ message }}
@@ -102,10 +114,12 @@
   const originalMessage = deliveryBar.getAttribute('data-message');
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
   
   // USTAW SZEROKOŚĆ DYNAMICZNIE
   deliveryBar.style.width = width + '%';
-  console.log('Ustawiona szerokość:', width + '%'); // DEBUG
+  console.log('Ustawiona szerokość:', width + '%');
+  console.log('Przezroczyste tło:', transparentBg);
   
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
@@ -122,7 +136,9 @@
         
         if (cartTotal >= threshold) {
           messageElement.innerHTML = '🎉 Masz darmową dostawę!';
-          deliveryBar.style.backgroundColor = '#4CAF50';
+          if (!transparentBg) {
+            deliveryBar.style.backgroundColor = '#4CAF50';
+          }
         } else {
           const remaining = threshold - cartTotal;
           let message = originalMessage;
@@ -131,7 +147,9 @@
           message = message.replace('{remaining}', remaining.toFixed(2) + ' zł');
           
           messageElement.innerHTML = message;
-          deliveryBar.style.backgroundColor = bgColor;
+          if (!transparentBg) {
+            deliveryBar.style.backgroundColor = bgColor;
+          }
         }
       })
       .catch(() => {
