@@ -14,6 +14,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+});
+
 // Konfiguracja sesji Express z PostgreSQL store
 const PgStore = pgSession(session);
 
@@ -33,19 +46,6 @@ app.use(session({
     maxAge: 24 * 60 * 60 * 1000 // 24 godziny
   }
 }));
-
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
-  ssl: {
-    rejectUnauthorized: false
-  },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
-});
 
 // Implementacja CustomSessionStorage z lepszą obsługą błędów
 const sessionStorage = {
