@@ -41,16 +41,12 @@
       box-shadow: none;
     {% endif %}
     
-    /* WYŚRODKOWANIE TYLKO W OSI X */
-    {% assign width = settings.width | default: 100 %}
-    width: {{ width }}%;
-    
     {% if settings.position == 'fixed' %}
       position: fixed;
-      left: 50%;  /* Środek w osi X */
-      transform: translateX(-50%);  /* Wyśrodkowanie w osi X */
+      left: 50%;
+      transform: translateX(-50%);
     {% else %}
-      position: absolute;
+      position: relative;
       margin: 0 auto;
     {% endif %}
   }
@@ -82,7 +78,8 @@
      id="free-delivery-bar"
      data-threshold="{{ settings.min_amount | default: 199 }}"
      data-message="{{ settings.message | default: 'Darmowa dostawa przy zamówieniu powyżej 199 zł!' }}"
-     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}">
+     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
+     data-width="{{ settings.width | default: 90 }}">
   <span id="delivery-message">
     {% assign message = settings.message | default: "Darmowa dostawa przy zamówieniu powyżej 199 zł!" %}
     {{ message }}
@@ -104,11 +101,12 @@
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
   const bgColor = deliveryBar.getAttribute('data-bg-color');
-  const width = parseInt(deliveryBar.getAttribute('data-width')) || 90; // 👈 DODANE
+  const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   
-  // 👇 USTAW SZEROKOŚĆ DYNAMICZNIE
+  // USTAW SZEROKOŚĆ DYNAMICZNIE
   deliveryBar.style.width = width + '%';
-
+  console.log('Ustawiona szerokość:', width + '%'); // DEBUG
+  
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
     deliveryBar.classList.add('hidden');
@@ -120,7 +118,7 @@
     fetch('/cart.js')
       .then(response => response.json())
       .then(cart => {
-        const cartTotal = cart.total_price / 100; // Shopify zwraca w groszach
+        const cartTotal = cart.total_price / 100;
         
         if (cartTotal >= threshold) {
           messageElement.innerHTML = '🎉 Masz darmową dostawę!';
@@ -129,7 +127,6 @@
           const remaining = threshold - cartTotal;
           let message = originalMessage;
           
-          // Zastąp placeholders
           message = message.replace('{amount}', threshold + ' zł');
           message = message.replace('{remaining}', remaining.toFixed(2) + ' zł');
           
@@ -138,7 +135,6 @@
         }
       })
       .catch(() => {
-        // Fallback - pokaż domyślną wiadomość
         let message = originalMessage.replace('{amount}', threshold + ' zł');
         messageElement.innerHTML = message;
       });
@@ -152,10 +148,7 @@
     });
   }
   
-  // Zaktualizuj przy załadowaniu strony
   updateDeliveryMessage();
-  
-  // Nasłuchuj zmian w koszyku
   document.addEventListener('cart:updated', updateDeliveryMessage);
   
 })();
