@@ -96,9 +96,14 @@ const shopify = shopifyApi({
   isEmbeddedApp: true,
   apiVersion: LATEST_API_VERSION,
   sessionStorage, // Użycie CustomSessionStorage
+  cookies: {
+    secure: true,
+    sameSite: "none",
+    httpOnly: true,
+  }
 });
 
-app.use(cookieParser());
+app.use(cookieParser(process.env.COOKIE_SECRET)); // Dodaj sekret do cookie-parser
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -128,16 +133,23 @@ app.get("/auth", async (req, res) => {
       return res.status(400).send("Missing shop parameter");
     }
 
+    // Sprawdź, czy sklep jest prawidłowy
+    const sanitizedShop = shopify.utils.sanitizeShop(shop);
+    if (!sanitizedShop) {
+      return res.status(400).send("Invalid shop parameter");
+    }
+
     const redirectUrl = await shopify.auth.begin({
-      shop,
+      shop: sanitizedShop,
       callbackPath: "/auth/callback",
       isOnline: false,
       rawRequest: req,
       rawResponse: res,
     });
 
-    console.log("Redirecting to:", redirectUrl);
-    return res.redirect(redirectUrl);
+    console.log("Auth rozpoczęty, przekierowanie do:", redirectUrl);
+    // Nie używaj res.redirect, pozwól shopify.auth.begin obsłużyć przekierowanie
+    // return res.redirect(redirectUrl);
   } catch (err) {
     console.error("Błąd w /auth:", err);
     res.status(500).send("Błąd podczas inicjalizacji OAuth");
@@ -145,21 +157,22 @@ app.get("/auth", async (req, res) => {
 });
 
 app.get("/auth/callback", async (req, res) => {
-  console.log("Cookies on callback:", req.cookies);
-
-  if (!verifyHmac(req.query)) {
-    console.error("Nieprawidłowy HMAC");
-    return res.status(400).send("Nieprawidłowy HMAC");
-  }
-
   try {
-    const session = await shopify.auth.callback({
+    console.log("Cookies on callback:", req.cookies);
+
+    const callbackResponse = await shopify.auth.callback({
       rawRequest: req,
       rawResponse: res,
+      query: req.query,
     });
 
+    console.log("Callback response:", callbackResponse);
+
+    const { session } = callbackResponse;
     console.log("Session created:", session);
-    res.redirect(`/admin?shop=${session.shop}`);
+    
+    // Redirect with session data
+    return res.redirect(`/admin?shop=${session.shop}`);
   } catch (err) {
     console.error("Błąd autoryzacji:", err);
     res.status(500).send("Błąd autoryzacji");
