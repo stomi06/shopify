@@ -1,9 +1,0 @@
-api_version = "2023-10"
-
-[[extensions]]
-type = "theme_app_extension"
-name = "Free Shipping Bar"
-handle = "free-shipping-bar"
-
-[extensions.settings]
-name = "Free Shipping Bar Settings"
