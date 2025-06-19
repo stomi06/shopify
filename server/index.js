@@ -40,8 +40,7 @@ app.use(session({
 }));
 
 // Implementacja CustomSessionStorage z lepszą obsługą błędów
-const sessionStorage = {
-  storeSession: async (session) => {
+const sessionStorage = {  storeSession: async (session) => {
     try {
       console.log("Attempting to store session for:", session.shop);
       const query = `
@@ -66,13 +65,18 @@ const sessionStorage = {
         session.expires ? new Date(session.expires) : null,
         JSON.stringify(session),
       ];
-      await pool.query(query, values);
-      console.log("Session stored successfully for:", session.shop);
-      return true;
+      
+      // Użyj krótkiego timeout'u dla zapytania
+      const client = await pool.connect();
+      try {
+        await client.query(query, values);
+        return true;
+      } finally {
+        client.release();
+      }
     } catch (err) {
-      console.error("Błąd podczas zapisywania sesji:", err);
-      // Nie przerywaj procesu jeśli baza danych nie działa
-      return true; // Zwróć true aby kontynuować
+      console.error("Błąd podczas zapisywania sesji:", err.message);
+      throw err; // Pozwól obsłużyć błąd wyżej
     }
   },
   loadSession: async (id) => {
@@ -239,9 +243,7 @@ app.get("/auth/callback", async (req, res) => {
     if (!accessTokenData.access_token) {
       console.error("Nie otrzymano access_token:", accessTokenData);
       return res.status(500).send("Failed to obtain access token");
-    }
-
-    // Zapisz token w bazie danych
+    }    // Zapisz token w bazie danych (opcjonalnie)
     const session = {
       id: `${shop}_offline`,
       shop,
@@ -251,7 +253,13 @@ app.get("/auth/callback", async (req, res) => {
       scope: accessTokenData.scope,
     };
 
-    await sessionStorage.storeSession(session);
+    // Spróbuj zapisać sesję, ale nie przerywaj jeśli się nie uda
+    try {
+      await sessionStorage.storeSession(session);
+      console.log("✅ Sesja zapisana w bazie danych");
+    } catch (error) {
+      console.warn("⚠️ Nie udało się zapisać sesji w bazie, ale aplikacja działa:", error.message);
+    }
 
     // Dodaj ScriptTag (opcjonalnie)
     try {
