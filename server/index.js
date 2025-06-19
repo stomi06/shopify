@@ -22,8 +22,11 @@ const pool = new Pool({
   ssl: {
     rejectUnauthorized: false
   },
-  connectionTimeoutMillis: 10000,
-  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 30000,
+  idleTimeoutMillis: 60000,
+  max: 10,
+  statement_timeout: 30000,
+  query_timeout: 30000,
 });
 
 // Prosta konfiguracja sesji Express
@@ -318,8 +321,11 @@ app.get("/", (req, res) => {
 
 // API endpoint do zapisywania ustawień
 app.post('/api/settings', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { shop, settings } = req.body;
+    console.log('Zapisuję ustawienia dla sklepu:', shop);
+    console.log('Ustawienia:', settings);
     
     const query = `
       INSERT INTO app_settings (shop, settings) 
@@ -329,49 +335,61 @@ app.post('/api/settings', async (req, res) => {
         updated_at = NOW()
     `;
     
-    await pool.query(query, [shop, JSON.stringify(settings)]);
+    await client.query(query, [shop, JSON.stringify(settings)]);
+    console.log('✅ Ustawienia zapisane pomyślnie');
     res.json({ success: true });
   } catch (err) {
-    console.error('Błąd zapisywania ustawień:', err);
-    res.status(500).json({ error: 'Błąd serwera' });
+    console.error('❌ Błąd zapisywania ustawień:', err.message);
+    res.status(500).json({ error: 'Błąd serwera: ' + err.message });
+  } finally {
+    client.release();
   }
 });
 
 // API endpoint do pobierania ustawień
 app.get('/api/settings/:shop', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { shop } = req.params;
-    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    console.log('Pobieram ustawienia dla sklepu:', shop);
+    
+    const result = await client.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
     
     if (result.rows.length > 0) {
+      console.log('✅ Znaleziono ustawienia');
       res.json(result.rows[0].settings);
     } else {
+      console.log('⚠️ Brak ustawień, zwracam domyślne');
       // Domyślne ustawienia
       res.json({
         message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
-        threshold: 199,
-        backgroundColor: "#4CAF50",
-        textColor: "#FFFFFF",
-        position: "top"
+        min_amount: 199,
+        background_color: "#4CAF50",
+        text_color: "#FFFFFF",
+        position: "top",
+        closeable: true
       });
     }
   } catch (err) {
-    console.error('Błąd pobierania ustawień:', err);
-    res.status(500).json({ error: 'Błąd serwera' });
+    console.error('❌ Błąd pobierania ustawień:', err.message);
+    res.status(500).json({ error: 'Błąd serwera: ' + err.message });
+  } finally {
+    client.release();
   }
 });
 
 // Endpoint dla rozszerzenia do pobierania ustawień
 app.get('/api/delivery-bar/:shop', async (req, res) => {
+  const client = await pool.connect();
   try {
     const { shop } = req.params;
     console.log(`Pobieranie ustawień dla sklepu: ${shop}`);
     
-    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    const result = await client.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
     
     if (result.rows.length > 0) {
       const settings = result.rows[0].settings;
-      console.log(`Znalezione ustawienia:`, settings);
+      console.log(`✅ Znalezione ustawienia:`, settings);
       res.json(settings);
     } else {
       const defaultSettings = {
@@ -382,11 +400,11 @@ app.get('/api/delivery-bar/:shop', async (req, res) => {
         position: "top",
         closeable: true
       };
-      console.log(`Brak ustawień, zwracam domyślne`);
+      console.log(`⚠️ Brak ustawień, zwracam domyślne`);
       res.json(defaultSettings);
     }
   } catch (err) {
-    console.error('Błąd pobierania ustawień dla rozszerzenia:', err);
+    console.error('❌ Błąd pobierania ustawień dla rozszerzenia:', err.message);
     res.status(500).json({ 
       error: 'Błąd serwera',
       message: "🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!",
@@ -396,6 +414,8 @@ app.get('/api/delivery-bar/:shop', async (req, res) => {
       position: "top",
       closeable: true
     });
+  } finally {
+    client.release();
   }
 });
 
