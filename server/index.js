@@ -38,7 +38,7 @@ app.use(session({
     secure: false,
     httpOnly: false,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 godziny
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
