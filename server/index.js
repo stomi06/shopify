@@ -8,7 +8,6 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import session from "express-session";
-import pgSession from "connect-pg-simple";
 
 dotenv.config();
 const app = express();
@@ -27,15 +26,8 @@ const pool = new Pool({
   idleTimeoutMillis: 30000,
 });
 
-// Konfiguracja sesji Express z PostgreSQL store
-const PgStore = pgSession(session);
-
+// Prosta konfiguracja sesji Express
 app.use(session({
-  store: new PgStore({
-    pool: pool,
-    tableName: 'session',
-    createTableIfMissing: true
-  }),
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
   resave: false,
   saveUninitialized: false,
