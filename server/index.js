@@ -13,15 +13,15 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Konfiguracja sesji Express
+// Konfiguracja sesji Express - zmiana ustawień dla Shopify
 app.use(session({
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
   resave: false,
   saveUninitialized: true,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    secure: false, // Wyłącz secure dla lepszej kompatybilności
+    httpOnly: false, // Pozwól na dostęp z JavaScript
+    sameSite: 'lax', // Użyj lax zamiast none
     maxAge: 24 * 60 * 60 * 1000 // 24 godziny
   }
 }));
@@ -107,15 +107,9 @@ const shopify = shopifyApi({
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
   scopes: process.env.SCOPES.split(","),
   hostName: process.env.HOST.replace(/^https?:\/\//, ""),
-  isEmbeddedApp: true,
+  isEmbeddedApp: false, // Zmień na false aby uniknąć problemów z iframe
   apiVersion: LATEST_API_VERSION,
   sessionStorage, // Użycie CustomSessionStorage
-  cookies: {
-    secure: true,
-    sameSite: "none",
-    httpOnly: true,
-    prefix: "", // Dodaj puste prefix
-  }
 });
 
 app.use(cookieParser()); // Usuń sekret z cookie-parser
@@ -269,7 +263,7 @@ app.get("/auth/callback", async (req, res) => {
       console.error("Error creating script tag:", error);
     }
 
-    res.redirect(`/admin?shop=${shop}`);
+    res.redirect(`https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`);
   } catch (err) {
     console.error("Błąd autoryzacji:", err);
     res.status(500).send("Błąd autoryzacji");
@@ -277,6 +271,17 @@ app.get("/auth/callback", async (req, res) => {
 });
 
 app.get("/admin", (req, res) => {
+  const shop = req.query.shop;
+  if (!shop) {
+    return res.status(400).send("Missing shop parameter");
+  }
+  
+  // Przekieruj do Shopify Admin z aplikacją w nowej karcie zamiast iframe
+  const adminUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`;
+  res.redirect(adminUrl);
+});
+
+app.get("/", (req, res) => {
   res.sendFile(path.resolve("views/admin.html"));
 });
 
