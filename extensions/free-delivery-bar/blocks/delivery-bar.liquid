@@ -104,7 +104,11 @@
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
   const bgColor = deliveryBar.getAttribute('data-bg-color');
+  const width = parseInt(deliveryBar.getAttribute('data-width')) || 90; // 👈 DODANE
   
+  // 👇 USTAW SZEROKOŚĆ DYNAMICZNIE
+  deliveryBar.style.width = width + '%';
+
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
     deliveryBar.classList.add('hidden');
