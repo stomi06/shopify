@@ -10,7 +10,6 @@
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     text-align: center;
     padding: 12px 20px;
-    position: relative;
     z-index: 1000;
     transition: all 0.3s ease;
     
@@ -38,24 +37,25 @@
       {% assign shadow_color = settings.shadow_color | default: '#000000' %}
       {% assign shadow_distance = settings.shadow_distance | default: 2 %}
       {% assign shadow_blur = settings.shadow_blur | default: 4 %}
-      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px {{ shadow_color | append: ', ' | append: shadow_opacity | prepend: 'rgba(' | replace: '#', '' | split: '' | slice: 0, 6 | join: '' | prepend: 'rgba(' | append: ', ' | append: shadow_opacity | append: ')' }};
+      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }});
     {% else %}
       box-shadow: none;
     {% endif %}
     
-    /* Pozycja */
+    /* Pozycja i rozmiar - ZAWSZE WYŚRODKOWANE */
+    {% assign width = settings.width | default: 90 %}
+    width: {{ width }}%;
+    max-width: 500px;
+    min-width: 300px;
+    
     {% if settings.position == 'fixed' %}
       position: fixed;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 90%;
-      max-width: 500px;
-      min-width: 300px;
     {% else %}
       position: relative;
       margin: 20px auto;
-      max-width: 800px;
     {% endif %}
   }
   

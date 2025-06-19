@@ -323,18 +323,9 @@
             <div class="help-text">Użyj {amount} jako placeholder dla kwoty, {remaining} dla pozostałej kwoty</div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="minAmount">Minimalna kwota (zł)</label>
-              <input type="number" id="minAmount" min="0" step="1" value="199" />
-            </div>
-            <div class="form-group">
-              <label for="position">Pozycja paska</label>
-              <select id="position">
-                <option value="fixed">Fixed (zawsze widoczny)</option>
-                <option value="absolute">Absolute (statyczny)</option>
-              </select>
-            </div>
+          <div class="form-group">
+            <label for="minAmount">Minimalna kwota (zł)</label>
+            <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
         </div>
 
@@ -356,6 +347,73 @@
           <div class="form-group">
             <label for="opacity">Przezroczystość tła: <span class="range-value" id="opacityValue">100%</span></label>
             <input type="range" id="opacity" min="10" max="100" value="100" step="5" />
+          </div>
+        </div>
+
+        <!-- Typografia -->
+        <div class="form-section">
+          <div class="section-title">✍️ Typografia</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fontSize">Rozmiar tekstu</label>
+              <select id="fontSize">
+                <option value="12">Mały (12px)</option>
+                <option value="14" selected>Średni (14px)</option>
+                <option value="16">Duży (16px)</option>
+                <option value="18">Bardzo duży (18px)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="fontWeight">Grubość czcionki</label>
+              <select id="fontWeight">
+                <option value="400">Normalna</option>
+                <option value="500">Średnia</option>
+                <option value="600" selected>Pogrubiona</option>
+                <option value="700">Bardzo pogrubiona</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pozycja i rozmiar -->
+        <div class="form-section">
+          <div class="section-title">📐 Pozycja i rozmiar</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="position">Pozycja paska</label>
+              <select id="position">
+                <option value="fixed">Fixed (zawsze widoczny)</option>
+                <option value="absolute">Absolute (statyczny)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="width">Szerokość paska: <span class="range-value" id="widthValue">90%</span></label>
+              <input type="range" id="width" min="50" max="100" value="90" step="5" />
+              <div class="help-text">Maksymalna szerokość: 500px</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Kolory i przezroczystość -->
+        <div class="form-section">
+          <div class="section-title">🎨 Kolory i przezroczystość</div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="backgroundColor">Kolor tła</label>
+              <input type="color" id="backgroundColor" value="#4CAF50" />
+            </div>
+            <div class="form-group">
+              <label for="textColor">Kolor tekstu</label>
+              <input type="color" id="textColor" value="#FFFFFF" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="opacity">Przezroczystość tła: <span class="range-value" id="opacityValue">100%</span></label>
+            <input type="range" id="opacity" min="0" max="100" value="100" step="5" />
           </div>
         </div>
 
@@ -481,6 +539,7 @@
     updateRangeValue('shadowOpacity', 'shadowOpacityValue', '%');
     updateRangeValue('shadowBlur', 'shadowBlurValue', 'px');
     updateRangeValue('shadowDistance', 'shadowDistanceValue', 'px');
+    updateRangeValue('width', 'widthValue', '%');
 
     // Funkcja aktualizacji podglądu
     function updatePreview() {
@@ -502,6 +561,7 @@
       const shadowOpacity = document.getElementById('shadowOpacity').value / 100;
       const shadowBlur = document.getElementById('shadowBlur').value;
       const shadowDistance = document.getElementById('shadowDistance').value;
+      const width = document.getElementById('width').value;
       
       // Konwertuj hex na rgba dla przezroczystości
       function hexToRgba(hex, alpha) {
@@ -522,6 +582,8 @@
       previewBar.style.fontWeight = fontWeight;
       previewBar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
       previewBar.style.borderRadius = borderRadius + 'px';
+      previewBar.style.width = width + '%'; // 👈 DODANE
+      previewBar.style.maxWidth = '400px'; // 👈 DODANE (zmniejszone dla podglądu)
       
       // Cień
       if (shadowBlur > 0 || shadowDistance > 0) {
@@ -552,6 +614,7 @@
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
         position: document.getElementById('position').value,
+        width: parseInt(document.getElementById('width').value), // 👈 DODANE
         opacity: parseInt(document.getElementById('opacity').value),
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
@@ -626,6 +689,7 @@
         document.getElementById('shadowOpacity').value = settings.shadow_opacity || 20;
         document.getElementById('shadowBlur').value = settings.shadow_blur || 4;
         document.getElementById('shadowDistance').value = settings.shadow_distance || 2;
+        document.getElementById('width').value = settings.width || 90; // 👈 DODANE
 
         // Zaktualizuj wyświetlane wartości zakresów
         document.getElementById('opacityValue').textContent = (settings.opacity || 100) + '%';
@@ -634,6 +698,7 @@
         document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 20) + '%';
         document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';
+        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
 
         updatePreview();
         console.log('Ustawienia załadowane:', settings);
@@ -660,6 +725,7 @@
         document.getElementById('shadowOpacity').value = 20;
         document.getElementById('shadowBlur').value = 4;
         document.getElementById('shadowDistance').value = 2;
+        document.getElementById('width').value = 90; // 👈 DODANE
         
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';
@@ -668,7 +734,8 @@
         document.getElementById('shadowOpacityValue').textContent = '20%';
         document.getElementById('shadowBlurValue').textContent = '4px';
         document.getElementById('shadowDistanceValue').textContent = '2px';
-        
+        document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
+
         updatePreview();
       }
     }
