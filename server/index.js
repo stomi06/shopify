@@ -100,6 +100,7 @@ const shopify = shopifyApi({
     secure: true,
     sameSite: "none",
     httpOnly: true,
+    prefix: "", // Dodaj puste prefix
   }
 });
 
@@ -108,6 +109,14 @@ app.use(cookieParser(process.env.COOKIE_SECRET)); // Dodaj sekret do cookie-pars
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
+
+// Debugging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  console.log("All cookies:", req.cookies);
+  console.log("Headers:", req.headers);
+  next();
+});
 
 function verifyHmac(query) {
   const { hmac, ...rest } = query;
@@ -148,8 +157,7 @@ app.get("/auth", async (req, res) => {
     });
 
     console.log("Auth rozpoczęty, przekierowanie do:", redirectUrl);
-    // Nie używaj res.redirect, pozwól shopify.auth.begin obsłużyć przekierowanie
-    // return res.redirect(redirectUrl);
+    return res.redirect(redirectUrl);
   } catch (err) {
     console.error("Błąd w /auth:", err);
     res.status(500).send("Błąd podczas inicjalizacji OAuth");
