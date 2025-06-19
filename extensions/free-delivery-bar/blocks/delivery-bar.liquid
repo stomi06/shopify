@@ -7,19 +7,55 @@
 
 <style>
   .free-delivery-bar {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     text-align: center;
     padding: 12px 20px;
-    font-weight: 600;
     position: relative;
     z-index: 1000;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    transition: all 0.3s ease;
+    
+    /* Podstawowe style z ustawień */
     background-color: {{ settings.background_color | default: '#4CAF50' }};
     color: {{ settings.text_color | default: '#ffffff' }};
-    {% if settings.position == 'bottom' %}
+    font-size: {{ settings.font_size | default: 14 }}px;
+    font-weight: {{ settings.font_weight | default: 600 }};
+    border-radius: {{ settings.border_radius | default: 6 }}px;
+    
+    /* Przezroczystość */
+    {% assign opacity = settings.opacity | default: 100 | divided_by: 100.0 %}
+    opacity: {{ opacity }};
+    
+    /* Ramka */
+    {% if settings.border_width and settings.border_width > 0 %}
+      border: {{ settings.border_width }}px solid {{ settings.border_color | default: '#cccccc' }};
+    {% else %}
+      border: none;
+    {% endif %}
+    
+    /* Cień */
+    {% if settings.shadow_blur and settings.shadow_blur > 0 %}
+      {% assign shadow_opacity = settings.shadow_opacity | default: 20 | divided_by: 100.0 %}
+      {% assign shadow_color = settings.shadow_color | default: '#000000' %}
+      {% assign shadow_distance = settings.shadow_distance | default: 2 %}
+      {% assign shadow_blur = settings.shadow_blur | default: 4 %}
+      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px {{ shadow_color | append: ', ' | append: shadow_opacity | prepend: 'rgba(' | replace: '#', '' | split: '' | slice: 0, 6 | join: '' | prepend: 'rgba(' | append: ', ' | append: shadow_opacity | append: ')' }};
+    {% else %}
+      box-shadow: none;
+    {% endif %}
+    
+    /* Pozycja */
+    {% if settings.position == 'fixed' %}
       position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 500px;
+      min-width: 300px;
+    {% else %}
+      position: relative;
+      margin: 20px auto;
+      max-width: 800px;
     {% endif %}
   }
   
@@ -27,17 +63,38 @@
     background: none;
     border: none;
     color: inherit;
-    float: right;
+    position: absolute;
+    top: 8px;
+    right: 12px;
     cursor: pointer;
     font-size: 18px;
-    line-height: 1;
     padding: 0;
-    margin-left: 10px;
+    opacity: 0.8;
+    line-height: 1;
+  }
+  
+  .free-delivery-bar button:hover {
+    opacity: 1;
   }
   
   .free-delivery-bar.hidden {
     display: none;
   }
+
+  /* Overlay dla position fixed */
+  {% if settings.position == 'fixed' %}
+  .free-delivery-bar::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: -1;
+    pointer-events: none;
+  }
+  {% endif %}
 </style>
 
 <div class="free-delivery-bar" 
@@ -126,7 +183,7 @@
   "settings": [
     {
       "type": "paragraph",
-      "content": "Wszystkie ustawienia (wiadomość, kolory, kwota) są zarządzane przez panel aplikacji. Ten blok automatycznie pobiera ustawienia z aplikacji."
+      "content": "Wszystkie ustawienia (wiadomość, kolory, pozycja, style) są zarządzane przez panel aplikacji. Ten blok automatycznie pobiera ustawienia z aplikacji."
     },
     {
       "type": "paragraph", 
