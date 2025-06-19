@@ -1,8 +1,9 @@
 import '@shopify/shopify-api/adapters/node';
+import { MemorySessionStorage } from "@shopify/shopify-api";
 import express from "express";
 import dotenv from "dotenv";
 import path from "path";
-import { MemorySessionStorage, shopifyApi, LATEST_API_VERSION } from "@shopify/shopify-api";
+import { shopifyApi, LATEST_API_VERSION } from "@shopify/shopify-api";
 import bodyParser from "body-parser";
 
 dotenv.config();
