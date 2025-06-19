@@ -7,10 +7,24 @@ import path from "path";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import crypto from "crypto";
+import session from "express-session";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Konfiguracja sesji Express
+app.use(session({
+  secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
+  resave: false,
+  saveUninitialized: true,
+  cookie: { 
+    secure: true,
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000 // 24 godziny
+  }
+}));
 
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -104,7 +118,7 @@ const shopify = shopifyApi({
   }
 });
 
-app.use(cookieParser(process.env.COOKIE_SECRET)); // Dodaj sekret do cookie-parser
+app.use(cookieParser()); // Usuń sekret z cookie-parser
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -135,29 +149,23 @@ function verifyHmac(query) {
 
 app.get("/auth", async (req, res) => {
   try {
-    console.log("Cookies before redirect:", req.cookies);
-
     const shop = req.query.shop;
     if (!shop) {
       return res.status(400).send("Missing shop parameter");
     }
 
-    // Sprawdź, czy sklep jest prawidłowy
-    const sanitizedShop = shopify.utils.sanitizeShop(shop);
-    if (!sanitizedShop) {
-      return res.status(400).send("Invalid shop parameter");
-    }
+    // Zapisz informacje o sklepie w sesji
+    req.session.shop = shop;
 
-    const redirectUrl = await shopify.auth.begin({
-      shop: sanitizedShop,
-      callbackPath: "/auth/callback",
-      isOnline: false,
-      rawRequest: req,
-      rawResponse: res,
-    });
+    // Wygeneruj stan dla OAuth i zapisz go w sesji
+    const state = crypto.randomBytes(16).toString('hex');
+    req.session.state = state;
 
-    console.log("Auth rozpoczęty, przekierowanie do:", redirectUrl);
-    return res.redirect(redirectUrl);
+    // Przekieruj do Shopify OAuth
+    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=${process.env.SCOPES}&redirect_uri=${process.env.HOST}/auth/callback&state=${state}`;
+    
+    console.log("Przekierowuję do:", authUrl);
+    res.redirect(authUrl);
   } catch (err) {
     console.error("Błąd w /auth:", err);
     res.status(500).send("Błąd podczas inicjalizacji OAuth");
@@ -166,21 +174,75 @@ app.get("/auth", async (req, res) => {
 
 app.get("/auth/callback", async (req, res) => {
   try {
-    console.log("Cookies on callback:", req.cookies);
+    console.log("Session w callback:", req.session);
+    
+    const { code, hmac, state, shop } = req.query;
+    
+    // Sprawdź czy stan zgadza się z tym z sesji
+    if (state !== req.session.state) {
+      return res.status(403).send("Request origin cannot be verified");
+    }
 
-    const callbackResponse = await shopify.auth.callback({
-      rawRequest: req,
-      rawResponse: res,
-      query: req.query,
+    // Sprawdź czy sklep zgadza się z tym z sesji
+    if (shop !== req.session.shop) {
+      return res.status(403).send("Shop parameter does not match");
+    }
+
+    // Weryfikuj HMAC
+    if (!verifyHmac(req.query)) {
+      return res.status(400).send("HMAC verification failed");
+    }
+
+    // Wymień kod na token dostępu
+    const accessTokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        client_id: process.env.SHOPIFY_API_KEY,
+        client_secret: process.env.SHOPIFY_API_SECRET,
+        code
+      })
     });
 
-    console.log("Callback response:", callbackResponse);
+    const accessTokenData = await accessTokenResponse.json();
+    console.log("Access token data:", accessTokenData);
 
-    const { session } = callbackResponse;
-    console.log("Session created:", session);
-    
-    // Redirect with session data
-    return res.redirect(`/admin?shop=${session.shop}`);
+    // Zapisz token w bazie danych
+    const session = {
+      id: `${shop}_offline`,
+      shop,
+      state,
+      isOnline: false,
+      accessToken: accessTokenData.access_token,
+      scope: accessTokenData.scope,
+    };
+
+    await sessionStorage.storeSession(session);
+    console.log("Sesja zapisana w bazie danych");
+
+    // Dodaj ScriptTag (opcjonalnie)
+    try {
+      const response = await fetch(`https://${shop}/admin/api/${LATEST_API_VERSION}/script_tags.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessTokenData.access_token
+        },
+        body: JSON.stringify({
+          script_tag: {
+            event: 'onload',
+            src: `${process.env.HOST}/bar.js`
+          }
+        })
+      });
+      
+      const scriptTagData = await response.json();
+      console.log("Script tag created:", scriptTagData);
+    } catch (error) {
+      console.error("Error creating script tag:", error);
+    }
+
+    res.redirect(`/admin?shop=${shop}`);
   } catch (err) {
     console.error("Błąd autoryzacji:", err);
     res.status(500).send("Błąd autoryzacji");
