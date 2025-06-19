@@ -198,9 +198,9 @@
           const settings = await response.json();
 
           document.getElementById('message').value = settings.message || "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
-          document.getElementById('minAmount').value = settings.threshold || 199;
-          document.getElementById('backgroundColor').value = settings.backgroundColor || "#4CAF50";
-          document.getElementById('textColor').value = settings.textColor || "#FFFFFF";
+          document.getElementById('minAmount').value = settings.min_amount || 199;
+          document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
+          document.getElementById('textColor').value = settings.text_color || "#FFFFFF";
           document.getElementById('position').value = settings.position || "top";
 
           updatePreview();
@@ -216,9 +216,9 @@
       async function saveSettings() {
         const settings = {
           message: document.getElementById('message').value,
-          threshold: parseInt(document.getElementById('minAmount').value),
-          backgroundColor: document.getElementById('backgroundColor').value,
-          textColor: document.getElementById('textColor').value,
+          min_amount: parseInt(document.getElementById('minAmount').value),
+          background_color: document.getElementById('backgroundColor').value,
+          text_color: document.getElementById('textColor').value,
           position: document.getElementById('position').value
         };
 

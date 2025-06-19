@@ -353,32 +353,4 @@ app.get('/api/settings/:shop', async (req, res) => {
   }
 });
 
-// Endpoint dla rozszerzenia do pobierania ustawień
-app.get('/api/delivery-bar/:shop', async (req, res) => {
-  try {
-    const { shop } = req.params;
-    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
-    
-    if (result.rows.length > 0) {
-      res.json(result.rows[0].settings);
-    } else {
-      res.json({
-        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
-        threshold: 199,
-        backgroundColor: "#4CAF50",
-        textColor: "#FFFFFF",
-        position: "top"
-      });
-    }
-  } catch (err) {
-    res.json({
-      message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
-      threshold: 199,
-      backgroundColor: "#4CAF50",
-      textColor: "#FFFFFF",
-      position: "top"
-    });
-  }
-});
-
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));

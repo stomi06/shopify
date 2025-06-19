@@ -6,6 +6,7 @@
 <div class="free-delivery-bar" 
      id="free-delivery-bar"
      data-shop="{{ shop.permanent_domain }}"
+     data-threshold="{{ block.settings.min_amount | default: 199 }}"
      style="
        background-color: {{ block.settings.background_color | default: '#4CAF50' }};
        color: {{ block.settings.text_color | default: '#ffffff' }};
@@ -47,44 +48,43 @@
 </div>
 
 <script>
-// Załaduj ustawienia z API i zaktualizuj pasek
+// Dynamiczna aktualizacja wiadomości na podstawie wartości koszyka
 (function() {
   const deliveryBar = document.getElementById('free-delivery-bar');
   if (!deliveryBar) return;
   
-  const shop = deliveryBar.getAttribute('data-shop');
+  const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   
-  // Pobierz ustawienia z API
-  fetch(`/api/delivery-bar/${shop}`)
-    .then(response => response.json())
-    .then(settings => {
-      // Zaktualizuj wiadomość
-      const messageElement = document.getElementById('delivery-message');
-      if (messageElement && settings.message) {
-        // Zastąp {amount} rzeczywistą wartością
-        const message = settings.message.replace('{amount}', settings.threshold || 199);
-        messageElement.textContent = message;
-      }
-      
-      // Zaktualizuj kolory
-      if (settings.backgroundColor) {
-        deliveryBar.style.backgroundColor = settings.backgroundColor;
-      }
-      if (settings.textColor) {
-        deliveryBar.style.color = settings.textColor;
-      }
-      
-      // Zaktualizuj pozycję
-      if (settings.position === 'bottom') {
-        deliveryBar.style.position = 'fixed';
-        deliveryBar.style.bottom = '0';
-        deliveryBar.style.left = '0';
-        deliveryBar.style.right = '0';
-      }
-    })
-    .catch(err => {
-      console.log('Używam domyślnych ustawień dla paska dostawy');
-    });
+  // Funkcja do aktualizacji wiadomości na podstawie wartości koszyka
+  function updateDeliveryMessage() {
+    // Pobierz aktualną wartość koszyka z Shopify
+    fetch('/cart.js')
+      .then(response => response.json())
+      .then(cart => {
+        const cartTotal = cart.total_price / 100; // Shopify zwraca w groszach
+        const messageElement = document.getElementById('delivery-message');
+        
+        if (cartTotal >= threshold) {
+          messageElement.innerHTML = '🎉 Masz darmową dostawę!';
+          deliveryBar.style.backgroundColor = '#4CAF50';
+        } else {
+          const remaining = threshold - cartTotal;
+          messageElement.innerHTML = `🚚 Dodaj za ${remaining.toFixed(2)} zł i otrzymasz darmową dostawę!`;
+          deliveryBar.style.backgroundColor = '#FF9800';
+        }
+      })
+      .catch(() => {
+        // Fallback - pokaż domyślną wiadomość
+        console.log('Nie można pobrać informacji o koszyku');
+      });
+  }
+  
+  // Zaktualizuj przy załadowaniu strony
+  updateDeliveryMessage();
+  
+  // Nasłuchuj zmian w koszyku
+  document.addEventListener('cart:updated', updateDeliveryMessage);
+  
 })();
 </script>
 
@@ -99,20 +99,20 @@
       "type": "text",
       "id": "message",
       "label": "Wiadomość",
-      "default": "🚚 Darmowa dostawa powyżej 100 zł!",
-      "info": "Tekst wyświetlany na pasku"
+      "default": "🚚 Darmowa dostawa powyżej {amount} zł!",
+      "info": "Tekst wyświetlany na pasku. Użyj {amount} jako placeholder"
     },
     {
       "type": "number",
       "id": "min_amount",
       "label": "Minimalna kwota (zł)",
-      "default": 100
+      "default": 199
     },
     {
       "type": "color",
       "id": "background_color",
       "label": "Kolor tła",
-      "default": "#00a651"
+      "default": "#4CAF50"
     },
     {
       "type": "color",
@@ -142,12 +142,6 @@
       "label": "Możliwość zamknięcia",
       "default": true,
       "info": "Pozwala użytkownikowi zamknąć pasek"
-    },
-    {
-      "type": "checkbox",
-      "id": "show_on_cart_page",
-      "label": "Pokazuj na stronie koszyka",
-      "default": false
     }
   ]
 }
