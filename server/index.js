@@ -251,9 +251,7 @@ app.get("/auth/callback", async (req, res) => {
       isOnline: false,
       accessToken: accessTokenData.access_token,
       scope: accessTokenData.scope,
-    };
-
-    // Spróbuj zapisać sesję, ale nie przerywaj jeśli się nie uda
+    };    // Spróbuj zapisać sesję, ale nie przerywaj jeśli się nie uda
     try {
       await sessionStorage.storeSession(session);
       console.log("✅ Sesja zapisana w bazie danych");
@@ -261,29 +259,7 @@ app.get("/auth/callback", async (req, res) => {
       console.warn("⚠️ Nie udało się zapisać sesji w bazie, ale aplikacja działa:", error.message);
     }
 
-    // Dodaj ScriptTag (opcjonalnie)
-    try {
-      const response = await fetch(`https://${shop}/admin/api/${LATEST_API_VERSION}/script_tags.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Shopify-Access-Token': accessTokenData.access_token
-        },
-        body: JSON.stringify({
-          script_tag: {
-            event: 'onload',
-            src: `${process.env.HOST}/bar.js`
-          }
-        })
-      });
-      
-      const scriptTagData = await response.json();
-      console.log("Script tag created:", scriptTagData);
-    } catch (error) {
-      console.error("Error creating script tag:", error);
-    }
-
-    // Przekieruj do strony sukcesu zamiast Shopify Admin
+    // Przekieruj do strony sukcesu
     console.log("Przekierowuję do strony sukcesu");
     return res.send(`
       <!DOCTYPE html>
@@ -306,9 +282,9 @@ app.get("/auth/callback", async (req, res) => {
       </head>
       <body>
         <div class="success">✅ Aplikacja została zainstalowana pomyślnie!</div>
-        <div class="info">Script tag został dodany do Twojego sklepu: ${shop}</div>
-        <div class="info">Możesz teraz zamknąć tę kartę i wrócić do panelu administracyjnego Shopify.</div>
-        <a href="https://${shop}/admin" class="button">Wróć do panelu admin</a>
+        <div class="info">Sklep: ${shop}</div>
+        <div class="info">Możesz teraz zarządzać aplikacją przez panel administracyjny.</div>
+        <a href="https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}" class="button">Otwórz aplikację</a>
       </body>
       </html>
     `);
@@ -324,9 +300,8 @@ app.get("/admin", (req, res) => {
     return res.status(400).send("Missing shop parameter");
   }
   
-  // Przekieruj do Shopify Admin z aplikacją w nowej karcie zamiast iframe
-  const adminUrl = `https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`;
-  res.redirect(adminUrl);
+  // Wyświetl panel aplikacji
+  res.sendFile(path.resolve("views/admin.html"));
 });
 
 app.get("/", (req, res) => {
