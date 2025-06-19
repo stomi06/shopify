@@ -38,14 +38,17 @@ app.use(session({
     secure: false,
     httpOnly: false,
     sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000
+    maxAge: 24 * 60 * 60 * 1000 // 24 godziny
   }
 }));
 
 // Implementacja CustomSessionStorage z lepszą obsługą błędów
 const sessionStorage = {  storeSession: async (session) => {
+    const client = await pool.connect();
     try {
-      console.log("Attempting to store session for:", session.shop);
+      console.log("🔄 Attempting to store session for:", session.shop);
+      console.log("🔄 Session data:", JSON.stringify(session, null, 2));
+      
       const query = `
         INSERT INTO shopify_sessions (id, shop, state, is_online, access_token, scope, expires_at, session_data)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -69,17 +72,20 @@ const sessionStorage = {  storeSession: async (session) => {
         JSON.stringify(session),
       ];
       
-      // Użyj krótkiego timeout'u dla zapytania
-      const client = await pool.connect();
-      try {
-        await client.query(query, values);
-        return true;
-      } finally {
-        client.release();
-      }
+      console.log("🔄 SQL values:", values);
+      
+      await client.query(query, values);
+      console.log("✅ Session stored successfully");
+      return true;
     } catch (err) {
-      console.error("Błąd podczas zapisywania sesji:", err.message);
-      throw err; // Pozwól obsłużyć błąd wyżej
+      console.error("❌ Błąd podczas zapisywania sesji:", {
+        message: err.message,
+        stack: err.stack,
+        code: err.code
+      });
+      throw err;
+    } finally {
+      client.release();
     }
   },
   loadSession: async (id) => {
@@ -264,10 +270,21 @@ app.get("/auth/callback", async (req, res) => {
       scope: accessTokenData.scope,
     };    // Spróbuj zapisać sesję, ale nie przerywaj jeśli się nie uda
     try {
+      console.log("🔄 Próbuję zapisać sesję:", {
+        id: session.id,
+        shop: session.shop,
+        isOnline: session.isOnline,
+        hasAccessToken: !!session.accessToken,
+        scope: session.scope
+      });
       await sessionStorage.storeSession(session);
       console.log("✅ Sesja zapisana w bazie danych");
     } catch (error) {
-      console.warn("⚠️ Nie udało się zapisać sesji w bazie, ale aplikacja działa:", error.message);
+      console.error("❌ Szczegółowy błąd zapisywania sesji:", {
+        message: error.message,
+        stack: error.stack,
+        session: session
+      });
     }
 
     // Przekieruj do strony sukcesu
