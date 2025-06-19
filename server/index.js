@@ -308,4 +308,77 @@ app.get("/", (req, res) => {
   res.sendFile(path.resolve("views/admin.html"));
 });
 
+// API endpoint do zapisywania ustawień
+app.post('/api/settings', async (req, res) => {
+  try {
+    const { shop, settings } = req.body;
+    
+    const query = `
+      INSERT INTO app_settings (shop, settings) 
+      VALUES ($1, $2)
+      ON CONFLICT (shop) DO UPDATE SET 
+        settings = EXCLUDED.settings,
+        updated_at = NOW()
+    `;
+    
+    await pool.query(query, [shop, JSON.stringify(settings)]);
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Błąd zapisywania ustawień:', err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
+// API endpoint do pobierania ustawień
+app.get('/api/settings/:shop', async (req, res) => {
+  try {
+    const { shop } = req.params;
+    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    
+    if (result.rows.length > 0) {
+      res.json(result.rows[0].settings);
+    } else {
+      // Domyślne ustawienia
+      res.json({
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
+        threshold: 199,
+        backgroundColor: "#4CAF50",
+        textColor: "#FFFFFF",
+        position: "top"
+      });
+    }
+  } catch (err) {
+    console.error('Błąd pobierania ustawień:', err);
+    res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
+// Endpoint dla rozszerzenia do pobierania ustawień
+app.get('/api/delivery-bar/:shop', async (req, res) => {
+  try {
+    const { shop } = req.params;
+    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    
+    if (result.rows.length > 0) {
+      res.json(result.rows[0].settings);
+    } else {
+      res.json({
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
+        threshold: 199,
+        backgroundColor: "#4CAF50",
+        textColor: "#FFFFFF",
+        position: "top"
+      });
+    }
+  } catch (err) {
+    res.json({
+      message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
+      threshold: 199,
+      backgroundColor: "#4CAF50",
+      textColor: "#FFFFFF",
+      position: "top"
+    });
+  }
+});
+
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));

@@ -4,8 +4,10 @@
 {% endcomment %}
 
 <div class="free-delivery-bar" 
+     id="free-delivery-bar"
+     data-shop="{{ shop.permanent_domain }}"
      style="
-       background-color: {{ block.settings.background_color | default: '#00a651' }};
+       background-color: {{ block.settings.background_color | default: '#4CAF50' }};
        color: {{ block.settings.text_color | default: '#ffffff' }};
        text-align: center;
        padding: 12px 20px;
@@ -20,11 +22,13 @@
        {% endif %}
      ">
   
-  {% if block.settings.message != blank %}
-    {{ block.settings.message }}
-  {% else %}
-    🚚 Darmowa dostawa powyżej {{ block.settings.min_amount | default: 100 }} zł!
-  {% endif %}
+  <span id="delivery-message">
+    {% if block.settings.message != blank %}
+      {{ block.settings.message }}
+    {% else %}
+      🚚 Darmowa dostawa przy zamówieniu powyżej {{ block.settings.min_amount | default: 199 }} zł!
+    {% endif %}
+  </span>
   
   {% if block.settings.closeable %}
     <button onclick="this.parentElement.style.display='none'" 
@@ -41,6 +45,48 @@
             ">×</button>
   {% endif %}
 </div>
+
+<script>
+// Załaduj ustawienia z API i zaktualizuj pasek
+(function() {
+  const deliveryBar = document.getElementById('free-delivery-bar');
+  if (!deliveryBar) return;
+  
+  const shop = deliveryBar.getAttribute('data-shop');
+  
+  // Pobierz ustawienia z API
+  fetch(`/api/delivery-bar/${shop}`)
+    .then(response => response.json())
+    .then(settings => {
+      // Zaktualizuj wiadomość
+      const messageElement = document.getElementById('delivery-message');
+      if (messageElement && settings.message) {
+        // Zastąp {amount} rzeczywistą wartością
+        const message = settings.message.replace('{amount}', settings.threshold || 199);
+        messageElement.textContent = message;
+      }
+      
+      // Zaktualizuj kolory
+      if (settings.backgroundColor) {
+        deliveryBar.style.backgroundColor = settings.backgroundColor;
+      }
+      if (settings.textColor) {
+        deliveryBar.style.color = settings.textColor;
+      }
+      
+      // Zaktualizuj pozycję
+      if (settings.position === 'bottom') {
+        deliveryBar.style.position = 'fixed';
+        deliveryBar.style.bottom = '0';
+        deliveryBar.style.left = '0';
+        deliveryBar.style.right = '0';
+      }
+    })
+    .catch(err => {
+      console.log('Używam domyślnych ustawień dla paska dostawy');
+    });
+})();
+</script>
 
 {% schema %}
 {

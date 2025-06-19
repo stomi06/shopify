@@ -162,8 +162,7 @@
       </div>
     </div>
 
-    <script>
-      // Aktualizacja podglądu w czasie rzeczywistym
+    <script>      // Aktualizacja podglądu w czasie rzeczywistym
       function updatePreview() {
         const message = document.getElementById('message').value;
         const backgroundColor = document.getElementById('backgroundColor').value;
@@ -180,22 +179,79 @@
       document.getElementById('backgroundColor').addEventListener('input', updatePreview);
       document.getElementById('textColor').addEventListener('input', updatePreview);
 
-      // Zapisz ustawienia
-      function saveSettings() {
+      // Pobierz parametr shop z URL
+      function getShopFromUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('shop') || 'demo-shop.myshopify.com';
+      }
+
+      // Załaduj ustawienia z API
+      async function loadSettings() {
+        try {
+          const shop = getShopFromUrl();
+          const response = await fetch(`/api/settings/${shop}`);
+          
+          if (!response.ok) {
+            throw new Error('Błąd pobierania ustawień');
+          }
+          
+          const settings = await response.json();
+
+          document.getElementById('message').value = settings.message || "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
+          document.getElementById('minAmount').value = settings.threshold || 199;
+          document.getElementById('backgroundColor').value = settings.backgroundColor || "#4CAF50";
+          document.getElementById('textColor').value = settings.textColor || "#FFFFFF";
+          document.getElementById('position').value = settings.position || "top";
+
+          updatePreview();
+          console.log('Ustawienia załadowane:', settings);
+        } catch (err) {
+          console.error('Błąd ładowania ustawień:', err);
+          // Użyj domyślnych wartości
+          updatePreview();
+        }
+      }
+
+      // Zapisz ustawienia do API
+      async function saveSettings() {
         const settings = {
           message: document.getElementById('message').value,
-          minAmount: document.getElementById('minAmount').value,
+          threshold: parseInt(document.getElementById('minAmount').value),
           backgroundColor: document.getElementById('backgroundColor').value,
           textColor: document.getElementById('textColor').value,
           position: document.getElementById('position').value
         };
 
-        // Tutaj możesz dodać zapytanie AJAX do backendu
-        console.log('Zapisuję ustawienia:', settings);
-        
-        // Placeholder - pokaż komunikat sukcesu
-        alert('Ustawienia zostały zapisane! Teraz przejdź do customizer motywu aby dodać rozszerzenie.');
+        try {
+          const shop = getShopFromUrl();
+          const response = await fetch('/api/settings', {
+            method: 'POST',
+            headers: { 
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ shop, settings })
+          });
+
+          if (!response.ok) {
+            throw new Error('Błąd zapisywania ustawień');
+          }
+
+          const result = await response.json();
+          
+          if (result.success) {
+            alert('✅ Ustawienia zostały zapisane pomyślnie!');
+            console.log('Ustawienia zapisane:', settings);
+          } else {
+            alert('❌ Błąd podczas zapisywania ustawień');
+          }
+        } catch (err) {
+          console.error('Błąd:', err);
+          alert('❌ Błąd połączenia z serwerem');
+        }
       }
+
+      // Załaduj ustawienia przy starcie strony
+      document.addEventListener('DOMContentLoaded', loadSettings);
     </script>
   </body>
 </html>
