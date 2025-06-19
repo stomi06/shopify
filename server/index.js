@@ -19,9 +19,9 @@ app.use(session({
   resave: false,
   saveUninitialized: true,
   cookie: { 
-    secure: true,
+    secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'none',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 godziny
   }
 }));
@@ -154,6 +154,8 @@ app.get("/auth", async (req, res) => {
       return res.status(400).send("Missing shop parameter");
     }
 
+    console.log("Starting auth for shop:", shop);
+
     // Zapisz informacje o sklepie w sesji
     req.session.shop = shop;
 
@@ -161,11 +163,21 @@ app.get("/auth", async (req, res) => {
     const state = crypto.randomBytes(16).toString('hex');
     req.session.state = state;
 
-    // Przekieruj do Shopify OAuth
-    const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=${process.env.SCOPES}&redirect_uri=${process.env.HOST}/auth/callback&state=${state}`;
-    
-    console.log("Przekierowuję do:", authUrl);
-    res.redirect(authUrl);
+    console.log("Session data saved:", { shop: req.session.shop, state: req.session.state });
+
+    // Zapisz sesję przed przekierowaniem
+    req.session.save((err) => {
+      if (err) {
+        console.error("Error saving session:", err);
+        return res.status(500).send("Error saving session");
+      }
+
+      // Przekieruj do Shopify OAuth
+      const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=${process.env.SCOPES}&redirect_uri=${process.env.HOST}/auth/callback&state=${state}`;
+      
+      console.log("Przekierowuję do:", authUrl);
+      res.redirect(authUrl);
+    });
   } catch (err) {
     console.error("Błąd w /auth:", err);
     res.status(500).send("Błąd podczas inicjalizacji OAuth");
@@ -175,17 +187,32 @@ app.get("/auth", async (req, res) => {
 app.get("/auth/callback", async (req, res) => {
   try {
     console.log("Session w callback:", req.session);
+    console.log("Query params:", req.query);
     
     const { code, hmac, state, shop } = req.query;
     
-    // Sprawdź czy stan zgadza się z tym z sesji
-    if (state !== req.session.state) {
+    // Sprawdź czy sesja istnieje
+    if (!req.session) {
+      console.error("Brak sesji w callback");
+      return res.status(500).send("Session not found");
+    }
+
+    // Sprawdź czy stan zgadza się z tym z sesji (jeśli istnieje)
+    if (req.session.state && state !== req.session.state) {
+      console.error("State mismatch:", { sessionState: req.session.state, queryState: state });
       return res.status(403).send("Request origin cannot be verified");
     }
 
-    // Sprawdź czy sklep zgadza się z tym z sesji
-    if (shop !== req.session.shop) {
+    // Sprawdź czy sklep zgadza się z tym z sesji (jeśli istnieje)
+    if (req.session.shop && shop !== req.session.shop) {
+      console.error("Shop mismatch:", { sessionShop: req.session.shop, queryShop: shop });
       return res.status(403).send("Shop parameter does not match");
+    }
+
+    // Jeśli sesja nie ma danych, użyj danych z query (fallback)
+    if (!req.session.shop) {
+      req.session.shop = shop;
+      console.log("Ustawiono shop z query params:", shop);
     }
 
     // Weryfikuj HMAC
