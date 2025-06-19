@@ -126,6 +126,14 @@ const shopify = shopifyApi({
 
 app.use(cookieParser()); // Usuń sekret z cookie-parser
 
+// Dodaj CORS middleware
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  next();
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));
@@ -350,6 +358,44 @@ app.get('/api/settings/:shop', async (req, res) => {
   } catch (err) {
     console.error('Błąd pobierania ustawień:', err);
     res.status(500).json({ error: 'Błąd serwera' });
+  }
+});
+
+// Endpoint dla rozszerzenia do pobierania ustawień
+app.get('/api/delivery-bar/:shop', async (req, res) => {
+  try {
+    const { shop } = req.params;
+    console.log(`Pobieranie ustawień dla sklepu: ${shop}`);
+    
+    const result = await pool.query('SELECT settings FROM app_settings WHERE shop = $1', [shop]);
+    
+    if (result.rows.length > 0) {
+      const settings = result.rows[0].settings;
+      console.log(`Znalezione ustawienia:`, settings);
+      res.json(settings);
+    } else {
+      const defaultSettings = {
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount}!",
+        min_amount: 199,
+        background_color: "#4CAF50",
+        text_color: "#FFFFFF",
+        position: "top",
+        closeable: true
+      };
+      console.log(`Brak ustawień, zwracam domyślne`);
+      res.json(defaultSettings);
+    }
+  } catch (err) {
+    console.error('Błąd pobierania ustawień dla rozszerzenia:', err);
+    res.status(500).json({ 
+      error: 'Błąd serwera',
+      message: "🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!",
+      min_amount: 199,
+      background_color: "#4CAF50", 
+      text_color: "#FFFFFF",
+      position: "top",
+      closeable: true
+    });
   }
 });
 

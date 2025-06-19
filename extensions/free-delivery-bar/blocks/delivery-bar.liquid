@@ -1,86 +1,120 @@
 {% comment %}
   Free Delivery Bar Block
-  Wyświetla pasek z informacją o darmowej dostawie
+  Ustawienia są zarządzane przez panel aplikacji
 {% endcomment %}
 
 <div class="free-delivery-bar" 
      id="free-delivery-bar"
      data-shop="{{ shop.permanent_domain }}"
-     data-threshold="{{ block.settings.min_amount | default: 199 }}"
-     style="
-       background-color: {{ block.settings.background_color | default: '#4CAF50' }};
-       color: {{ block.settings.text_color | default: '#ffffff' }};
-       text-align: center;
-       padding: 12px 20px;
-       font-weight: 600;
-       position: relative;
-       z-index: 1000;
-       {% if block.settings.position == 'bottom' %}
-         position: fixed;
-         bottom: 0;
-         left: 0;
-         right: 0;
-       {% endif %}
-     ">
+     style="display: none; text-align: center; padding: 12px 20px; font-weight: 600; position: relative; z-index: 1000;">
   
-  <span id="delivery-message">
-    {% if block.settings.message != blank %}
-      {{ block.settings.message }}
-    {% else %}
-      🚚 Darmowa dostawa przy zamówieniu powyżej {{ block.settings.min_amount | default: 199 }} zł!
-    {% endif %}
-  </span>
+  <span id="delivery-message">Ładowanie...</span>
   
-  {% if block.settings.closeable %}
-    <button onclick="this.parentElement.style.display='none'" 
-            style="
-              background: none;
-              border: none;
-              color: inherit;
-              float: right;
-              cursor: pointer;
-              font-size: 18px;
-              line-height: 1;
-              padding: 0;
-              margin-left: 10px;
-            ">×</button>
-  {% endif %}
+  <button id="close-delivery-bar" 
+          style="background: none; border: none; color: inherit; float: right; cursor: pointer; font-size: 18px; line-height: 1; padding: 0; margin-left: 10px; display: none;">×</button>
 </div>
 
 <script>
-// Dynamiczna aktualizacja wiadomości na podstawie wartości koszyka
 (function() {
   const deliveryBar = document.getElementById('free-delivery-bar');
+  const messageElement = document.getElementById('delivery-message');
+  const closeButton = document.getElementById('close-delivery-bar');
+  
   if (!deliveryBar) return;
   
-  const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
+  const shop = deliveryBar.getAttribute('data-shop');
+  let appSettings = null;
   
-  // Funkcja do aktualizacji wiadomości na podstawie wartości koszyka
+  // Pobierz ustawienia z aplikacji
+  async function loadAppSettings() {
+    try {
+      const response = await fetch(`https://shopify-ige3.onrender.com/api/delivery-bar/${shop}`);
+      
+      if (!response.ok) {
+        throw new Error('Nie można pobrać ustawień');
+      }
+      
+      appSettings = await response.json();
+      console.log('Ustawienia aplikacji:', appSettings);
+      
+      // Zastosuj style z ustawień
+      deliveryBar.style.backgroundColor = appSettings.background_color || '#4CAF50';
+      deliveryBar.style.color = appSettings.text_color || '#ffffff';
+      
+      // Ustaw pozycję
+      if (appSettings.position === 'bottom') {
+        deliveryBar.style.position = 'fixed';
+        deliveryBar.style.bottom = '0';
+        deliveryBar.style.left = '0';
+        deliveryBar.style.right = '0';
+      }
+      
+      // Pokaż przycisk zamknięcia jeśli włączony
+      if (appSettings.closeable) {
+        closeButton.style.display = 'block';
+      }
+      
+      // Pokaż pasek
+      deliveryBar.style.display = 'block';
+      
+      // Zaktualizuj wiadomość na podstawie koszyka
+      updateDeliveryMessage();
+      
+    } catch (error) {
+      console.error('Błąd ładowania ustawień aplikacji:', error);
+      // Ukryj pasek jeśli nie można pobrać ustawień
+      deliveryBar.style.display = 'none';
+    }
+  }
+  
+  // Aktualizuj wiadomość na podstawie wartości koszyka
   function updateDeliveryMessage() {
-    // Pobierz aktualną wartość koszyka z Shopify
+    if (!appSettings) return;
+    
     fetch('/cart.js')
       .then(response => response.json())
       .then(cart => {
         const cartTotal = cart.total_price / 100; // Shopify zwraca w groszach
-        const messageElement = document.getElementById('delivery-message');
+        const threshold = appSettings.min_amount || 199;
         
         if (cartTotal >= threshold) {
           messageElement.innerHTML = '🎉 Masz darmową dostawę!';
           deliveryBar.style.backgroundColor = '#4CAF50';
         } else {
           const remaining = threshold - cartTotal;
-          messageElement.innerHTML = `🚚 Dodaj za ${remaining.toFixed(2)} zł i otrzymasz darmową dostawę!`;
-          deliveryBar.style.backgroundColor = '#FF9800';
+          let message = appSettings.message || '🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!';
+          
+          // Zastąp {amount} rzeczywistą kwotą
+          message = message.replace('{amount}', threshold + ' zł');
+          message = message.replace('{remaining}', remaining.toFixed(2) + ' zł');
+          
+          messageElement.innerHTML = message;
+          deliveryBar.style.backgroundColor = appSettings.background_color || '#FF9800';
         }
       })
       .catch(() => {
         // Fallback - pokaż domyślną wiadomość
-        console.log('Nie można pobrać informacji o koszyku');
+        let message = appSettings.message || '🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!';
+        message = message.replace('{amount}', (appSettings.min_amount || 199) + ' zł');
+        messageElement.innerHTML = message;
       });
   }
   
-  // Zaktualizuj przy załadowaniu strony
-  updateDeliveryMessage();
+  // Obsługa zamknięcia paska
+  closeButton.addEventListener('click', function() {
+    deliveryBar.style.display = 'none';
+    // Zapisz w localStorage, że użytkownik zamknął pasek
+    localStorage.setItem('deliveryBarClosed', 'true');
+  });
+  
+  // Sprawdź czy pasek był wcześniej zamknięty
+  if (localStorage.getItem('deliveryBarClosed') === 'true') {
+    deliveryBar.style.display = 'none';
+    return;
+  }
+  
+  // Załaduj ustawienia przy starcie
+  loadAppSettings();
   
   // Nasłuchuj zmian w koszyku
   document.addEventListener('cart:updated', updateDeliveryMessage);
@@ -92,56 +126,14 @@
 {
   "name": "Free Delivery Bar",
   "target": "section",
-  "stylesheet": "free-delivery-bar.css",
-  "javascript": "free-delivery-bar.js",
   "settings": [
     {
-      "type": "text",
-      "id": "message",
-      "label": "Wiadomość",
-      "default": "🚚 Darmowa dostawa powyżej {amount} zł!",
-      "info": "Tekst wyświetlany na pasku. Użyj {amount} jako placeholder"
+      "type": "paragraph",
+      "content": "Wszystkie ustawienia (wiadomość, kolory, kwota) są zarządzane przez panel aplikacji. Ten blok tylko wyświetla pasek na stronie."
     },
     {
-      "type": "number",
-      "id": "min_amount",
-      "label": "Minimalna kwota (zł)",
-      "default": 199
-    },
-    {
-      "type": "color",
-      "id": "background_color",
-      "label": "Kolor tła",
-      "default": "#4CAF50"
-    },
-    {
-      "type": "color",
-      "id": "text_color",
-      "label": "Kolor tekstu",
-      "default": "#ffffff"
-    },
-    {
-      "type": "select",
-      "id": "position",
-      "label": "Pozycja paska",
-      "options": [
-        {
-          "value": "top",
-          "label": "Góra strony"
-        },
-        {
-          "value": "bottom",
-          "label": "Dół strony (sticky)"
-        }
-      ],
-      "default": "top"
-    },
-    {
-      "type": "checkbox",
-      "id": "closeable",
-      "label": "Możliwość zamknięcia",
-      "default": true,
-      "info": "Pozwala użytkownikowi zamknąć pasek"
+      "type": "paragraph", 
+      "content": "Aby skonfigurować pasek, przejdź do: Apps → Free Delivery → Ustawienia"
     }
   ]
 }
