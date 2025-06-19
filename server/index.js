@@ -5,6 +5,7 @@ import express from "express";
 import dotenv from "dotenv";
 import path from "path";
 import bodyParser from "body-parser";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 const app = express();
@@ -82,6 +83,7 @@ const shopify = shopifyApi({
   sessionStorage, // Użycie CustomSessionStorage
 });
 
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.static("public"));

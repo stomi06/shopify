@@ -23,6 +23,7 @@
     "@shopify/shopify-api": "^11.13.0",
     "axios": "^1.10.0",
     "body-parser": "^2.2.0",
+    "cookie-parser": "^1.4.7",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "pg": "^8.16.1"
