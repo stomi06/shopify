@@ -1,0 +1,9 @@
+# Konfiguracja rozszerzenia Free Delivery Bar
+
+name = "free-delivery-bar"
+type = "theme"
+
+[extension_points]
+
+[[extension_points.entry]]
+target = "layout.theme"

@@ -1,0 +1,108 @@
+{% comment %}
+  Free Delivery Bar Block
+  Wyświetla pasek z informacją o darmowej dostawie
+{% endcomment %}
+
+<div class="free-delivery-bar" 
+     style="
+       background-color: {{ block.settings.background_color | default: '#00a651' }};
+       color: {{ block.settings.text_color | default: '#ffffff' }};
+       text-align: center;
+       padding: 12px 20px;
+       font-weight: 600;
+       position: relative;
+       z-index: 1000;
+       {% if block.settings.position == 'bottom' %}
+         position: fixed;
+         bottom: 0;
+         left: 0;
+         right: 0;
+       {% endif %}
+     ">
+  
+  {% if block.settings.message != blank %}
+    {{ block.settings.message }}
+  {% else %}
+    🚚 Darmowa dostawa powyżej {{ block.settings.min_amount | default: 100 }} zł!
+  {% endif %}
+  
+  {% if block.settings.closeable %}
+    <button onclick="this.parentElement.style.display='none'" 
+            style="
+              background: none;
+              border: none;
+              color: inherit;
+              float: right;
+              cursor: pointer;
+              font-size: 18px;
+              line-height: 1;
+              padding: 0;
+              margin-left: 10px;
+            ">×</button>
+  {% endif %}
+</div>
+
+{% schema %}
+{
+  "name": "Free Delivery Bar",
+  "target": "section",
+  "stylesheet": "free-delivery-bar.css",
+  "javascript": "free-delivery-bar.js",
+  "settings": [
+    {
+      "type": "text",
+      "id": "message",
+      "label": "Wiadomość",
+      "default": "🚚 Darmowa dostawa powyżej 100 zł!",
+      "info": "Tekst wyświetlany na pasku"
+    },
+    {
+      "type": "number",
+      "id": "min_amount",
+      "label": "Minimalna kwota (zł)",
+      "default": 100
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Kolor tła",
+      "default": "#00a651"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Kolor tekstu",
+      "default": "#ffffff"
+    },
+    {
+      "type": "select",
+      "id": "position",
+      "label": "Pozycja paska",
+      "options": [
+        {
+          "value": "top",
+          "label": "Góra strony"
+        },
+        {
+          "value": "bottom",
+          "label": "Dół strony (sticky)"
+        }
+      ],
+      "default": "top"
+    },
+    {
+      "type": "checkbox",
+      "id": "closeable",
+      "label": "Możliwość zamknięcia",
+      "default": true,
+      "info": "Pozwala użytkownikowi zamknąć pasek"
+    },
+    {
+      "type": "checkbox",
+      "id": "show_on_cart_page",
+      "label": "Pokazuj na stronie koszyka",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

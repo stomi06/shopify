@@ -1,0 +1,24 @@
+# Konfiguracja główna aplikacji Shopify
+name = "free-delivery-app"
+client_id = "7fb3c15b431478143eac521f8700d4f0"
+application_url = "https://shopify-ige3.onrender.com"
+embedded = true
+
+[access_scopes]
+scopes = "read_products,write_script_tags"
+
+[auth]
+redirect_urls = [
+  "https://shopify-ige3.onrender.com/auth/callback"
+]
+
+[webhooks]
+api_version = "2024-01"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = false
+dev_store_url = "freedelivery-test.myshopify.com"
+include_config_on_deploy = true
