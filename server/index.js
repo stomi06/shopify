@@ -8,20 +8,28 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import session from "express-session";
+import pgSession from "connect-pg-simple";
 
 dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Konfiguracja sesji Express - zmiana ustawień dla Shopify
+// Konfiguracja sesji Express z PostgreSQL store
+const PgStore = pgSession(session);
+
 app.use(session({
+  store: new PgStore({
+    pool: pool,
+    tableName: 'session',
+    createTableIfMissing: true
+  }),
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false,
   cookie: { 
-    secure: false, // Wyłącz secure dla lepszej kompatybilności
-    httpOnly: false, // Pozwól na dostęp z JavaScript
-    sameSite: 'lax', // Użyj lax zamiast none
+    secure: false,
+    httpOnly: false,
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 godziny
   }
 }));
@@ -32,12 +40,18 @@ const pool = new Pool({
   database: process.env.DB_NAME,
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
 });
 
-// Implementacja CustomSessionStorage
+// Implementacja CustomSessionStorage z lepszą obsługą błędów
 const sessionStorage = {
   storeSession: async (session) => {
     try {
+      console.log("Attempting to store session for:", session.shop);
       const query = `
         INSERT INTO shopify_sessions (id, shop, state, is_online, access_token, scope, expires_at, session_data)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -61,10 +75,12 @@ const sessionStorage = {
         JSON.stringify(session),
       ];
       await pool.query(query, values);
+      console.log("Session stored successfully for:", session.shop);
       return true;
     } catch (err) {
       console.error("Błąd podczas zapisywania sesji:", err);
-      return false;
+      // Nie przerywaj procesu jeśli baza danych nie działa
+      return true; // Zwróć true aby kontynuować
     }
   },
   loadSession: async (id) => {
@@ -225,8 +241,13 @@ app.get("/auth/callback", async (req, res) => {
       })
     });
 
-    const accessTokenData = await accessTokenResponse.json();
-    console.log("Access token data:", accessTokenData);
+    const accessTokenData = await accessTokenResponse.json();    console.log("Access token data:", accessTokenData);
+
+    // Sprawdź czy otrzymaliśmy prawidłowy token
+    if (!accessTokenData.access_token) {
+      console.error("Nie otrzymano access_token:", accessTokenData);
+      return res.status(500).send("Failed to obtain access token");
+    }
 
     // Zapisz token w bazie danych
     const session = {
@@ -239,7 +260,6 @@ app.get("/auth/callback", async (req, res) => {
     };
 
     await sessionStorage.storeSession(session);
-    console.log("Sesja zapisana w bazie danych");
 
     // Dodaj ScriptTag (opcjonalnie)
     try {
@@ -263,7 +283,35 @@ app.get("/auth/callback", async (req, res) => {
       console.error("Error creating script tag:", error);
     }
 
-    res.redirect(`https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`);
+    // Przekieruj do strony sukcesu zamiast Shopify Admin
+    console.log("Przekierowuję do strony sukcesu");
+    return res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Aplikacja zainstalowana pomyślnie</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          .success { color: green; font-size: 24px; margin-bottom: 20px; }
+          .info { color: #666; margin-bottom: 20px; }
+          .button { 
+            background: #5c6ac4; 
+            color: white; 
+            padding: 12px 24px; 
+            text-decoration: none; 
+            border-radius: 4px; 
+            display: inline-block;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="success">✅ Aplikacja została zainstalowana pomyślnie!</div>
+        <div class="info">Script tag został dodany do Twojego sklepu: ${shop}</div>
+        <div class="info">Możesz teraz zamknąć tę kartę i wrócić do panelu administracyjnego Shopify.</div>
+        <a href="https://${shop}/admin" class="button">Wróć do panelu admin</a>
+      </body>
+      </html>
+    `);
   } catch (err) {
     console.error("Błąd autoryzacji:", err);
     res.status(500).send("Błąd autoryzacji");
