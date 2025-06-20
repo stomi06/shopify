@@ -1,6 +1,6 @@
 {% comment %}
   Free Delivery Bar Block
-  Ustawienia są zarządzane przez panel aplikacji i zapisane w metafields
+  Settings are managed through the app panel and saved in metafields
 {% endcomment %}
 
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
@@ -95,15 +95,15 @@
 <div class="free-delivery-bar" 
      id="free-delivery-bar"
      data-threshold="{{ settings.min_amount | default: 199 }}"
-     data-message="{{ settings.message | default: 'Darmowa dostawa przy zamówieniu powyżej 199 zł!' }}"
-     data-success-message="{{ settings.success_message | default: 'Gratulacje! Masz darmową dostawę!' }}"
+     data-message="{{ settings.message | default: 'Free delivery on orders over $199!' }}"
+     data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
   <span id="delivery-message">
-    {% assign message = settings.message | default: "Darmowa dostawa przy zamówieniu powyżej 199 zł!" %}
+    {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
     {{ message }}
   </span>
   
@@ -163,7 +163,7 @@
   deliveryBar.style.setProperty('width', width + '%', 'important');
   deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   
-  // Sprawdź czy pasek był wcześniej zamknięty
+  // Check if bar was previously closed
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
     deliveryBar.classList.add('hidden');
     return;
@@ -171,7 +171,7 @@
   
   let isBarVisible = !deliveryBar.classList.contains('hidden');
 
-  // Aktualizuj wiadomość na podstawie wartości koszyka
+  // Update delivery message based on cart value
   function updateDeliveryMessage() {
     fetch('/cart.js')
       .then(response => response.json())
@@ -182,7 +182,7 @@
         let finalMessage = originalMessage;
         
         if (cartTotal >= threshold) {
-          // PRÓG OSIĄGNIĘTY
+          // THRESHOLD REACHED
           if (showSuccess) {
             // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
             if (!isBarVisible) {
@@ -194,7 +194,7 @@
             if (successMessage && successMessage.trim() !== '') {
               finalMessage = successMessage;
             } else {
-              finalMessage = '🎉 Masz darmową dostawę!';
+              finalMessage = '🎉 You have free delivery!';
             }
             
             messageElement.innerHTML = finalMessage;
@@ -227,8 +227,8 @@
           const remaining = threshold - cartTotal;
           
           finalMessage = originalMessage
-            .replace('{amount}', threshold + ' zł')
-            .replace('{remaining}', remaining.toFixed(2) + ' zł');
+            .replace('{amount}', threshold)
+            .replace('{remaining}', remaining.toFixed(2));
           
           messageElement.innerHTML = finalMessage;
           
@@ -237,7 +237,7 @@
             deliveryBar.style.backgroundColor = bgColor;
           }
           
-          console.log('📊 Normal message - remaining:', remaining.toFixed(2) + ' zł');
+          console.log('📊 Normal message - remaining:', remaining.toFixed(2));
         }
         
         // 🔥 ZAPISZ W LOCALSTORAGE
@@ -247,7 +247,7 @@
         console.error('❌ Cart fetch error:', error);
         // Fallback
         deliveryBar.classList.remove('hidden');
-        let message = originalMessage.replace('{amount}', threshold + ' zł');
+        let message = originalMessage.replace('{amount}', threshold);
         messageElement.innerHTML = message;
       });
   }
@@ -360,11 +360,11 @@
   "settings": [
     {
       "type": "paragraph",
-      "content": "Wszystkie ustawienia (wiadomość, kolory, pozycja, style) są zarządzane przez panel aplikacji. Ten blok automatycznie pobiera ustawienia z aplikacji."
+      "content": "All settings (message, colors, position, styles) are managed through the app panel. This block automatically fetches settings from the app."
     },
     {
       "type": "paragraph", 
-      "content": "Aby skonfigurować pasek, przejdź do: Apps → Free Delivery → Ustawienia"
+      "content": "To configure the bar, go to: Apps → Free Delivery → Settings"
     }
   ]
 }

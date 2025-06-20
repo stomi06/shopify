@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Delivery Bar - Panel zarządzania</title>
+  <title>Free Delivery Bar - Management Panel</title>
   <style>
     * {
       margin: 0;
@@ -318,59 +318,59 @@
       <div class="app-icon">🚚</div>
       Free Delivery Bar
     </h1>
-    <div style="color: #6d7175; font-size: 14px;">Panel zarządzania</div>
+    <div style="color: #6d7175; font-size: 14px;">Management Panel</div>
   </div>
 
   <div class="main-content">
     <div class="settings-panel">
       <div class="panel-header">
-        <h2>Konfiguracja paska</h2>
-        <p>Dostosuj wygląd i zachowanie paska darmowej dostawy</p>
+        <h2>Bar Configuration</h2>
+        <p>Customize the appearance and behavior of the free delivery bar</p>
       </div>
       
       <div class="panel-content">
-        <!-- Treść i zachowanie -->
+        <!-- Content and behavior -->
         <div class="form-section">
-          <div class="section-title">📝 Treść i zachowanie</div>
+          <div class="section-title">📝 Content and Behavior</div>
           
           <div class="form-group">
-            <label for="message">Wiadomość na pasku</label>
-            <textarea id="message" rows="2" placeholder="🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!"></textarea>
-            <div class="help-text">Użyj {amount} jako placeholder dla kwoty, {remaining} dla pozostałej kwoty</div>
+            <label for="message">Bar Message</label>
+            <textarea id="message" rows="2" placeholder="🚚 Free delivery on orders over {amount}!"></textarea>
+            <div class="help-text">Use {amount} as placeholder for the amount, {remaining} for the remaining amount</div>
           </div>
 
           <div class="form-group">
-            <label for="minAmount">Minimalna kwota (zł)</label>
+            <label for="minAmount">Minimum Amount ($)</label>
             <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
 
-          <!-- NOWA SEKCJA - Komunikat sukcesu -->
+          <!-- SUCCESS MESSAGE SECTION -->
           <div class="form-group">
             <label>
               <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
-              Pokaż komunikat po osiągnięciu progu darmowej dostawy
+              Show message after reaching free delivery threshold
             </label>
-            <div class="help-text">Gdy włączone, pasek zmieni wiadomość po osiągnięciu wymaganej kwoty</div>
+            <div class="help-text">When enabled, the bar will change message after reaching the required amount</div>
           </div>
 
           <div class="form-group" id="successMessageGroup">
-            <label for="successMessage">Komunikat sukcesu</label>
-            <textarea id="successMessage" rows="2" placeholder="🎉 Gratulacje! Masz darmową dostawę!"></textarea>
-            <div class="help-text">Wiadomość wyświetlana gdy klient osiągnie próg darmowej dostawy</div>
+            <label for="successMessage">Success Message</label>
+            <textarea id="successMessage" rows="2" placeholder="🎉 Congratulations! You have free delivery!"></textarea>
+            <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
           </div>
         </div>
 
-        <!-- Kolory i przezroczystość -->
+        <!-- Colors and transparency -->
         <div class="form-section">
-          <div class="section-title">🎨 Kolory i przezroczystość</div>
+          <div class="section-title">🎨 Colors and Transparency</div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="backgroundColor">Kolor tła</label>
+              <label for="backgroundColor">Background Color</label>
               <input type="color" id="backgroundColor" value="#4CAF50" />
             </div>
             <div class="form-group">
-              <label for="textColor">Kolor tekstu</label>
+              <label for="textColor">Text Color</label>
               <input type="color" id="textColor" value="#FFFFFF" />
             </div>
           </div>
@@ -378,141 +378,141 @@
           <div class="form-group">
             <label>
               <input type="checkbox" id="transparentBg" style="margin-right: 8px;">
-              Przezroczyste tło (tylko tekst widoczny)
+              Transparent background (only text visible)
             </label>
-            <div class="help-text">Gdy włączone, tło paska będzie całkowicie przezroczyste</div>
+            <div class="help-text">When enabled, the bar background will be completely transparent</div>
           </div>
 
           <div class="form-group">
-            <label for="opacity">Przezroczystość paska: <span class="range-value" id="opacityValue">100%</span></label>
+            <label for="opacity">Bar Transparency: <span class="range-value" id="opacityValue">100%</span></label>
             <input type="range" id="opacity" min="0" max="100" value="100"/>
-            <div class="help-text">Kontroluje przezroczystość całego paska (tekst + tło)</div>
+            <div class="help-text">Controls the transparency of the entire bar (text + background)</div>
           </div>
         </div>
 
-        <!-- Typografia -->
+        <!-- Typography -->
         <div class="form-section">
-          <div class="section-title">✍️ Typografia</div>
+          <div class="section-title">✍️ Typography</div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="fontSize">Rozmiar tekstu</label>
+              <label for="fontSize">Font Size</label>
               <select id="fontSize">
-                <option value="12">Mały (12px)</option>
-                <option value="14" selected>Średni (14px)</option>
-                <option value="16">Duży (16px)</option>
-                <option value="18">Bardzo duży (18px)</option>
+                <option value="12">Small (12px)</option>
+                <option value="14" selected>Medium (14px)</option>
+                <option value="16">Large (16px)</option>
+                <option value="18">Extra Large (18px)</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="fontWeight">Grubość czcionki</label>
+              <label for="fontWeight">Font Weight</label>
               <select id="fontWeight">
-                <option value="400">Normalna</option>
-                <option value="500">Średnia</option>
-                <option value="600" selected>Pogrubiona</option>
-                <option value="700">Bardzo pogrubiona</option>
+                <option value="400">Normal</option>
+                <option value="500">Medium</option>
+                <option value="600" selected>Bold</option>
+                <option value="700">Extra Bold</option>
               </select>
             </div>
           </div>
         </div>
 
-        <!-- Pozycja i rozmiar -->
+        <!-- Position and size -->
         <div class="form-section">
-          <div class="section-title">📐 Pozycja i rozmiar</div>
+          <div class="section-title">📐 Position and Size</div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="position">Pozycja paska</label>
+              <label for="position">Bar Position</label>
               <select id="position">
-                <option value="fixed">Fixed (zawsze widoczny)</option>
-                <option value="absolute">Absolute (statyczny)</option>
+                <option value="fixed">Fixed (always visible)</option>
+                <option value="absolute">Absolute (static)</option>
               </select>
             </div>
             <div class="form-group">
-              <label for="width">Szerokość paska: <span class="range-value" id="widthValue">90%</span></label>
+              <label for="width">Bar Width: <span class="range-value" id="widthValue">90%</span></label>
               <input type="range" id="width" min="50" max="100" step="5" />
-              <div class="help-text">Maksymalna szerokość: 500px</div>
+              <div class="help-text">Maximum width: 500px</div>
             </div>
           </div>
 
           <div class="form-group">
-            <label for="marginTop">Odległość od góry: <span class="range-value" id="marginTopValue">20px</span></label>
+            <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">20px</span></label>
             <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
-            <div class="help-text">Kontroluje odstęp od górnej krawędzi strony</div>
+            <div class="help-text">Controls the spacing from the top edge of the page</div>
           </div>
         </div>
 
-        <!-- Ramka -->
+        <!-- Border -->
         <div class="form-section">
-          <div class="section-title">🔲 Ramka</div>
+          <div class="section-title">🔲 Border</div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="borderWidth">Grubość ramki: <span class="range-value" id="borderWidthValue">0px</span></label>
+              <label for="borderWidth">Border Width: <span class="range-value" id="borderWidthValue">0px</span></label>
               <input type="range" id="borderWidth" min="0" max="10" value="0" step="1" />
             </div>
             <div class="form-group">
-              <label for="borderColor">Kolor ramki</label>
+              <label for="borderColor">Border Color</label>
               <input type="color" id="borderColor" value="#cccccc" />
             </div>
           </div>
 
           <div class="form-group">
-            <label for="borderRadius">Zaokrąglenie rogów: <span class="range-value" id="borderRadiusValue">6px</span></label>
+            <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">6px</span></label>
             <input type="range" id="borderRadius" min="0" max="50" value="6" step="1" />
           </div>
         </div>
 
-        <!-- Cień -->
+        <!-- Shadow -->
         <div class="form-section">
-          <div class="section-title">🌑 Cień</div>
+          <div class="section-title">🌑 Shadow</div>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="shadowColor">Kolor cienia</label>
+              <label for="shadowColor">Shadow Color</label>
               <input type="color" id="shadowColor" value="#000000" />
             </div>
             <div class="form-group">
-              <label for="shadowOpacity">Przezroczystość cienia: <span class="range-value" id="shadowOpacityValue">20%</span></label>
+              <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">20%</span></label>
               <input type="range" id="shadowOpacity" min="0" max="100" value="20" step="5" />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="shadowBlur">Rozmycie cienia: <span class="range-value" id="shadowBlurValue">4px</span></label>
+              <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">4px</span></label>
               <input type="range" id="shadowBlur" min="0" max="20" value="4" step="1" />
             </div>
             <div class="form-group">
-              <label for="shadowDistance">Odległość cienia: <span class="range-value" id="shadowDistanceValue">2px</span></label>
+              <label for="shadowDistance">Shadow Distance: <span class="range-value" id="shadowDistanceValue">2px</span></label>
               <input type="range" id="shadowDistance" min="0" max="10" value="2" step="1" />
             </div>
           </div>
         </div>
 
-        <!-- Przyciski akcji -->
+        <!-- Action buttons -->
         <div class="form-section">
-          <button type="button" class="button-secondary" onclick="resetSettings()">Reset do domyślnych</button>
-          <button type="button" class="button-primary" onclick="saveSettings()">Zapisz ustawienia</button>
+          <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
+          <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
         </div>
       </div>
     </div>
 
-    <!-- Panel podglądu -->
+    <!-- Preview panel -->
     <div class="preview-panel">
       <div class="panel-header">
-        <h2>Podgląd na żywo</h2>
-        <p>Zobacz jak będzie wyglądać pasek</p>
+        <h2>Live Preview</h2>
+        <p>See how the bar will look</p>
       </div>
       
       <div class="preview-content">
         <div class="preview-area">
           <div class="preview-bar" id="previewBar">
-            <span id="previewMessage">🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!</span>
+            <span id="previewMessage">🚚 Free delivery on orders over $199!</span>
             <button class="preview-close">×</button>
           </div>
           <div style="color: #6d7175; font-size: 12px; margin-top: 16px;">
-            Tak będzie wyglądać pasek na stronie sklepu
+            This is how the bar will appear on your store
           </div>
         </div>
       </div>
@@ -547,10 +547,10 @@
       const previewMessage = document.getElementById('previewMessage');
       
       // Pobierz wszystkie wartości
-      const message = document.getElementById('message').value || '🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!';
+      const message = document.getElementById('message').value || '🚚 Free delivery on orders over $199!';
       const minAmount = document.getElementById('minAmount').value || 199;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
-      const successMessage = document.getElementById('successMessage').value || '🎉 Gratulacje! Masz darmową dostawę!';
+      const successMessage = document.getElementById('successMessage').value || '🎉 Congratulations! You have free delivery!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
       const transparentBg = document.getElementById('transparentBg').checked;
@@ -590,7 +590,7 @@
         return; // Nie wykonuj reszty stylowania
       } else {
         // Pokaż normalną wiadomość
-        finalMessage = message.replace('{amount}', minAmount + ' zł');
+        finalMessage = message.replace('{amount}', '$' + minAmount);
         previewBar.style.display = 'block';
         
         if (transparentBg) {
@@ -660,7 +660,7 @@
         closeable: true
       };
 
-      console.log('Zapisuję komunikat sukcesu:', settings.show_success_message, settings.success_message);
+      console.log('Saving success message:', settings.show_success_message, settings.success_message);
       
       try {
         const shop = getShopFromUrl();
@@ -671,21 +671,21 @@
         });
 
         if (response.ok) {
-          // Pokaż komunikat sukcesu
+          // Show success message
           const alertDiv = document.createElement('div');
           alertDiv.className = 'alert success';
-          alertDiv.textContent = '✅ Ustawienia zostały zapisane pomyślnie!';
+          alertDiv.textContent = '✅ Settings saved successfully!';
           document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
           
           setTimeout(() => alertDiv.remove(), 3000);
         } else {
-          throw new Error('Błąd podczas zapisywania');
+          throw new Error('Error while saving');
         }
       } catch (err) {
-        // Pokaż komunikat błędu
+        // Show error message
         const alertDiv = document.createElement('div');
         alertDiv.className = 'alert error';
-        alertDiv.textContent = '❌ Błąd podczas zapisywania ustawień: ' + err.message;
+        alertDiv.textContent = '❌ Error saving settings: ' + err.message;
         document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
         
         setTimeout(() => alertDiv.remove(), 5000);
@@ -699,17 +699,17 @@
         const response = await fetch(`/api/settings/${shop}`);
         
         if (!response.ok) {
-          console.log('Używam domyślnych ustawień');
+          console.log('Using default settings');
           return;
         }
         
         const settings = await response.json();
 
         // Załaduj podstawowe ustawienia
-        document.getElementById('message').value = settings.message || "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
+        document.getElementById('message').value = settings.message || "🚚 Free delivery on orders over ${amount}!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false; // 👈 DODANE (domyślnie true)
-        document.getElementById('successMessage').value = settings.success_message || "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
+        document.getElementById('successMessage').value = settings.success_message || "🎉 Congratulations! You have free delivery!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
         document.getElementById('textColor').value = settings.text_color || "#FFFFFF";
         document.getElementById('transparentBg').checked = settings.transparent_bg || false;
@@ -743,19 +743,19 @@
         toggleSuccessMessageField(); // 👈 DODANE
         
         updatePreview();
-        console.log('Ustawienia załadowane:', settings);
+        console.log('Settings loaded:', settings);
       } catch (err) {
-        console.error('Błąd ładowania ustawień:', err);
+        console.error('Error loading settings:', err);
       }
     }
 
     // Funkcja resetowania ustawień
     function resetSettings() {
-      if (confirm('Czy na pewno chcesz przywrócić domyślne ustawienia?')) {
-        document.getElementById('message').value = "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
+      if (confirm('Are you sure you want to restore default settings?')) {
+        document.getElementById('message').value = "🚚 Free delivery on orders over ${amount}!";
         document.getElementById('minAmount').value = 199;
         document.getElementById('showSuccessMessage').checked = true; // 👈 DODANE
-        document.getElementById('successMessage').value = "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
+        document.getElementById('successMessage').value = "🎉 Congratulations! You have free delivery!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = "#4CAF50";
         document.getElementById('textColor').value = "#FFFFFF";
         document.getElementById('transparentBg').checked = false;
