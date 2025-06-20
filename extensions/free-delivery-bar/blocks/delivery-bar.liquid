@@ -90,32 +90,6 @@
   .free-delivery-bar button:hover {
     opacity: 1;
   }
-  
-  .delivery-bar-content {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-
-  .delivery-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    flex-shrink: 0;
-  }
-
-  /* Mobile responsive */
-  @media (max-width: 768px) {
-    .delivery-icon {
-      width: 16px;
-      height: 16px;
-    }
-    
-    .delivery-bar-content {
-      gap: 6px;
-    }
-  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -127,24 +101,11 @@
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"
-     data-show-icon="{% if settings.show_icon == true %}true{% else %}false{% endif %}"
-     data-icon-type="{{ settings.icon_type | default: 'default' }}"
-     data-icon-image="{{ settings.icon_image }}">
-  <div class="delivery-bar-content">
-    {% if settings.show_icon %}
-      {% if settings.icon_type == 'custom' and settings.icon_image %}
-        <img class="delivery-icon" src="{{ settings.icon_image }}" alt="Delivery" />
-      {% else %}
-        <img class="delivery-icon" src="/default-icon" alt="Delivery" />
-      {% endif %}
-    {% endif %}
-    
-    <span id="delivery-message">
-      {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
-      {{ message }}
-    </span>
-  </div>
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
+  <span id="delivery-message">
+    {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
+    {{ message }}
+  </span>
   
   {% if settings.closeable == true %}
     <button id="close-delivery-bar">×</button>
@@ -173,7 +134,7 @@
   const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
 
   if (savedMessage) {
-    updateMessageWithIcon(savedMessage);
+    messageElement.innerHTML = savedMessage;
     console.log('📱 Restored message from localStorage:', savedMessage);
   }
 
@@ -194,18 +155,9 @@
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
-  const showIcon = deliveryBar.getAttribute('data-show-icon') === 'true';
-  const iconType = deliveryBar.getAttribute('data-icon-type');
-  const iconImage = deliveryBar.getAttribute('data-icon-image');
 
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
-  console.log('=== ICON DEBUG ===');
-  console.log('showIcon:', showIcon);
-  console.log('iconType:', iconType); 
-  console.log('iconImage:', iconImage);
-  console.log('iconImage length:', iconImage ? iconImage.length : 'null');
-  console.log('==================');
   
   // USTAW SZEROKOŚĆ I MARGIN-TOP DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
@@ -245,8 +197,7 @@
               finalMessage = '🎉 You have free delivery!';
             }
             
-            // Aktualizuj wiadomość z ikoną
-            updateMessageWithIcon(finalMessage);
+            messageElement.innerHTML = finalMessage;
             
             // Zmień kolor na zielony (sukces)
             if (!transparentBg) {
@@ -279,8 +230,7 @@
             .replace('{amount}', threshold)
             .replace('{remaining}', remaining.toFixed(2));
           
-          // Aktualizuj wiadomość z ikoną
-          updateMessageWithIcon(finalMessage);
+          messageElement.innerHTML = finalMessage;
           
           // Przywróć oryginalny kolor
           if (!transparentBg) {
@@ -400,35 +350,6 @@
   console.log('🚀 Initializing...');
   updateDeliveryMessage();
   
-  // Dodaj nową funkcję do aktualizacji wiadomości z ikoną:
-  function updateMessageWithIcon(message) {
-    let iconHtml = '';
-    
-    console.log('🖼️ updateMessageWithIcon called:', { showIcon, iconType, iconImage: iconImage?.substring(0, 50) });
-    
-    if (showIcon) {
-      if (iconType === 'custom' && iconImage && iconImage !== 'null' && iconImage !== '') {
-        iconHtml = `<img class="delivery-icon" src="${iconImage}" alt="Delivery" />`;
-        console.log('✅ Using custom icon');
-      } else {
-        iconHtml = `<img class="delivery-icon" src="/default-icon" alt="Delivery" />`;
-        console.log('✅ Using default icon');
-      }
-    } else {
-      console.log('❌ showIcon is false');
-    }
-    
-    // Znajdź element delivery-bar-content i zaktualizuj jego zawartość
-    const contentDiv = deliveryBar.querySelector('.delivery-bar-content');
-    if (contentDiv) {
-      contentDiv.innerHTML = `
-        ${iconHtml}
-        <span id="delivery-message">${message}</span>
-      `;
-      
-      console.log('🔄 Updated contentDiv HTML:', contentDiv.innerHTML);
-    }
-  }
 })();
 </script>
 

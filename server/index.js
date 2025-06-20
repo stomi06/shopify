@@ -11,8 +11,6 @@ import session from "express-session";
 
 dotenv.config();
 const app = express();
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
 const PORT = process.env.PORT || 3000;
 
 const pool = new Pool({
@@ -387,10 +385,6 @@ app.post('/api/settings', async (req, res) => {
     console.error('❌ Błąd zapisywania ustawień:', err.message);
     res.status(500).json({ error: 'Błąd serwera: ' + err.message });
   }
-});
-
-app.get('/default-icon', (req, res) => {
-  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
 });
 
 // API endpoint do pobierania ustawień z Metafields

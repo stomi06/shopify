@@ -300,57 +300,6 @@
       margin-right: 8px;
     }
 
-    /* Dodaj do <style> w admin.html: */
-    #iconUploadGroup {
-      margin-top: 15px;
-      padding: 15px;
-      border: 1px solid #e1e3e5;
-      border-radius: 6px;
-      background: #f9f9f9;
-    }
-
-    .icon-choice {
-      margin-bottom: 12px;
-      padding: 8px;
-      border-radius: 4px;
-      transition: background-color 0.2s ease;
-    }
-
-    .icon-choice:hover {
-      background-color: #f0f0f0;
-    }
-
-    .radio-label {
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      font-weight: normal;
-      margin-bottom: 0;
-    }
-
-    .radio-label input[type="radio"] {
-      margin-right: 8px;
-    }
-
-    .image-preview {
-      margin-top: 10px;
-      padding: 10px;
-      border: 2px dashed #c9cccf;
-      border-radius: 6px;
-      text-align: center;
-      min-height: 60px;
-      display: none;
-      background-size: contain;
-      background-repeat: no-repeat;
-      background-position: center;
-    }
-
-    .image-preview.has-image {
-      background-color: #f6f6f7;
-      border-color: #5c6ac4;
-      border-style: solid;
-    }
-
     @media (max-width: 1200px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -546,45 +495,6 @@
           <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
           <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
         </div>
-
-        <!-- Delivery Icon Section - UPROSZCZONA -->
-        <div class="form-section">
-          <div class="section-title">🖼️ Ikona dostawy</div>
-          
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="showIcon" style="margin-right: 8px;">
-              Dodaj ikonę dostawy przed tekstem
-            </label>
-            <div class="help-text">Ikona będzie wyświetlana po lewej stronie tekstu</div>
-          </div>
-
-          <div class="form-group" id="iconUploadGroup" style="display: none;">
-            <label>Wybierz ikonę:</label>
-            
-            <!-- Opcja domyślnej ikony -->
-            <div class="icon-choice">
-              <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked>
-              <label for="useDefaultIcon" class="radio-label">
-                <img src="/default-icon" alt="Default icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
-                Użyj domyślnej ikony
-              </label>
-            </div>
-            
-            <!-- Opcja własnej ikony -->
-            <div class="icon-choice">
-              <input type="radio" id="useCustomIcon" name="iconChoice" value="custom">
-              <label for="useCustomIcon" class="radio-label">📤 Prześlij własną ikonę</label>
-            </div>
-            
-            <!-- Upload dla własnej ikony -->
-            <div id="customIconUpload" style="display: none; margin-top: 10px;">
-              <input type="file" id="deliveryImage" accept="image/*">
-              <div class="image-preview" id="imagePreview"></div>
-              <div class="help-text">Zalecany rozmiar: 24x24px, format PNG/JPG</div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -690,23 +600,7 @@
         }
       }
       
-      // Obsługa ikony
-      const showIcon = document.getElementById('showIcon').checked;
-      let iconHtml = '';
-      if (showIcon) {
-        const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value;
-        
-        if (iconChoice === 'default') {
-          iconHtml = `<img src="/default-icon" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
-        } else if (iconChoice === 'custom') {
-          const customImage = document.getElementById('imagePreview').getAttribute('data-image');
-          if (customImage) {
-            iconHtml = `<img src="${customImage}" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
-          }
-        }
-      }
-
-      previewMessage.innerHTML = iconHtml + finalMessage;
+      previewMessage.textContent = finalMessage;
       
       // Zastosuj style
       previewBar.style.color = textColor;
@@ -742,14 +636,6 @@
 
     // Funkcja zapisywania ustawień
     async function saveSettings() {
-      const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value || 'default';
-      let iconImage = null;
-
-      if (iconChoice === 'custom') {
-        const preview = document.getElementById('imagePreview');
-        iconImage = preview.getAttribute('data-image'); // Użyj data-image zamiast backgroundImage
-      }
-
       const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
@@ -771,10 +657,7 @@
         shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
-        closeable: true,
-        show_icon: document.getElementById('showIcon').checked,
-        icon_type: iconChoice,
-        icon_image: iconImage
+        closeable: true
       };
 
       console.log('Saving success message:', settings.show_success_message, settings.success_message);
@@ -859,30 +742,6 @@
         // Pokaż/ukryj pole komunikatu sukcesu
         toggleSuccessMessageField(); // 👈 DODANE
         
-        // Obsługa ikony
-        document.getElementById('showIcon').checked = settings.show_icon || false;
-        const iconChoice = settings.icon_type || 'default';
-
-        // Zaznacz odpowiedni radio
-        const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
-        if (radioToCheck) {
-          radioToCheck.checked = true;
-        }
-
-        // Jeśli jest custom image, załaduj ją
-        if (settings.icon_image && iconChoice === 'custom') {
-          const preview = document.getElementById('imagePreview');
-          preview.setAttribute('data-image', settings.icon_image);
-          preview.style.backgroundImage = `url(${settings.icon_image})`;
-          preview.style.display = 'block';
-          preview.classList.add('has-image');
-          preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Zdjęcie załadowane</div>';
-        }
-
-        // Pokaż/ukryj odpowiednie sekcje
-        document.getElementById('iconUploadGroup').style.display = settings.show_icon ? 'block' : 'none';
-        document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
-
         updatePreview();
         console.log('Settings loaded:', settings);
       } catch (err) {
@@ -948,46 +807,6 @@
     });
 
     document.getElementById('successMessage').addEventListener('input', updatePreview);
-
-    // Obsługa ikony
-    document.getElementById('showIcon').addEventListener('change', function() {
-      const iconGroup = document.getElementById('iconUploadGroup');
-      iconGroup.style.display = this.checked ? 'block' : 'none';
-      updatePreview();
-    });
-
-    // Obsługa wyboru typu ikony
-    document.querySelectorAll('input[name="iconChoice"]').forEach(radio => {
-      radio.addEventListener('change', function() {
-        const customUpload = document.getElementById('customIconUpload');
-        customUpload.style.display = this.value === 'custom' ? 'block' : 'none';
-        updatePreview();
-      });
-    });
-
-    // Zastąp event listener dla deliveryImage:
-    document.getElementById('deliveryImage').addEventListener('change', function() {
-      const file = this.files[0];
-      const preview = document.getElementById('imagePreview');
-      
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          // Zapisz base64 w data-image
-          preview.setAttribute('data-image', e.target.result);
-          preview.style.backgroundImage = `url(${e.target.result})`;
-          preview.style.display = 'block';
-          preview.classList.add('has-image');
-          preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Zdjęcie załadowane</div>';
-          
-          // Automatycznie zaznacz custom option
-          document.getElementById('useCustomIcon').checked = true;
-          
-          updatePreview();
-        };
-        reader.readAsDataURL(file);
-      }
-    });
 
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {
