@@ -775,7 +775,8 @@ const DEFAULT_DELIVERY_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGh
         success_message: document.getElementById('successMessage').value,
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
-        transparent_bg: document.getElementById('transparentBg').checked,        position: document.getElementById('position').value,
+        transparent_bg: document.getElementById('transparentBg').checked,        
+        position: document.getElementById('position').value,
         width: parseInt(document.getElementById('width').value),
         margin_top: parseInt(document.getElementById('marginTop').value),
         bar_height: parseInt(document.getElementById('barHeight').value),
@@ -792,7 +793,7 @@ const DEFAULT_DELIVERY_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGh
         closeable: true,        // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
         icon_type: iconChoice,
-        icon_image: iconChoice === 'custom' ? iconImage : DEFAULT_DELIVERY_ICON, // 👈 ZAWSZE ZAPISZ IKONĘ
+        icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
       };

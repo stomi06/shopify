@@ -102,26 +102,13 @@
     justify-content: center;
     gap: {{ settings.icon_gap | default: 8 }}px;
     height: 100%; /* Dodaj tę linię */
-  }
-  /* Zmodyfikuj style dla .delivery-icon */
+  }  /* Podstawowe style dla ikon */
   .delivery-icon {
     width: {{ settings.icon_size | default: 20 }}px !important;
     height: {{ settings.icon_size | default: 20 }}px !important;
-    max-height: {{ settings.icon_size | default: 20 }}px !important;
-    min-height: {{ settings.icon_size | default: 20 }}px !important;
-    max-width: {{ settings.icon_size | default: 20 }}px !important;
-    min-width: {{ settings.icon_size | default: 20 }}px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
     display: block !important;
-    transition: none !important; 
-    box-sizing: content-box !important;
-    aspect-ratio: 1 !important;
-    /* Zapobiega rozciąganiu podczas ładowania */
-    background-color: transparent !important;
-    background-size: contain !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
   }
 </style>
 
@@ -139,10 +126,7 @@
     {% if settings.show_icon %}
       <img class="delivery-icon" 
            src="{{ settings.icon_image }}" 
-           alt="Delivery"
-           width="{{ settings.icon_size }}" 
-           height="{{ settings.icon_size }}" 
-           style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
+           alt="Delivery" />
     {% endif %}
     
     <span id="delivery-message">
@@ -200,66 +184,14 @@
   const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';  const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const iconSize = parseInt(deliveryBar.getAttribute('data-icon-size')) || 20;
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
-
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
-  console.log('📏 Icon size from data:', iconSize);
-    // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
+  
+  // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
   deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   deliveryBar.style.setProperty('height', barHeight + 'px', 'important');
-  // 🔧 STABILIZACJA IKON - zastosuj wymiary natychmiast
-  let stabilizationInProgress = false; // Zapobiega wielokrotnej stabilizacji
-    function stabilizeIcons() {
-    if (stabilizationInProgress) {
-      console.log('🚫 Stabilization already in progress, skipping...');
-      return;
-    }
-    
-    stabilizationInProgress = true;
-    const icons = deliveryBar.querySelectorAll('.delivery-icon');
-    console.log('🔧 Stabilizing', icons.length, 'icons with size:', iconSize + 'px');
-    
-    icons.forEach(icon => {
-      const targetSize = iconSize + 'px';
-      
-      // Ustaw wszystkie wymiary na raz
-      icon.style.setProperty('width', targetSize, 'important');
-      icon.style.setProperty('height', targetSize, 'important');
-      icon.style.setProperty('min-width', targetSize, 'important');
-      icon.style.setProperty('min-height', targetSize, 'important');
-      icon.style.setProperty('max-width', targetSize, 'important');
-      icon.style.setProperty('max-height', targetSize, 'important');
-      icon.style.setProperty('object-fit', 'contain', 'important');
-      icon.style.setProperty('flex-shrink', '0', 'important');
-      
-      console.log('🎯 Icon set to:', targetSize);
-    });
-    
-    // Reset flag po krótkiej chwili
-    setTimeout(() => {
-      stabilizationInProgress = false;
-    }, 100);
-  }
-  // Uruchom stabilizację natychmiast i po załadowaniu
-  stabilizeIcons();
-  
-  // 🧪 DEBUGGING - sprawdź czy ikony istnieją
-  setTimeout(() => {
-    const icons = deliveryBar.querySelectorAll('.delivery-icon');
-    console.log('🧪 Current icons found:', icons.length);
-    icons.forEach((icon, index) => {
-      console.log(`🖼️ Icon ${index}:`, {
-        width: icon.style.width,
-        height: icon.style.height,
-        src: icon.src?.substring(0, 50) + '...',
-        computedWidth: window.getComputedStyle(icon).width,
-        computedHeight: window.getComputedStyle(icon).height
-      });
-    });
-  }, 2000);
   
   // Check if bar was previously closed
   if (localStorage.getItem('deliveryBarClosed') === 'true') {

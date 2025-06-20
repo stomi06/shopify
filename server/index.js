@@ -430,7 +430,7 @@ app.get('/api/settings/:shop', async (req, res) => {
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
-        icon_image: DEFAULT_DELIVERY_ICON, // 👈 DODAJ DEFAULT ICON
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 ZAWSZE DOMYŚLNA IKONA
         icon_size: 20,
         icon_gap: 8,
         bar_height: 40
@@ -454,7 +454,7 @@ app.get('/api/settings/:shop', async (req, res) => {
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
-        icon_image: DEFAULT_DELIVERY_ICON, // 👈 DODAJ DEFAULT ICON
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 ZAWSZE DOMYŚLNA IKONA
         icon_size: 20,
         icon_gap: 8,
         bar_height: 40
