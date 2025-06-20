@@ -472,7 +472,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Serwuj pliki statyczne z folderu assets
-app.use('/assets', express.static(path.join(__dirname, '../assets')));
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Endpoint dla domyślnej ikony dostawy
 app.get('/default-icon', (req, res) => {
