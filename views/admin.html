@@ -489,12 +489,16 @@
               <input type="range" id="width" min="50" max="100" step="5" />
               <div class="help-text">Maximum width: 500px</div>
             </div>
-          </div>
-
-          <div class="form-group">
+          </div>          <div class="form-group">
             <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">20px</span></label>
             <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
             <div class="help-text">Controls the spacing from the top edge of the page</div>
+          </div>
+
+          <div class="form-group">
+            <label for="barHeight">Bar Height: <span class="range-value" id="barHeightValue">40px</span></label>
+            <input type="range" id="barHeight" min="30" max="80" value="40" step="2" />
+            <div class="help-text">Controls the height of the delivery bar</div>
           </div>
         </div>
 
@@ -594,6 +598,7 @@
     updateRangeValue('shadowDistance', 'shadowDistanceValue', 'px');
     updateRangeValue('width', 'widthValue', '%');
     updateRangeValue('marginTop', 'marginTopValue', 'px');
+    updateRangeValue('barHeight', 'barHeightValue', 'px');
     updateRangeValue('iconSize', 'iconSizeValue', 'px');
     updateRangeValue('iconGap', 'iconGapValue', 'px');
 
@@ -658,10 +663,10 @@
       const successMessage = document.getElementById('successMessage').value || '🎉 Congratulations! You have free delivery!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
-      const transparentBg = document.getElementById('transparentBg').checked;
-      const opacity = document.getElementById('opacity').value / 100;
+      const transparentBg = document.getElementById('transparentBg').checked;      const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
       const marginTop = document.getElementById('marginTop').value;
+      const barHeight = document.getElementById('barHeight').value;
       const fontSize = document.getElementById('fontSize').value;
       const fontWeight = document.getElementById('fontWeight').value;
       const borderWidth = document.getElementById('borderWidth').value;
@@ -711,13 +716,17 @@
       }
       
       previewMessage.innerHTML = iconHtml + finalMessage;
-      
-      // Zastosuj style
+        // Zastosuj style
       previewBar.style.color = textColor;
       previewBar.style.fontSize = fontSize + 'px';
       previewBar.style.fontWeight = fontWeight;
       previewBar.style.width = width + '%';
       previewBar.style.maxWidth = '400px';
+      previewBar.style.height = barHeight + 'px';
+      previewBar.style.display = 'flex';
+      previewBar.style.alignItems = 'center';
+      previewBar.style.justifyContent = 'center';
+      previewBar.style.padding = '0 20px';
       previewBar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
       previewBar.style.borderRadius = borderRadius + 'px';
       previewBar.style.opacity = opacity;
@@ -763,10 +772,10 @@
         success_message: document.getElementById('successMessage').value,
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
-        transparent_bg: document.getElementById('transparentBg').checked,
-        position: document.getElementById('position').value,
+        transparent_bg: document.getElementById('transparentBg').checked,        position: document.getElementById('position').value,
         width: parseInt(document.getElementById('width').value),
         margin_top: parseInt(document.getElementById('marginTop').value),
+        bar_height: parseInt(document.getElementById('barHeight').value),
         opacity: parseInt(document.getElementById('opacity').value),
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
@@ -852,9 +861,9 @@
         document.getElementById('shadowColor').value = settings.shadow_color || "#000000";
         document.getElementById('shadowOpacity').value = settings.shadow_opacity || 20;
         document.getElementById('shadowBlur').value = settings.shadow_blur || 4;
-        document.getElementById('shadowDistance').value = settings.shadow_distance || 2;
-        document.getElementById('width').value = settings.width || 90; // 👈 DODANE
+        document.getElementById('shadowDistance').value = settings.shadow_distance || 2;        document.getElementById('width').value = settings.width || 90; // 👈 DODANE
         document.getElementById('marginTop').value = settings.margin_top || 20; // 👈 DODANE
+        document.getElementById('barHeight').value = settings.bar_height || 40; // Nowe
 
         // Zaktualizuj wyświetlane wartości zakresów
         document.getElementById('opacityValue').textContent = (settings.opacity || 100) + '%';
@@ -863,7 +872,8 @@
         document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 20) + '%';
         document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
-        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE        // Opcje ikon
+        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
+        document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px'; // Nowe// Opcje ikon
         document.getElementById('showIcon').checked = settings.show_icon || false; // Poprawione - domyślnie false
         const iconChoice = settings.icon_type || 'default';
         const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
@@ -925,9 +935,9 @@
         document.getElementById('shadowColor').value = "#000000";
         document.getElementById('shadowOpacity').value = 20;
         document.getElementById('shadowBlur').value = 4;
-        document.getElementById('shadowDistance').value = 2;
-        document.getElementById('width').value = 90; // 👈 DODANE
+        document.getElementById('shadowDistance').value = 2;        document.getElementById('width').value = 90; // 👈 DODANE
         document.getElementById('marginTop').value = 20; // 👈 DODANE
+        document.getElementById('barHeight').value = 40; // Nowe
         
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';
@@ -937,6 +947,7 @@
         document.getElementById('shadowBlurValue').textContent = '4px';
         document.getElementById('shadowDistanceValue').textContent = '2px';        document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
         document.getElementById('marginTopValue').textContent = '20px'; // 👈 DODANE
+        document.getElementById('barHeightValue').textContent = '40px'; // Nowe
 
         // Reset ikon
         document.getElementById('showIcon').checked = false;

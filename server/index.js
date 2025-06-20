@@ -428,7 +428,8 @@ app.get('/api/settings/:shop', async (req, res) => {
         show_icon: false,
         icon_type: 'default',
         icon_size: 20,
-        icon_gap: 8
+        icon_gap: 8,
+        bar_height: 40
       });
     }
     
@@ -450,7 +451,8 @@ app.get('/api/settings/:shop', async (req, res) => {
         show_icon: false,
         icon_type: 'default',
         icon_size: 20,
-        icon_gap: 8
+        icon_gap: 8,
+        bar_height: 40
       });
     }
   } catch (err) {
