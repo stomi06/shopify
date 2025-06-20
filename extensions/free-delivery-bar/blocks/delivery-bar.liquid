@@ -4,12 +4,8 @@
 {% endcomment %}
 
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
-{% assign backend_url = settings.app_url | default: 'https://shopify-ige3.onrender.com' %}
 
-<!-- Preload domyślnej ikony dla szybszego ładowania -->
-{% unless settings.icon_type == 'custom' and settings.icon_image %}
-  <link rel="preload" as="image" href="{{ backend_url }}/assets/default-delivery-icon.png">
-{% endunless %}
+<!-- Usuń preload - nie będzie potrzebny -->
 
 <style>  .free-delivery-bar {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -141,21 +137,12 @@
      data-icon-size="{{ settings.icon_size | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">  <div class="delivery-bar-content">
     {% if settings.show_icon %}
-      {% if settings.icon_type == 'custom' and settings.icon_image %}
-        <img class="delivery-icon" 
-             src="{{ settings.icon_image }}" 
-             alt="Delivery"
-             width="{{ settings.icon_size }}" 
-             height="{{ settings.icon_size }}" 
-             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />      {% else %}
-        <img class="delivery-icon" 
-             src="{{ backend_url }}/assets/default-delivery-icon.png" 
-             alt="Delivery"
-             width="{{ settings.icon_size }}" 
-             height="{{ settings.icon_size }}" 
-             loading="eager"
-             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important; background-color: transparent; display: block;" />
-      {% endif %}
+      <img class="delivery-icon" 
+           src="{{ settings.icon_image }}" 
+           alt="Delivery"
+           width="{{ settings.icon_size }}" 
+           height="{{ settings.icon_size }}" 
+           style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
     {% endif %}
     
     <span id="delivery-message">

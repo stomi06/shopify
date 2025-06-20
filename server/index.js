@@ -10,6 +10,9 @@ import crypto from "crypto";
 import session from "express-session";
 
 dotenv.config();
+// Default delivery icon as Base64 - embedded directly
+const DEFAULT_DELIVERY_ICON = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTMgN0gxOUwyMSAxMlY5SDIzVjE3SDIxVjE5QzIxIDE5LjU1MjMgMjAuNTUyMyAyMCAyMCAyMEMxOS40NDc3IDIwIDE5IDE5LjU1MjMgMTkgMTlWMTdIOVYxOUM5IDE5LjU1MjMgOC41NTIzIDIwIDggMjBDNy40NDc3IDIwIDcgMTkuNTUyMyA3IDE5VjE3SDVWOUM1IDguMTA0NTcgNS44OTU0MyA5IDcgOVpNOSAxNUM5IDE1LjU1MjMgOS40NDc3IDE2IDEwIDE2QzEwLjU1MjMgMTYgMTEgMTUuNTUyMyAxMSAxNUMxMSAxNC40NDc3IDEwLjU1MjMgMTQgMTAgMTRDOS40NDc3IDE0IDkgMTQuNDQ3NyA5IDE1Wk0xNyAxNUMxNyAxNS41NTIzIDE3LjQ0NzcgMTYgMTggMTZDMTguNTUyMyAxNiAxOSAxNS41NTIzIDE5IDE1QzE5IDE0LjQ0NzcgMTguNTUyMyAxNCAxOCAxNEMxNy40NDc3IDE0IDE3IDE0LjQ0NzcgMTcgMTVaIiBmaWxsPSIjZmZmZmZmIi8+Cjwvc3ZnPgo=';
+
 const APP_URL = process.env.HOST;
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -427,6 +430,7 @@ app.get('/api/settings/:shop', async (req, res) => {
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 DODAJ DEFAULT ICON
         icon_size: 20,
         icon_gap: 8,
         bar_height: 40
@@ -450,6 +454,7 @@ app.get('/api/settings/:shop', async (req, res) => {
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 DODAJ DEFAULT ICON
         icon_size: 20,
         icon_gap: 8,
         bar_height: 40
