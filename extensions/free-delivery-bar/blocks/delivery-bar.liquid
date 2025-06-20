@@ -127,22 +127,7 @@
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
-  <div class="delivery-bar-content">
-    {% if settings.show_icon %}
-      {% if settings.icon_type == 'custom' and settings.icon_image %}
-        <img class="delivery-icon" 
-             src="{{ settings.icon_image }}" 
-             alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
-      {% else %}
-        <img class="delivery-icon" 
-             src="{{ backend_url }}/assets/default-delivery-icon.png" 
-             alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
-      {% endif %}
-    {% endif %}
-    <div class="delivery-bar-content">
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">  <div class="delivery-bar-content">
     {% if settings.show_icon %}
       {% if settings.icon_type == 'custom' and settings.icon_image %}
         <img class="delivery-icon" 

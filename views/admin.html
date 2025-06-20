@@ -684,29 +684,17 @@
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
-      
-      // Zastąp placeholder w wiadomości - pokazuj komunikat sukcesu gdy jest włączony
+        // Zastąp placeholder w wiadomości
       let finalMessage;
-      const isSuccessDemo = Math.random() > 0.5; // Losowo symuluj sukces
       
-      if (isSuccessDemo && showSuccessMessage) {
-        // Pokaż komunikat sukcesu
-        finalMessage = successMessage;
-        previewBar.style.backgroundColor = '#4CAF50';
-        previewBar.style.display = 'block'; // Pokaż pasek
-      } else if (isSuccessDemo && !showSuccessMessage) {
-        // Ukryj pasek gdy sukces osiągnięty ale komunikat wyłączony
-        previewBar.style.display = 'none';
-        return; // Nie wykonuj reszty stylowania
+      // Zawsze pokaż normalną wiadomość w podglądzie
+      finalMessage = message.replace('{amount}', '$' + minAmount);
+      previewBar.style.display = 'block';
+      
+      if (transparentBg) {
+        previewBar.style.backgroundColor = 'transparent';
       } else {
-        // Pokaż normalną wiadomość
-        finalMessage = message.replace('{amount}', '$' + minAmount);
-        previewBar.style.display = 'block';
-        
-        if (transparentBg) {
-          previewBar.style.backgroundColor = 'transparent';
-        } else {
-          previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);        }
+        previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
       }
       
       // Obsługa ikony
@@ -875,10 +863,8 @@
         document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 20) + '%';
         document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
-        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
-
-        // Opcje ikon
-        document.getElementById('showIcon').checked = settings.show_icon !== false;
+        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE        // Opcje ikon
+        document.getElementById('showIcon').checked = settings.show_icon || false; // Poprawione - domyślnie false
         const iconChoice = settings.icon_type || 'default';
         const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
         if (radioToCheck) {
@@ -899,7 +885,7 @@
         document.getElementById('iconGap').value = settings.icon_gap || 8;
         
         // Pokaż/ukryj sekcje ikon
-        const showIcon = settings.show_icon !== false;
+        const showIcon = settings.show_icon || false; // Poprawione
         document.getElementById('iconOptionsGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconSizeGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconGapGroup').style.display = showIcon ? 'block' : 'none';
