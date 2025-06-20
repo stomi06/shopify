@@ -300,6 +300,42 @@
       margin-right: 8px;
     }
 
+    .icon-options {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 15px;
+      background: #f9f9f9;
+    }
+
+    .icon-type-selector {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .icon-type-selector input[type="radio"] {
+      margin-right: 5px;
+    }
+
+    .icon-option {
+      padding: 10px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      background: white;
+    }
+
+    .image-preview {
+      margin-top: 10px;
+      max-width: 100px;
+      max-height: 50px;
+    }
+
+    .image-preview img {
+      max-width: 100%;
+      max-height: 50px;
+      border-radius: 4px;
+    }
+
     @media (max-width: 1200px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -494,6 +530,45 @@
         <div class="form-section">
           <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
           <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
+        </div>
+
+        <!-- Delivery Icon Section - NOWA SEKCJA -->
+        <div class="form-section">
+          <div class="section-title">🚚 Ikona dostawy</div>
+          
+          <div class="form-group">
+            <label for="deliveryIcon">Wybierz ikonę dostawy</label>
+            <div class="icon-options">
+              <div class="icon-type-selector">
+                <input type="radio" id="iconEmoji" name="iconType" value="emoji" checked>
+                <label for="iconEmoji">Emoji</label>
+                
+                <input type="radio" id="iconImage" name="iconType" value="image">
+                <label for="iconImage">Własne zdjęcie</label>
+                
+                <input type="radio" id="iconNone" name="iconType" value="none">
+                <label for="iconNone">Bez ikony</label>
+              </div>
+              
+              <!-- Emoji selector -->
+              <div id="emojiSelector" class="icon-option">
+                <select id="deliveryEmoji">
+                  <option value="🚚">🚚 Ciężarówka</option>
+                  <option value="📦">📦 Paczka</option>
+                  <option value="🎁">🎁 Prezent</option>
+                  <option value="⚡">⚡ Szybka dostawa</option>
+                  <option value="🏃‍♂️">🏃‍♂️ Ekspres</option>
+                  <option value="✈️">✈️ Samolot</option>
+                </select>
+              </div>
+              
+              <!-- Image upload -->
+              <div id="imageSelector" class="icon-option" style="display: none;">
+                <input type="file" id="deliveryImage" accept="image/*">
+                <div class="image-preview" id="imagePreview"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -808,6 +883,58 @@
 
     document.getElementById('successMessage').addEventListener('input', updatePreview);
 
+    // Funkcje pomocnicze dla ikony dostawy
+    document.addEventListener('DOMContentLoaded', function() {
+      const iconTypeRadios = document.querySelectorAll('input[name="iconType"]');
+      const emojiSelector = document.getElementById('emojiSelector');
+      const imageSelector = document.getElementById('imageSelector');
+      const imageInput = document.getElementById('deliveryImage');
+      const imagePreview = document.getElementById('imagePreview');
+
+      // Przełączanie między typami ikon
+      iconTypeRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+          emojiSelector.style.display = this.value === 'emoji' ? 'block' : 'none';
+          imageSelector.style.display = this.value === 'image' ? 'block' : 'none';
+          updatePreview();
+        });
+      });
+
+      // Upload obrazka
+      imageInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Delivery icon">`;
+            updatePreview();
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      // Aktualizuj podgląd
+      function updatePreview() {
+        const previewMessage = document.getElementById('previewMessage');
+        const iconType = document.querySelector('input[name="iconType"]:checked').value;
+        
+        let iconHtml = '';
+        
+        if (iconType === 'emoji') {
+          const emoji = document.getElementById('deliveryEmoji').value;
+          iconHtml = `<span class="delivery-icon">${emoji}</span> `;
+        } else if (iconType === 'image') {
+          const imgSrc = imagePreview.querySelector('img')?.src;
+          if (imgSrc) {
+            iconHtml = `<img class="delivery-icon-img" src="${imgSrc}" alt="Delivery"> `;
+          }
+        }
+        
+        const message = document.getElementById('message').value || 'Darmowa dostawa od 199 zł!';
+        previewMessage.innerHTML = iconHtml + message;
+      }
+    });
+
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {
       loadSettings();
@@ -816,6 +943,38 @@
 
     // Dodaj nasłuchiwacz dla checkbox'a:
     document.getElementById('transparentBg').addEventListener('change', updatePreview);
+
+    // Dodaj nasłuchiwacze dla opcji ikony
+    document.querySelectorAll('input[name="iconType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const value = this.value;
+        
+        // Pokaż/ukryj odpowiednie pola
+        document.getElementById('emojiSelector').style.display = value === 'emoji' ? 'block' : 'none';
+        document.getElementById('imageSelector').style.display = value === 'image' ? 'block' : 'none';
+        
+        updatePreview();
+      });
+    });
+
+    // Nasłuchiwacz dla przesyłania obrazu
+    document.getElementById('deliveryImage').addEventListener('change', function() {
+      const file = this.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        // Ustaw podgląd obrazu
+        document.getElementById('imagePreview').style.backgroundImage = `url(${e.target.result})`;
+        document.getElementById('imagePreview').style.display = 'block';
+        
+        // Zaktualizuj ustawienia
+        updatePreview();
+      }
+      
+      if (file) {
+        reader.readAsDataURL(file);
+      }
+    });
   </script>
 </body>
 </html>

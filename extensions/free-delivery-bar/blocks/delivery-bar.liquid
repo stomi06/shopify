@@ -90,6 +90,37 @@
   .free-delivery-bar button:hover {
     opacity: 1;
   }
+  
+  .delivery-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .delivery-icon {
+    font-size: 1.2em;
+    line-height: 1;
+  }
+
+  .delivery-icon-img {
+    height: 20px;
+    width: auto;
+    max-width: 30px;
+    object-fit: contain;
+  }
+
+  /* Mobile adjustments */
+  @media (max-width: 768px) {
+    .delivery-icon-img {
+      height: 16px;
+      max-width: 24px;
+    }
+    
+    .delivery-icon {
+      font-size: 1em;
+    }
+  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -102,10 +133,18 @@
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
-  <span id="delivery-message">
-    {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
-    {{ message }}
-  </span>
+  <div class="delivery-bar-content">
+    {% if settings.icon_type == 'emoji' and settings.icon_emoji %}
+      <span class="delivery-icon">{{ settings.icon_emoji }}</span>
+    {% elsif settings.icon_type == 'image' and settings.icon_image %}
+      <img class="delivery-icon-img" src="{{ settings.icon_image }}" alt="Delivery" />
+    {% endif %}
+    
+    <span id="delivery-message">
+      {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
+      {{ message }}
+    </span>
+  </div>
   
   {% if settings.closeable == true %}
     <button id="close-delivery-bar">×</button>
