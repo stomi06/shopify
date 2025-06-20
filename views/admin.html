@@ -580,9 +580,7 @@
   </div>
 
   <script>
-    // PROSTA ZMIENNA - domyślna ikona jako Base64  
     let DEFAULT_DELIVERY_ICON = null;
-
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
       const valueSpan = document.getElementById(valueId);
@@ -695,7 +693,7 @@
       let finalMessage;
       
       // Zawsze pokaż normalną wiadomość w podglądzie
-      finalMessage = message.replace('{amount}', '$' + minAmount);
+      finalMessage = message.replace('{amount}' + minAmount);
       previewBar.style.display = 'block';
       
       if (transparentBg) {
