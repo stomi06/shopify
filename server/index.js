@@ -18,8 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Default delivery icon as Base64 - embedded directly
-const iconBuffer = fs.readFileSync(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
-const DEFAULT_DELIVERY_ICON = `data:image/png;base64,${iconBuffer.toString('base64')}`;
+const iconBuffer = fs.readFileSync(path.join(__dirname, 'assets', 'default-delivery-icon.svg'));
+const DEFAULT_DELIVERY_ICON = `data:image/svg+xml;base64,${iconBuffer.toString('base64')}`;
 
 const APP_URL = process.env.HOST;
 const app = express();
