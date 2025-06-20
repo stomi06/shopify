@@ -100,22 +100,38 @@
     align-items: center;
     justify-content: center;
     gap: {{ settings.icon_gap | default: 8 }}px;
-  }
-
-  .delivery-icon {
-    object-fit: contain;
+  }  .delivery-icon {
+    object-fit: contain !important;
     flex-shrink: 0;
+    display: block;
+    max-width: none;
+    max-height: none;
+    width: {{ settings.icon_size | default: 20 }}px !important;
+    height: {{ settings.icon_size | default: 20 }}px !important;
+    transition: none;
+    /* Dodatkowe style stabilizujące */
+    min-width: {{ settings.icon_size | default: 20 }}px;
+    min-height: {{ settings.icon_size | default: 20 }}px;
+    box-sizing: border-box;
+    vertical-align: middle;
+    image-rendering: auto;
+    transform: none;
   }
-
   /* Mobile responsive */
   @media (max-width: 768px) {
     .delivery-icon {
       width: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
       height: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
+      min-width: {{ settings.icon_size | default: 20 | minus: 4 }}px;
+      min-height: {{ settings.icon_size | default: 20 | minus: 4 }}px;
     }
     
     .delivery-bar-content {
       gap: {{ settings.icon_gap | default: 8 | minus: 2 }}px;
+    }
+    
+    .free-delivery-bar {
+      height: {{ settings.bar_height | default: 40 }}px !important;
     }
   }
 </style>
@@ -125,22 +141,22 @@
      data-threshold="{{ settings.min_amount | default: 199 }}"
      data-message="{{ settings.message | default: 'Free delivery on orders over $199!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
-     data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
-     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
+     data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">  <div class="delivery-bar-content">
+     data-bar-height="{{ settings.bar_height | default: 40 }}"
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"><div class="delivery-bar-content">
     {% if settings.show_icon %}
       {% if settings.icon_type == 'custom' and settings.icon_image %}
         <img class="delivery-icon" 
              src="{{ settings.icon_image }}" 
              alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+             style="width: {{ settings.icon_size | default: 20 }}px !important; height: {{ settings.icon_size | default: 20 }}px !important; object-fit: contain !important; flex-shrink: 0; min-width: {{ settings.icon_size | default: 20 }}px; min-height: {{ settings.icon_size | default: 20 }}px;" />
       {% else %}
         <img class="delivery-icon" 
              src="{{ backend_url }}/assets/default-delivery-icon.png" 
              alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+             style="width: {{ settings.icon_size | default: 20 }}px !important; height: {{ settings.icon_size | default: 20 }}px !important; object-fit: contain !important; flex-shrink: 0; min-width: {{ settings.icon_size | default: 20 }}px; min-height: {{ settings.icon_size | default: 20 }}px;" />
       {% endif %}
     {% endif %}
     
@@ -193,18 +209,19 @@
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');
-  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
-  const bgColor = deliveryBar.getAttribute('data-bg-color');
+  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';  const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
+  const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
 
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
   
-  // USTAW SZEROKOŚĆ I MARGIN-TOP DYNAMICZNIE
+  // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
   deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
+  deliveryBar.style.setProperty('height', barHeight + 'px', 'important');
   
   // Check if bar was previously closed
   if (localStorage.getItem('deliveryBarClosed') === 'true') {

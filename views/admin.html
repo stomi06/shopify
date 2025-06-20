@@ -787,8 +787,7 @@
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         closeable: true,
-        
-        // Opcje ikon
+          // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
         icon_type: iconChoice,
         icon_image: iconImage,
@@ -796,7 +795,8 @@
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
       };
 
-      console.log('Saving settings:', settings);
+      console.log('💾 Saving complete settings object:', settings);
+      console.log('📏 Bar height being saved:', settings.bar_height);
       
       try {
         const shop = getShopFromUrl();
