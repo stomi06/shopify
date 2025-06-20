@@ -100,39 +100,21 @@
     align-items: center;
     justify-content: center;
     gap: {{ settings.icon_gap | default: 8 }}px;
-  }  .delivery-icon {
-    object-fit: contain !important;
-    flex-shrink: 0;
-    display: block;
-    max-width: none;
-    max-height: none;
-    width: {{ settings.icon_size | default: 20 }}px !important;
-    height: {{ settings.icon_size | default: 20 }}px !important;
-    transition: none;
-    /* Dodatkowe style stabilizujące */
-    min-width: {{ settings.icon_size | default: 20 }}px;
-    min-height: {{ settings.icon_size | default: 20 }}px;
-    box-sizing: border-box;
-    vertical-align: middle;
-    image-rendering: auto;
-    transform: none;
+    height: 100%; /* Dodaj tę linię */
   }
-  /* Mobile responsive */
-  @media (max-width: 768px) {
-    .delivery-icon {
-      width: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
-      height: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
-      min-width: {{ settings.icon_size | default: 20 | minus: 4 }}px;
-      min-height: {{ settings.icon_size | default: 20 | minus: 4 }}px;
-    }
-    
-    .delivery-bar-content {
-      gap: {{ settings.icon_gap | default: 8 | minus: 2 }}px;
-    }
-    
-    .free-delivery-bar {
-      height: {{ settings.bar_height | default: 40 }}px !important;
-    }
+
+  /* Zmodyfikuj style dla .delivery-icon */
+  .delivery-icon {
+    width: {{ settings.icon_size }}px !important;
+    height: {{ settings.icon_size }}px !important;
+    max-height: 100% !important; /* Dodaj tę linię jako zabezpieczenie */
+    min-height: {{ settings.icon_size }}px !important;
+    object-fit: contain !important;
+    flex-shrink: 0 !important;
+    display: block !important;
+    transition: none !important; 
+    box-sizing: content-box !important;
+    aspect-ratio: 1 !important;
   }
 </style>
 
@@ -145,18 +127,23 @@
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-bar-height="{{ settings.bar_height | default: 40 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"><div class="delivery-bar-content">
+     data-icon-size="{{ settings.icon_size | default: 20 }}"
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">  <div class="delivery-bar-content">
     {% if settings.show_icon %}
       {% if settings.icon_type == 'custom' and settings.icon_image %}
         <img class="delivery-icon" 
              src="{{ settings.icon_image }}" 
-             alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px !important; height: {{ settings.icon_size | default: 20 }}px !important; object-fit: contain !important; flex-shrink: 0; min-width: {{ settings.icon_size | default: 20 }}px; min-height: {{ settings.icon_size | default: 20 }}px;" />
+             alt="Delivery"
+             width="{{ settings.icon_size }}" 
+             height="{{ settings.icon_size }}" 
+             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
       {% else %}
         <img class="delivery-icon" 
              src="{{ backend_url }}/assets/default-delivery-icon.png" 
-             alt="Delivery" 
-             style="width: {{ settings.icon_size | default: 20 }}px !important; height: {{ settings.icon_size | default: 20 }}px !important; object-fit: contain !important; flex-shrink: 0; min-width: {{ settings.icon_size | default: 20 }}px; min-height: {{ settings.icon_size | default: 20 }}px;" />
+             alt="Delivery"
+             width="{{ settings.icon_size }}" 
+             height="{{ settings.icon_size }}" 
+             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
       {% endif %}
     {% endif %}
     
@@ -187,13 +174,16 @@
     console.error('Nie znaleziono elementu free-delivery-bar');
     return;
   }
-  
-  // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
+    // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
   const savedMessage = localStorage.getItem('deliveryBarMessage');
   const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
 
-  if (savedMessage) {
-    messageElement.innerHTML = savedMessage;
+  // 🧹 WYCZYŚĆ LOCALSTORAGE Z IKON - może zawierać stare HTML z ikonami
+  if (savedMessage && (savedMessage.includes('<img') || savedMessage.includes('delivery-icon'))) {
+    console.log('🧹 Clearing localStorage - contains old icon HTML');
+    localStorage.removeItem('deliveryBarMessage');
+  } else if (savedMessage) {
+    messageElement.textContent = savedMessage; // ← textContent zamiast innerHTML!
     console.log('📱 Restored message from localStorage:', savedMessage);
   }
 
@@ -210,18 +200,68 @@
   const originalMessage = deliveryBar.getAttribute('data-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');
   const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';  const bgColor = deliveryBar.getAttribute('data-bg-color');
-  const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
-  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
+  const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
+  const iconSize = parseInt(deliveryBar.getAttribute('data-icon-size')) || 20;
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
 
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
-  
-  // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
+  console.log('📏 Icon size from data:', iconSize);
+    // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
   deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   deliveryBar.style.setProperty('height', barHeight + 'px', 'important');
+  // 🔧 STABILIZACJA IKON - zastosuj wymiary natychmiast
+  let stabilizationInProgress = false; // Zapobiega wielokrotnej stabilizacji
+    function stabilizeIcons() {
+    if (stabilizationInProgress) {
+      console.log('🚫 Stabilization already in progress, skipping...');
+      return;
+    }
+    
+    stabilizationInProgress = true;
+    const icons = deliveryBar.querySelectorAll('.delivery-icon');
+    console.log('🔧 Stabilizing', icons.length, 'icons with size:', iconSize + 'px');
+    
+    icons.forEach(icon => {
+      const targetSize = iconSize + 'px';
+      
+      // Ustaw wszystkie wymiary na raz
+      icon.style.setProperty('width', targetSize, 'important');
+      icon.style.setProperty('height', targetSize, 'important');
+      icon.style.setProperty('min-width', targetSize, 'important');
+      icon.style.setProperty('min-height', targetSize, 'important');
+      icon.style.setProperty('max-width', targetSize, 'important');
+      icon.style.setProperty('max-height', targetSize, 'important');
+      icon.style.setProperty('object-fit', 'contain', 'important');
+      icon.style.setProperty('flex-shrink', '0', 'important');
+      
+      console.log('🎯 Icon set to:', targetSize);
+    });
+    
+    // Reset flag po krótkiej chwili
+    setTimeout(() => {
+      stabilizationInProgress = false;
+    }, 100);
+  }
+  // Uruchom stabilizację natychmiast i po załadowaniu
+  stabilizeIcons();
+  
+  // 🧪 DEBUGGING - sprawdź czy ikony istnieją
+  setTimeout(() => {
+    const icons = deliveryBar.querySelectorAll('.delivery-icon');
+    console.log('🧪 Current icons found:', icons.length);
+    icons.forEach((icon, index) => {
+      console.log(`🖼️ Icon ${index}:`, {
+        width: icon.style.width,
+        height: icon.style.height,
+        src: icon.src?.substring(0, 50) + '...',
+        computedWidth: window.getComputedStyle(icon).width,
+        computedHeight: window.getComputedStyle(icon).height
+      });
+    });
+  }, 2000);
   
   // Check if bar was previously closed
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
@@ -250,14 +290,13 @@
             }
             isBarVisible = true;
             localStorage.setItem('deliveryBarState', 'visible');
-            
-            if (successMessage && successMessage.trim() !== '') {
+              if (successMessage && successMessage.trim() !== '') {
               finalMessage = successMessage;
             } else {
               finalMessage = '🎉 You have free delivery!';
             }
             
-            messageElement.innerHTML = finalMessage;
+            messageElement.textContent = finalMessage; // ← textContent zamiast innerHTML!
             
             // Zmień kolor na zielony (sukces)
             if (!transparentBg) {
@@ -285,12 +324,11 @@
           localStorage.setItem('deliveryBarState', 'visible');
           
           const remaining = threshold - cartTotal;
-          
-          finalMessage = originalMessage
+            finalMessage = originalMessage
             .replace('{amount}', threshold)
             .replace('{remaining}', remaining.toFixed(2));
           
-          messageElement.innerHTML = finalMessage;
+          messageElement.textContent = finalMessage; // ← textContent zamiast innerHTML!
           
           // Przywróć oryginalny kolor
           if (!transparentBg) {
@@ -334,8 +372,7 @@
       deliveryBar.classList.remove('fade-out');
     }, 10); // Krótkie opóźnienie
   }
-  
-  // Obsługa zamknięcia paska
+    // Obsługa zamknięcia paska
   if (closeButton) {
     closeButton.addEventListener('click', function() {
       deliveryBar.classList.add('hidden');
@@ -380,8 +417,7 @@
       setTimeout(updateDeliveryMessage, 100);
     });
   });
-  
-  // Intercept fetch requests do koszyka
+    // Intercept fetch requests do koszyka
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     const promise = originalFetch.apply(this, args);
@@ -393,8 +429,7 @@
       url.includes('/cart/update') || 
       url.includes('/cart/change') ||
       url.includes('/cart/clear')
-    )) {
-      promise.then(() => {
+    )) {      promise.then(() => {
         console.log('🔔 Cart fetch detected:', url);
         setTimeout(updateDeliveryMessage, 200);
       }).catch(() => {});
@@ -405,8 +440,7 @@
   
   // Polling jako backup - co sekundę
   setInterval(pollCartChanges, 1000);
-  
-  // Inicjalizacja
+    // Inicjalizacja
   console.log('🚀 Initializing...');
   updateDeliveryMessage();
   
