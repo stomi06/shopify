@@ -6,6 +6,11 @@
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
 {% assign backend_url = settings.app_url | default: 'https://shopify-ige3.onrender.com' %}
 
+<!-- Preload domyślnej ikony dla szybszego ładowania -->
+{% unless settings.icon_type == 'custom' and settings.icon_image %}
+  <link rel="preload" as="image" href="{{ backend_url }}/assets/default-delivery-icon.png">
+{% endunless %}
+
 <style>  .free-delivery-bar {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     text-align: center;
@@ -102,19 +107,25 @@
     gap: {{ settings.icon_gap | default: 8 }}px;
     height: 100%; /* Dodaj tę linię */
   }
-
   /* Zmodyfikuj style dla .delivery-icon */
   .delivery-icon {
-    width: {{ settings.icon_size }}px !important;
-    height: {{ settings.icon_size }}px !important;
-    max-height: 100% !important; /* Dodaj tę linię jako zabezpieczenie */
-    min-height: {{ settings.icon_size }}px !important;
+    width: {{ settings.icon_size | default: 20 }}px !important;
+    height: {{ settings.icon_size | default: 20 }}px !important;
+    max-height: {{ settings.icon_size | default: 20 }}px !important;
+    min-height: {{ settings.icon_size | default: 20 }}px !important;
+    max-width: {{ settings.icon_size | default: 20 }}px !important;
+    min-width: {{ settings.icon_size | default: 20 }}px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
     display: block !important;
     transition: none !important; 
     box-sizing: content-box !important;
     aspect-ratio: 1 !important;
+    /* Zapobiega rozciąganiu podczas ładowania */
+    background-color: transparent !important;
+    background-size: contain !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
   }
 </style>
 
@@ -136,14 +147,14 @@
              alt="Delivery"
              width="{{ settings.icon_size }}" 
              height="{{ settings.icon_size }}" 
-             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
-      {% else %}
+             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />      {% else %}
         <img class="delivery-icon" 
              src="{{ backend_url }}/assets/default-delivery-icon.png" 
              alt="Delivery"
              width="{{ settings.icon_size }}" 
              height="{{ settings.icon_size }}" 
-             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important;" />
+             loading="eager"
+             style="width: {{ settings.icon_size }}px !important; height: {{ settings.icon_size }}px !important; max-height: {{ settings.icon_size }}px !important; min-height: {{ settings.icon_size }}px !important; background-color: transparent; display: block;" />
       {% endif %}
     {% endif %}
     
