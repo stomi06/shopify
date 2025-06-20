@@ -173,7 +173,7 @@
   const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
 
   if (savedMessage) {
-    messageElement.innerHTML = savedMessage;
+    updateMessageWithIcon(savedMessage);
     console.log('📱 Restored message from localStorage:', savedMessage);
   }
 
@@ -200,6 +200,12 @@
 
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
+  console.log('=== ICON DEBUG ===');
+  console.log('showIcon:', showIcon);
+  console.log('iconType:', iconType); 
+  console.log('iconImage:', iconImage);
+  console.log('iconImage length:', iconImage ? iconImage.length : 'null');
+  console.log('==================');
   
   // USTAW SZEROKOŚĆ I MARGIN-TOP DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
@@ -242,8 +248,6 @@
             // Aktualizuj wiadomość z ikoną
             updateMessageWithIcon(finalMessage);
             
-            messageElement.innerHTML = finalMessage;
-            
             // Zmień kolor na zielony (sukces)
             if (!transparentBg) {
               deliveryBar.style.backgroundColor = '#4CAF50';
@@ -277,8 +281,6 @@
           
           // Aktualizuj wiadomość z ikoną
           updateMessageWithIcon(finalMessage);
-          
-          messageElement.innerHTML = finalMessage;
           
           // Przywróć oryginalny kolor
           if (!transparentBg) {
@@ -402,12 +404,18 @@
   function updateMessageWithIcon(message) {
     let iconHtml = '';
     
+    console.log('🖼️ updateMessageWithIcon called:', { showIcon, iconType, iconImage: iconImage?.substring(0, 50) });
+    
     if (showIcon) {
-      if (iconType === 'custom' && iconImage) {
-        iconHtml = `<img class="delivery-icon" src="${iconImage}" alt="Delivery" /> `;
+      if (iconType === 'custom' && iconImage && iconImage !== 'null' && iconImage !== '') {
+        iconHtml = `<img class="delivery-icon" src="${iconImage}" alt="Delivery" />`;
+        console.log('✅ Using custom icon');
       } else {
-        iconHtml = `<img class="delivery-icon" src="/default-icon" alt="Delivery" /> `;
+        iconHtml = `<img class="delivery-icon" src="/default-icon" alt="Delivery" />`;
+        console.log('✅ Using default icon');
       }
+    } else {
+      console.log('❌ showIcon is false');
     }
     
     // Znajdź element delivery-bar-content i zaktualizuj jego zawartość
@@ -417,9 +425,8 @@
         ${iconHtml}
         <span id="delivery-message">${message}</span>
       `;
-    } else {
-      // Fallback - jeśli nie ma delivery-bar-content
-      messageElement.innerHTML = iconHtml + message;
+      
+      console.log('🔄 Updated contentDiv HTML:', contentDiv.innerHTML);
     }
   }
 })();
