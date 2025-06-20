@@ -4,6 +4,7 @@
 {% endcomment %}
 
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
+{% assign backend_url = settings.app_url | default: 'https://shopify-ige3.onrender.com' %}
 
 <style>
   .free-delivery-bar {
@@ -91,16 +92,15 @@
     opacity: 1;
   }
   
+  /* Zastąp sekcję CSS dla ikon: */
   .delivery-bar-content {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: {{ settings.icon_gap | default: 8 }}px;
   }
 
   .delivery-icon {
-    width: 20px;
-    height: 20px;
     object-fit: contain;
     flex-shrink: 0;
   }
@@ -108,12 +108,12 @@
   /* Mobile responsive */
   @media (max-width: 768px) {
     .delivery-icon {
-      width: 16px;
-      height: 16px;
+      width: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
+      height: {{ settings.icon_size | default: 20 | minus: 4 }}px !important;
     }
     
     .delivery-bar-content {
-      gap: 6px;
+      gap: {{ settings.icon_gap | default: 8 | minus: 2 }}px;
     }
   }
 </style>
@@ -129,7 +129,20 @@
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
   <div class="delivery-bar-content">
-    <img class="delivery-icon" src="/assets/default-delivery-icon.png" alt="Delivery" />
+    {% if settings.show_icon %}
+      {% if settings.icon_type == 'custom' and settings.icon_image %}
+        <img class="delivery-icon" 
+             src="{{ settings.icon_image }}" 
+             alt="Delivery" 
+             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+      {% else %}
+        <img class="delivery-icon" 
+             src="{{ backend_url }}/assets/default-delivery-icon.png" 
+             alt="Delivery" 
+             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+      {% endif %}
+    {% endif %}
+    
     <span id="delivery-message">
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
       {{ message }}
