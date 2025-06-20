@@ -387,6 +387,10 @@ app.post('/api/settings', async (req, res) => {
   }
 });
 
+app.get('/default-icon', (req, res) => {
+  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
+});
+
 // API endpoint do pobierania ustawień z Metafields
 app.get('/api/settings/:shop', async (req, res) => {
   try {

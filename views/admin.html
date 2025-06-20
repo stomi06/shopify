@@ -300,42 +300,6 @@
       margin-right: 8px;
     }
 
-    .icon-options {
-      border: 1px solid #ddd;
-      border-radius: 6px;
-      padding: 15px;
-      background: #f9f9f9;
-    }
-
-    .icon-type-selector {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 15px;
-    }
-
-    .icon-type-selector input[type="radio"] {
-      margin-right: 5px;
-    }
-
-    .icon-option {
-      padding: 10px;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      background: white;
-    }
-
-    .image-preview {
-      margin-top: 10px;
-      max-width: 100px;
-      max-height: 50px;
-    }
-
-    .image-preview img {
-      max-width: 100%;
-      max-height: 50px;
-      border-radius: 4px;
-    }
-
     @media (max-width: 1200px) {
       .main-content {
         grid-template-columns: 1fr;
@@ -882,58 +846,6 @@
     });
 
     document.getElementById('successMessage').addEventListener('input', updatePreview);
-
-    // Funkcje pomocnicze dla ikony dostawy
-    document.addEventListener('DOMContentLoaded', function() {
-      const iconTypeRadios = document.querySelectorAll('input[name="iconType"]');
-      const emojiSelector = document.getElementById('emojiSelector');
-      const imageSelector = document.getElementById('imageSelector');
-      const imageInput = document.getElementById('deliveryImage');
-      const imagePreview = document.getElementById('imagePreview');
-
-      // Przełączanie między typami ikon
-      iconTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-          emojiSelector.style.display = this.value === 'emoji' ? 'block' : 'none';
-          imageSelector.style.display = this.value === 'image' ? 'block' : 'none';
-          updatePreview();
-        });
-      });
-
-      // Upload obrazka
-      imageInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            imagePreview.innerHTML = `<img src="${e.target.result}" alt="Delivery icon">`;
-            updatePreview();
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-
-      // Aktualizuj podgląd
-      function updatePreview() {
-        const previewMessage = document.getElementById('previewMessage');
-        const iconType = document.querySelector('input[name="iconType"]:checked').value;
-        
-        let iconHtml = '';
-        
-        if (iconType === 'emoji') {
-          const emoji = document.getElementById('deliveryEmoji').value;
-          iconHtml = `<span class="delivery-icon">${emoji}</span> `;
-        } else if (iconType === 'image') {
-          const imgSrc = imagePreview.querySelector('img')?.src;
-          if (imgSrc) {
-            iconHtml = `<img class="delivery-icon-img" src="${imgSrc}" alt="Delivery"> `;
-          }
-        }
-        
-        const message = document.getElementById('message').value || 'Darmowa dostawa od 199 zł!';
-        previewMessage.innerHTML = iconHtml + message;
-      }
-    });
 
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {
