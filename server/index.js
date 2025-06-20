@@ -10,6 +10,7 @@ import crypto from "crypto";
 import session from "express-session";
 
 dotenv.config();
+const APP_URL = process.env.HOST;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -353,11 +354,16 @@ app.post('/api/settings', async (req, res) => {
     const accessToken = sessionResult.rows[0].access_token;
     
     // Zapisz ustawienia do Shop Metafields
+    const settingsData = {
+      ...settings,
+      app_url: APP_URL  // Dodaj URL aplikacji
+    };
+
     const metafieldData = {
       metafield: {
         namespace: "free_delivery_app",
         key: "settings",
-        value: JSON.stringify(settings),
+        value: JSON.stringify(settingsData),  // Użyj settingsData zamiast settings
         type: "json"
       }
     };
@@ -418,7 +424,8 @@ app.get('/api/settings/:shop', async (req, res) => {
         background_color: "#4CAF50",
         text_color: "#FFFFFF",
         position: "top",
-        closeable: true
+        closeable: true,
+        app_url: APP_URL  // I tutaj
       });
     }
     
@@ -436,7 +443,8 @@ app.get('/api/settings/:shop', async (req, res) => {
         background_color: "#4CAF50",
         text_color: "#FFFFFF",
         position: "top",
-        closeable: true
+        closeable: true,
+        app_url: APP_URL  // I tutaj
       });
     }
   } catch (err) {
