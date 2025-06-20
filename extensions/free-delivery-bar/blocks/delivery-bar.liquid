@@ -11,7 +11,7 @@
     text-align: center;
     padding: 12px 20px;
     z-index: 3;
-    transition: all 0.3s ease;
+    transition: opacity 0.4s ease;
     left: 50%;
     transform: translateX(-50%);
     
@@ -27,10 +27,6 @@
     font-size: {{ settings.font_size | default: 14 }}px;
     font-weight: {{ settings.font_weight | default: 600 }};
     border-radius: {{ settings.border_radius | default: 6 }}px;
-    
-    /* Przezroczystość całego paska */
-    {% assign opacity = settings.opacity | default: 100 | divided_by: 100.0 %}
-    opacity: {{ opacity }};
     
     /* Ramka */
     {% if settings.border_width and settings.border_width > 0 %}
@@ -63,6 +59,20 @@
     {% endif %}
   }
   
+  /* 🔥 OPACITY - TYLKO RAZ! */
+  .free-delivery-bar:not(.fade-out) {
+    {% assign opacity = settings.opacity | default: 100 | divided_by: 100.0 %}
+    opacity: {{ opacity }};
+  }
+
+  .free-delivery-bar.fade-out {
+    opacity: 0 !important;
+  }
+  
+  .free-delivery-bar.hidden {
+    display: none;
+  }
+  
   .free-delivery-bar button {
     background: none;
     border: none;
@@ -80,10 +90,6 @@
   .free-delivery-bar button:hover {
     opacity: 1;
   }
-  
-  .free-delivery-bar.hidden {
-    display: none;
-  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -91,11 +97,11 @@
      data-threshold="{{ settings.min_amount | default: 199 }}"
      data-message="{{ settings.message | default: 'Darmowa dostawa przy zamówieniu powyżej 199 zł!' }}"
      data-success-message="{{ settings.success_message | default: 'Gratulacje! Masz darmową dostawę!' }}"
-     data-show-success="{{ settings.show_success_message | default: true }}"
+     data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
-     data-margin-top="{{ settings.margin_top }}"
-     data-transparent-bg="{{ settings.transparent_bg }}">
+     data-margin-top="{{ settings.margin_top | default: 20 }}"
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
   <span id="delivery-message">
     {% assign message = settings.message | default: "Darmowa dostawa przy zamówieniu powyżej 199 zł!" %}
     {{ message }}
@@ -108,6 +114,12 @@
 
 <script>
 (function() {
+  // Zabezpieczenie przed wielokrotnym uruchomieniem
+  if (window.freeDeliveryBarInitialized) {
+    return;
+  }
+  window.freeDeliveryBarInitialized = true;
+
   const deliveryBar = document.getElementById('free-delivery-bar');
   const messageElement = document.getElementById('delivery-message');
   const closeButton = document.getElementById('close-delivery-bar');
@@ -117,25 +129,39 @@
     return;
   }
   
+  // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
+  const savedMessage = localStorage.getItem('deliveryBarMessage');
+  const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
+
+  if (savedMessage) {
+    messageElement.innerHTML = savedMessage;
+    console.log('📱 Restored message from localStorage:', savedMessage);
+  }
+
+  // Ustaw stan paska na podstawie zapisanego stanu
+  if (savedBarState === 'hidden') {
+    deliveryBar.classList.add('hidden');
+    console.log('📱 Restored bar state: hidden');
+  } else if (savedBarState === 'visible') {
+    deliveryBar.classList.remove('hidden');
+    console.log('📱 Restored bar state: visible');
+  }
+  
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');
-  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true'; // 👈 POPRAWIONE - strict checking
+  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
 
-  console.log('=== DEBUG KOMUNIKATU SUKCESU ===');
-  console.log('Success message:', successMessage);
-  console.log('Show success (raw):', deliveryBar.getAttribute('data-show-success'));
-  console.log('Show success (parsed):', showSuccess);
+  console.log('=== FREE DELIVERY BAR INIT ===');
+  console.log('Threshold:', threshold);
   
-  // USTAW SZEROKOŚĆ I MARGIN DYNAMICZNIE
+  // USTAW SZEROKOŚĆ I MARGIN-TOP DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
-  if (marginTop) {
-    deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
-  }
+  deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
@@ -143,57 +169,110 @@
     return;
   }
   
+  let isBarVisible = !deliveryBar.classList.contains('hidden');
+
   // Aktualizuj wiadomość na podstawie wartości koszyka
   function updateDeliveryMessage() {
     fetch('/cart.js')
       .then(response => response.json())
       .then(cart => {
         const cartTotal = cart.total_price / 100;
+        console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
+        
+        let finalMessage = originalMessage;
         
         if (cartTotal >= threshold) {
-          // 👇 POPRAWIONA LOGIKA - sprawdź czy pokazywać komunikat sukcesu
+          // PRÓG OSIĄGNIĘTY
           if (showSuccess) {
-            // Pokaż komunikat sukcesu (własny lub domyślny)
-            if (successMessage && successMessage.trim() !== '') {
-              messageElement.innerHTML = successMessage;
-            } else {
-              messageElement.innerHTML = '🎉 Masz darmową dostawę!'; // Fallback
+            // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
+            if (!isBarVisible) {
+              fadeInBar();
             }
+            isBarVisible = true;
+            localStorage.setItem('deliveryBarState', 'visible');
+            
+            if (successMessage && successMessage.trim() !== '') {
+              finalMessage = successMessage;
+            } else {
+              finalMessage = '🎉 Masz darmową dostawę!';
+            }
+            
+            messageElement.innerHTML = finalMessage;
             
             // Zmień kolor na zielony (sukces)
             if (!transparentBg) {
               deliveryBar.style.backgroundColor = '#4CAF50';
             }
+            
+            console.log('✅ Showing success message');
           } else {
-            // 👈 NOWE - ukryj pasek gdy nie ma pokazywać komunikatu sukcesu
-            deliveryBar.classList.add('hidden');
-            console.log('Ukrywam pasek - komunikat sukcesu wyłączony');
+            // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ WIDOCZNY  
+            if (isBarVisible) {
+              fadeOutBar(() => {
+                localStorage.setItem('deliveryBarState', 'hidden');
+              });
+            }
+            isBarVisible = false;
             return;
           }
         } else {
-          // NORMALNA WIADOMOŚĆ - pokaż pasek
-          deliveryBar.classList.remove('hidden');
+          // PRÓG NIE OSIĄGNIĘTY
+          // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
+          if (!isBarVisible) {
+            fadeInBar();
+          }
+          isBarVisible = true;
+          localStorage.setItem('deliveryBarState', 'visible');
           
           const remaining = threshold - cartTotal;
-          let message = originalMessage;
           
-          message = message.replace('{amount}', threshold + ' zł');
-          message = message.replace('{remaining}', remaining.toFixed(2) + ' zł');
+          finalMessage = originalMessage
+            .replace('{amount}', threshold + ' zł')
+            .replace('{remaining}', remaining.toFixed(2) + ' zł');
           
-          messageElement.innerHTML = message;
+          messageElement.innerHTML = finalMessage;
           
           // Przywróć oryginalny kolor
           if (!transparentBg) {
             deliveryBar.style.backgroundColor = bgColor;
           }
+          
+          console.log('📊 Normal message - remaining:', remaining.toFixed(2) + ' zł');
         }
+        
+        // 🔥 ZAPISZ W LOCALSTORAGE
+        localStorage.setItem('deliveryBarMessage', finalMessage);
       })
-      .catch(() => {
-        // Fallback - pokaż pasek z domyślną wiadomością
+      .catch((error) => {
+        console.error('❌ Cart fetch error:', error);
+        // Fallback
         deliveryBar.classList.remove('hidden');
         let message = originalMessage.replace('{amount}', threshold + ' zł');
         messageElement.innerHTML = message;
       });
+  }
+  
+  // Funkcje animacji
+  function fadeOutBar(callback) {
+    deliveryBar.classList.add('fade-out');
+    setTimeout(() => {
+      deliveryBar.classList.add('hidden');
+      deliveryBar.classList.remove('fade-out');
+      if (callback) callback();
+    }, 400);
+  }
+
+  function fadeInBar() {
+    // 🔥 NAJPIERW USTAW OPACITY NA 0
+    deliveryBar.classList.add('fade-out');
+    deliveryBar.classList.remove('hidden');
+    
+    // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
+    deliveryBar.offsetHeight; // Force reflow
+    
+    setTimeout(() => {
+      deliveryBar.classList.remove('fade-out');
+    }, 10); // Krótkie opóźnienie
   }
   
   // Obsługa zamknięcia paska
@@ -201,11 +280,75 @@
     closeButton.addEventListener('click', function() {
       deliveryBar.classList.add('hidden');
       localStorage.setItem('deliveryBarClosed', 'true');
+      console.log('Bar closed by user');
     });
   }
   
+  // 🔥 NATYCHMIASTOWA AKTUALIZACJA
+  let lastCartTotal = null;
+  
+  // Polling function - sprawdza co sekundę
+  function pollCartChanges() {
+    fetch('/cart.js')
+      .then(response => response.json())
+      .then(cart => {
+        const currentTotal = cart.total_price / 100;
+        
+        // Aktualizuj tylko gdy wartość się zmieniła
+        if (currentTotal !== lastCartTotal) {
+          lastCartTotal = currentTotal;
+          console.log('🔔 Cart change detected:', currentTotal);
+          updateDeliveryMessage();
+        }
+      })
+      .catch(() => {
+        // Ignoruj błędy w tle
+      });
+  }
+  
+  // Nasłuchuj standardowych eventów Shopify
+  const cartEvents = [
+    'cart:updated',
+    'cart:changed',
+    'cartChanged',
+    'ajaxCart:updated'
+  ];
+  
+  cartEvents.forEach(eventName => {
+    document.addEventListener(eventName, function() {
+      console.log('🔔 Cart event:', eventName);
+      setTimeout(updateDeliveryMessage, 100);
+    });
+  });
+  
+  // Intercept fetch requests do koszyka
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    const promise = originalFetch.apply(this, args);
+    
+    // Sprawdź czy to request do koszyka
+    const url = args[0];
+    if (typeof url === 'string' && (
+      url.includes('/cart/add') || 
+      url.includes('/cart/update') || 
+      url.includes('/cart/change') ||
+      url.includes('/cart/clear')
+    )) {
+      promise.then(() => {
+        console.log('🔔 Cart fetch detected:', url);
+        setTimeout(updateDeliveryMessage, 200);
+      }).catch(() => {});
+    }
+    
+    return promise;
+  };
+  
+  // Polling jako backup - co sekundę
+  setInterval(pollCartChanges, 1000);
+  
+  // Inicjalizacja
+  console.log('🚀 Initializing...');
   updateDeliveryMessage();
-  document.addEventListener('cart:updated', updateDeliveryMessage);
   
 })();
 </script>
