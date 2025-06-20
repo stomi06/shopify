@@ -356,14 +356,14 @@ app.post('/api/settings', async (req, res) => {
     // Zapisz ustawienia do Shop Metafields 
     const settingsData = {
       ...settings,
-      app_url: APP_URL  // Dodaj URL aplikacji
+      app_url: APP_URL
     };
 
     const metafieldData = {
       metafield: {
         namespace: "free_delivery_app",
         key: "settings",
-        value: JSON.stringify(settingsData),  // Użyj settingsData zamiast settings
+        value: JSON.stringify(settingsData),
         type: "json"
       }
     };
@@ -417,15 +417,18 @@ app.get('/api/settings/:shop', async (req, res) => {
     });
     
     if (!response.ok) {
-      console.log('⚠️ Brak metafields, zwracam domyślne ustawienia');
-      return res.json({
+      console.log('⚠️ Brak metafields, zwracam domyślne ustawienia');      return res.json({
         message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
         min_amount: 199,
         background_color: "#4CAF50",
         text_color: "#FFFFFF",
         position: "top",
         closeable: true,
-        app_url: APP_URL  // I tutaj
+        app_url: APP_URL,
+        show_icon: false,
+        icon_type: 'default',
+        icon_size: 20,
+        icon_gap: 8
       });
     }
     
@@ -436,15 +439,18 @@ app.get('/api/settings/:shop', async (req, res) => {
       console.log('✅ Znaleziono ustawienia w metafields:', settings);
       res.json(settings);
     } else {
-      console.log('⚠️ Pusty metafield, zwracam domyślne');
-      res.json({
+      console.log('⚠️ Pusty metafield, zwracam domyślne');      res.json({
         message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
         min_amount: 199,
         background_color: "#4CAF50",
         text_color: "#FFFFFF",
         position: "top",
         closeable: true,
-        app_url: APP_URL  // I tutaj
+        app_url: APP_URL,
+        show_icon: false,
+        icon_type: 'default',
+        icon_size: 20,
+        icon_gap: 8
       });
     }
   } catch (err) {
@@ -457,6 +463,13 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Serwuj pliki statyczne z folderu assets
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
+
+// Endpoint dla domyślnej ikony dostawy
+app.get('/default-icon', (req, res) => {
+  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
+});
 
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));

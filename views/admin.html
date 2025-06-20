@@ -282,9 +282,7 @@
       background: #fed7d7;
       border-color: #fc8181;
       color: #742a2a;
-    }
-
-    input[type="checkbox"] {
+    }    input[type="checkbox"] {
       width: auto;
       margin-right: 8px;
       transform: scale(1.2);
@@ -297,6 +295,17 @@
     }
 
     .form-group label input[type="checkbox"] {
+      margin-right: 8px;
+    }
+
+    .image-preview.has-image {
+      background-color: #f6f6f7;
+      border-color: #5c6ac4;
+      border-style: solid;
+    }
+
+    #iconOptionsGroup input[type="radio"] {
+      width: auto;
       margin-right: 8px;
     }
 
@@ -414,6 +423,53 @@
               </select>
             </div>
           </div>
+        </div>        <!-- Delivery Icon -->
+        <div class="form-section">
+          <div class="section-title">🖼️ Delivery Icon</div>
+          
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="showIcon" style="margin-right: 8px;">
+              Show delivery icon
+            </label>
+            <div class="help-text">Display an icon next to the delivery message</div>
+          </div>
+
+          <div class="form-group" id="iconOptionsGroup" style="display: none;">
+            <label>Icon Type:</label>
+            
+            <div style="margin: 10px 0;">
+              <label style="margin-bottom: 8px;">
+                <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked style="margin-right: 8px;">
+                Use default delivery icon
+              </label>
+            </div>
+            
+            <div style="margin: 10px 0;">
+              <label style="margin-bottom: 8px;">
+                <input type="radio" id="useCustomIcon" name="iconChoice" value="custom" style="margin-right: 8px;">
+                Upload custom icon
+              </label>
+            </div>
+            
+            <div id="customIconUpload" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e1e3e5; border-radius: 6px; background: #f9f9f9;">
+              <input type="file" id="deliveryImage" accept="image/*">
+              <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+              <div class="help-text">Recommended size: 24x24px, PNG/JPG format</div>
+            </div>
+          </div>
+
+          <div class="form-group" id="iconSizeGroup" style="display: none;">
+            <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">20px</span></label>
+            <input type="range" id="iconSize" min="12" max="40" value="20" step="2" />
+            <div class="help-text">Size of the delivery icon</div>
+          </div>
+
+          <div class="form-group" id="iconGapGroup" style="display: none;">
+            <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">8px</span></label>
+            <input type="range" id="iconGap" min="0" max="20" value="8" step="2" />
+            <div class="help-text">Space between icon and text</div>
+          </div>
         </div>
 
         <!-- Position and size -->
@@ -529,9 +585,7 @@
         valueSpan.textContent = this.value + suffix;
         updatePreview();
       });
-    }
-
-    // Inicjalizacja zakresów
+    }    // Inicjalizacja zakresów
     updateRangeValue('opacity', 'opacityValue', '%');
     updateRangeValue('borderWidth', 'borderWidthValue', 'px');
     updateRangeValue('borderRadius', 'borderRadiusValue', 'px');
@@ -539,7 +593,58 @@
     updateRangeValue('shadowBlur', 'shadowBlurValue', 'px');
     updateRangeValue('shadowDistance', 'shadowDistanceValue', 'px');
     updateRangeValue('width', 'widthValue', '%');
-    updateRangeValue('marginTop', 'marginTopValue', 'px'); // 👈 DODANE
+    updateRangeValue('marginTop', 'marginTopValue', 'px');
+    updateRangeValue('iconSize', 'iconSizeValue', 'px');
+    updateRangeValue('iconGap', 'iconGapValue', 'px');
+
+    // Obsługa ikon
+    document.getElementById('showIcon').addEventListener('change', function() {
+      const iconOptionsGroup = document.getElementById('iconOptionsGroup');
+      const iconSizeGroup = document.getElementById('iconSizeGroup');
+      const iconGapGroup = document.getElementById('iconGapGroup');
+      
+      if (this.checked) {
+        iconOptionsGroup.style.display = 'block';
+        iconSizeGroup.style.display = 'block';
+        iconGapGroup.style.display = 'block';
+      } else {
+        iconOptionsGroup.style.display = 'none';
+        iconSizeGroup.style.display = 'none';
+        iconGapGroup.style.display = 'none';
+      }
+      updatePreview();
+    });
+
+    // Obsługa wyboru typu ikony
+    document.querySelectorAll('input[name="iconChoice"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const customUpload = document.getElementById('customIconUpload');
+        customUpload.style.display = this.value === 'custom' ? 'block' : 'none';
+        updatePreview();
+      });
+    });
+
+    // Upload własnej ikony
+    document.getElementById('deliveryImage').addEventListener('change', function() {
+      const file = this.files[0];
+      const preview = document.getElementById('imagePreview');
+      
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          preview.setAttribute('data-image', e.target.result);
+          preview.style.backgroundImage = `url(${e.target.result})`;
+          preview.style.display = 'block';
+          preview.classList.add('has-image');
+          preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Image loaded</div>';
+          
+          // Automatycznie zaznacz custom option
+          document.getElementById('useCustomIcon').checked = true;
+          updatePreview();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
     // Funkcja aktualizacji podglądu
     function updatePreview() {
@@ -562,10 +667,15 @@
       const borderWidth = document.getElementById('borderWidth').value;
       const borderColor = document.getElementById('borderColor').value;
       const borderRadius = document.getElementById('borderRadius').value;
-      const shadowColor = document.getElementById('shadowColor').value;
-      const shadowOpacity = document.getElementById('shadowOpacity').value / 100;
+      const shadowColor = document.getElementById('shadowColor').value;      const shadowOpacity = document.getElementById('shadowOpacity').value / 100;
       const shadowBlur = document.getElementById('shadowBlur').value;
       const shadowDistance = document.getElementById('shadowDistance').value;
+      
+      // Opcje ikon
+      const showIcon = document.getElementById('showIcon').checked;
+      const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value;
+      const iconSize = document.getElementById('iconSize').value;
+      const iconGap = document.getElementById('iconGap').value;
       
       // Konwertuj hex na rgba dla przezroczystości
       function hexToRgba(hex, alpha) {
@@ -596,11 +706,23 @@
         if (transparentBg) {
           previewBar.style.backgroundColor = 'transparent';
         } else {
-          previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
+          previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);        }
+      }
+      
+      // Obsługa ikony
+      let iconHtml = '';
+      if (showIcon) {
+        if (iconChoice === 'default') {
+          iconHtml = `<img src="/assets/default-delivery-icon.png" style="width: ${iconSize}px; height: ${iconSize}px; margin-right: ${iconGap}px; vertical-align: middle; object-fit: contain;"> `;
+        } else if (iconChoice === 'custom') {
+          const customImage = document.getElementById('imagePreview').getAttribute('data-image');
+          if (customImage) {
+            iconHtml = `<img src="${customImage}" style="width: ${iconSize}px; height: ${iconSize}px; margin-right: ${iconGap}px; vertical-align: middle; object-fit: contain;"> `;
+          }
         }
       }
       
-      previewMessage.textContent = finalMessage;
+      previewMessage.innerHTML = iconHtml + finalMessage;
       
       // Zastosuj style
       previewBar.style.color = textColor;
@@ -632,15 +754,25 @@
     function getShopFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('shop') || 'freedelivery-test.myshopify.com';
-    }
-
-    // Funkcja zapisywania ustawień
+    }    // Funkcja zapisywania ustawień
     async function saveSettings() {
+      // Sprawdź czy elementy istnieją przed użyciem
+      const iconChoiceElement = document.querySelector('input[name="iconChoice"]:checked');
+      const iconChoice = iconChoiceElement ? iconChoiceElement.value : 'default';
+      
+      let iconImage = null;
+      if (iconChoice === 'custom') {
+        const preview = document.getElementById('imagePreview');
+        if (preview) {
+          iconImage = preview.getAttribute('data-image');
+        }
+      }
+
       const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
-        show_success_message: document.getElementById('showSuccessMessage').checked, // 👈 DODANE
-        success_message: document.getElementById('successMessage').value, // 👈 DODANE
+        show_success_message: document.getElementById('showSuccessMessage').checked,
+        success_message: document.getElementById('successMessage').value,
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
         transparent_bg: document.getElementById('transparentBg').checked,
@@ -657,10 +789,17 @@
         shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
-        closeable: true
+        closeable: true,
+        
+        // Opcje ikon
+        show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
+        icon_type: iconChoice,
+        icon_image: iconImage,
+        icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
+        icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
       };
 
-      console.log('Saving success message:', settings.show_success_message, settings.success_message);
+      console.log('Saving settings:', settings);
       
       try {
         const shop = getShopFromUrl();
@@ -735,9 +874,40 @@
         document.getElementById('borderRadiusValue').textContent = (settings.border_radius || 6) + 'px';
         document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 20) + '%';
         document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
-        document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';
-        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
+        document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
         document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
+
+        // Opcje ikon
+        document.getElementById('showIcon').checked = settings.show_icon !== false;
+        const iconChoice = settings.icon_type || 'default';
+        const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
+        if (radioToCheck) {
+          radioToCheck.checked = true;
+        }
+        
+        // Jeśli jest custom image, załaduj ją
+        if (settings.icon_image && iconChoice === 'custom') {
+          const preview = document.getElementById('imagePreview');
+          preview.setAttribute('data-image', settings.icon_image);
+          preview.style.backgroundImage = `url(${settings.icon_image})`;
+          preview.style.display = 'block';
+          preview.classList.add('has-image');
+          preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Image loaded</div>';
+        }
+        
+        document.getElementById('iconSize').value = settings.icon_size || 20;
+        document.getElementById('iconGap').value = settings.icon_gap || 8;
+        
+        // Pokaż/ukryj sekcje ikon
+        const showIcon = settings.show_icon !== false;
+        document.getElementById('iconOptionsGroup').style.display = showIcon ? 'block' : 'none';
+        document.getElementById('iconSizeGroup').style.display = showIcon ? 'block' : 'none';
+        document.getElementById('iconGapGroup').style.display = showIcon ? 'block' : 'none';
+        document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
+        
+        // Zaktualizuj wyświetlane wartości zakresów ikon
+        document.getElementById('iconSizeValue').textContent = (settings.icon_size || 20) + 'px';
+        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 8) + 'px';
 
         // Pokaż/ukryj pole komunikatu sukcesu
         toggleSuccessMessageField(); // 👈 DODANE
@@ -779,9 +949,33 @@
         document.getElementById('borderRadiusValue').textContent = '6px';
         document.getElementById('shadowOpacityValue').textContent = '20%';
         document.getElementById('shadowBlurValue').textContent = '4px';
-        document.getElementById('shadowDistanceValue').textContent = '2px';
-        document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
+        document.getElementById('shadowDistanceValue').textContent = '2px';        document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
         document.getElementById('marginTopValue').textContent = '20px'; // 👈 DODANE
+
+        // Reset ikon
+        document.getElementById('showIcon').checked = false;
+        document.getElementById('useDefaultIcon').checked = true;
+        document.getElementById('useCustomIcon').checked = false;
+        document.getElementById('iconSize').value = 20;
+        document.getElementById('iconGap').value = 8;
+        
+        // Wyczyść podgląd
+        const preview = document.getElementById('imagePreview');
+        preview.removeAttribute('data-image');
+        preview.style.backgroundImage = '';
+        preview.style.display = 'none';
+        preview.classList.remove('has-image');
+        preview.innerHTML = '';
+        
+        // Pokaż/ukryj sekcje
+        document.getElementById('iconOptionsGroup').style.display = 'none';
+        document.getElementById('iconSizeGroup').style.display = 'none';
+        document.getElementById('iconGapGroup').style.display = 'none';
+        document.getElementById('customIconUpload').style.display = 'none';
+        
+        // Zaktualizuj wyświetlane wartości
+        document.getElementById('iconSizeValue').textContent = '20px';
+        document.getElementById('iconGapValue').textContent = '8px';
 
         toggleSuccessMessageField(); // 👈 DODANE
         updatePreview();

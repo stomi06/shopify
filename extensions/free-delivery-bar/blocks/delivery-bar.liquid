@@ -142,6 +142,20 @@
              style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
       {% endif %}
     {% endif %}
+    <div class="delivery-bar-content">
+    {% if settings.show_icon %}
+      {% if settings.icon_type == 'custom' and settings.icon_image %}
+        <img class="delivery-icon" 
+             src="{{ settings.icon_image }}" 
+             alt="Delivery" 
+             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+      {% else %}
+        <img class="delivery-icon" 
+             src="{{ backend_url }}/assets/default-delivery-icon.png" 
+             alt="Delivery" 
+             style="width: {{ settings.icon_size | default: 20 }}px; height: {{ settings.icon_size | default: 20 }}px;" />
+      {% endif %}
+    {% endif %}
     
     <span id="delivery-message">
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
