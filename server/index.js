@@ -8,6 +8,7 @@ import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import session from "express-session";
+import fs from 'fs';
 
 dotenv.config();
 
@@ -17,7 +18,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Default delivery icon as Base64 - embedded directly
-const DEFAULT_DELIVERY_ICON = `${process.env.HOST}/assets/default-delivery-icon.png`;
+const iconBuffer = fs.readFileSync(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
+const DEFAULT_DELIVERY_ICON = `data:image/png;base64,${iconBuffer.toString('base64')}`;
 
 const APP_URL = process.env.HOST;
 const app = express();
