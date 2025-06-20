@@ -353,7 +353,7 @@ app.post('/api/settings', async (req, res) => {
     
     const accessToken = sessionResult.rows[0].access_token;
     
-    // Zapisz ustawienia do Shop Metafields
+    // Zapisz ustawienia do Shop Metafields 
     const settingsData = {
       ...settings,
       app_url: APP_URL  // Dodaj URL aplikacji
