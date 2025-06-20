@@ -129,7 +129,7 @@
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
   <div class="delivery-bar-content">
-    <img class="delivery-icon" src="/assets/default-delivery-icon.png" alt="Delivery" />
+    <img class="delivery-icon" src="/default-icon" alt="Delivery" />
     <span id="delivery-message">
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
       {{ message }}
