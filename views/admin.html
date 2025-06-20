@@ -693,7 +693,6 @@
       // Obsługa ikony
       const showIcon = document.getElementById('showIcon').checked;
       let iconHtml = '';
-      
       if (showIcon) {
         const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value;
         
@@ -706,7 +705,7 @@
           }
         }
       }
-      
+
       previewMessage.innerHTML = iconHtml + finalMessage;
       
       // Zastosuj style
@@ -743,6 +742,14 @@
 
     // Funkcja zapisywania ustawień
     async function saveSettings() {
+      const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value || 'default';
+      let iconImage = null;
+
+      if (iconChoice === 'custom') {
+        const preview = document.getElementById('imagePreview');
+        iconImage = preview.getAttribute('data-image'); // Użyj data-image zamiast backgroundImage
+      }
+
       const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
@@ -766,9 +773,8 @@
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         closeable: true,
         show_icon: document.getElementById('showIcon').checked,
-        icon_type: document.querySelector('input[name="iconChoice"]:checked')?.value || 'default',
-        icon_image: document.getElementById('iconChoice') === 'custom' ? 
-          document.querySelector('#imagePreview').style.backgroundImage?.slice(5, -2) : null
+        icon_type: iconChoice,
+        icon_image: iconImage
       };
 
       console.log('Saving success message:', settings.show_success_message, settings.success_message);
@@ -856,16 +862,24 @@
         // Obsługa ikony
         document.getElementById('showIcon').checked = settings.show_icon || false;
         const iconChoice = settings.icon_type || 'default';
-        document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`).checked = true;
 
+        // Zaznacz odpowiedni radio
+        const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
+        if (radioToCheck) {
+          radioToCheck.checked = true;
+        }
+
+        // Jeśli jest custom image, załaduj ją
         if (settings.icon_image && iconChoice === 'custom') {
           const preview = document.getElementById('imagePreview');
+          preview.setAttribute('data-image', settings.icon_image);
           preview.style.backgroundImage = `url(${settings.icon_image})`;
           preview.style.display = 'block';
           preview.classList.add('has-image');
           preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Zdjęcie załadowane</div>';
         }
 
+        // Pokaż/ukryj odpowiednie sekcje
         document.getElementById('iconUploadGroup').style.display = settings.show_icon ? 'block' : 'none';
         document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
 
@@ -951,7 +965,7 @@
       });
     });
 
-    // Nasłuchiwacz dla przesyłania obrazu
+    // Zastąp event listener dla deliveryImage:
     document.getElementById('deliveryImage').addEventListener('change', function() {
       const file = this.files[0];
       const preview = document.getElementById('imagePreview');
@@ -959,10 +973,16 @@
       if (file) {
         const reader = new FileReader();
         reader.onload = function(e) {
+          // Zapisz base64 w data-image
+          preview.setAttribute('data-image', e.target.result);
           preview.style.backgroundImage = `url(${e.target.result})`;
           preview.style.display = 'block';
           preview.classList.add('has-image');
           preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Zdjęcie załadowane</div>';
+          
+          // Automatycznie zaznacz custom option
+          document.getElementById('useCustomIcon').checked = true;
+          
           updatePreview();
         };
         reader.readAsDataURL(file);

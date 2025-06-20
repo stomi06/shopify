@@ -127,7 +127,10 @@
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"
+     data-show-icon="{% if settings.show_icon == true %}true{% else %}false{% endif %}"
+     data-icon-type="{{ settings.icon_type | default: 'default' }}"
+     data-icon-image="{{ settings.icon_image }}">
   <div class="delivery-bar-content">
     {% if settings.show_icon %}
       {% if settings.icon_type == 'custom' and settings.icon_image %}
@@ -191,6 +194,9 @@
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
+  const showIcon = deliveryBar.getAttribute('data-show-icon') === 'true';
+  const iconType = deliveryBar.getAttribute('data-icon-type');
+  const iconImage = deliveryBar.getAttribute('data-icon-image');
 
   console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
@@ -233,6 +239,9 @@
               finalMessage = '🎉 You have free delivery!';
             }
             
+            // Aktualizuj wiadomość z ikoną
+            updateMessageWithIcon(finalMessage);
+            
             messageElement.innerHTML = finalMessage;
             
             // Zmień kolor na zielony (sukces)
@@ -265,6 +274,9 @@
           finalMessage = originalMessage
             .replace('{amount}', threshold)
             .replace('{remaining}', remaining.toFixed(2));
+          
+          // Aktualizuj wiadomość z ikoną
+          updateMessageWithIcon(finalMessage);
           
           messageElement.innerHTML = finalMessage;
           
@@ -386,6 +398,30 @@
   console.log('🚀 Initializing...');
   updateDeliveryMessage();
   
+  // Dodaj nową funkcję do aktualizacji wiadomości z ikoną:
+  function updateMessageWithIcon(message) {
+    let iconHtml = '';
+    
+    if (showIcon) {
+      if (iconType === 'custom' && iconImage) {
+        iconHtml = `<img class="delivery-icon" src="${iconImage}" alt="Delivery" /> `;
+      } else {
+        iconHtml = `<img class="delivery-icon" src="/default-icon" alt="Delivery" /> `;
+      }
+    }
+    
+    // Znajdź element delivery-bar-content i zaktualizuj jego zawartość
+    const contentDiv = deliveryBar.querySelector('.delivery-bar-content');
+    if (contentDiv) {
+      contentDiv.innerHTML = `
+        ${iconHtml}
+        <span id="delivery-message">${message}</span>
+      `;
+    } else {
+      // Fallback - jeśli nie ma delivery-bar-content
+      messageElement.innerHTML = iconHtml + message;
+    }
+  }
 })();
 </script>
 
