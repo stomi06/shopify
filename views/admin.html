@@ -343,6 +343,21 @@
             <label for="minAmount">Minimalna kwota (zł)</label>
             <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
+
+          <!-- NOWA SEKCJA - Komunikat sukcesu -->
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
+              Pokaż komunikat po osiągnięciu progu darmowej dostawy
+            </label>
+            <div class="help-text">Gdy włączone, pasek zmieni wiadomość po osiągnięciu wymaganej kwoty</div>
+          </div>
+
+          <div class="form-group" id="successMessageGroup">
+            <label for="successMessage">Komunikat sukcesu</label>
+            <textarea id="successMessage" rows="2" placeholder="🎉 Gratulacje! Masz darmową dostawę!"></textarea>
+            <div class="help-text">Wiadomość wyświetlana gdy klient osiągnie próg darmowej dostawy</div>
+          </div>
         </div>
 
         <!-- Kolory i przezroczystość -->
@@ -370,7 +385,7 @@
 
           <div class="form-group">
             <label for="opacity">Przezroczystość paska: <span class="range-value" id="opacityValue">100%</span></label>
-            <input type="range" id="opacity" min="0" max="100" value="100" step="5" />
+            <input type="range" id="opacity" min="0" max="100" value="100"/>
             <div class="help-text">Kontroluje przezroczystość całego paska (tekst + tło)</div>
           </div>
         </div>
@@ -534,12 +549,14 @@
       // Pobierz wszystkie wartości
       const message = document.getElementById('message').value || '🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!';
       const minAmount = document.getElementById('minAmount').value || 199;
+      const showSuccessMessage = document.getElementById('showSuccessMessage').checked; // 👈 DODANE
+      const successMessage = document.getElementById('successMessage').value || '🎉 Gratulacje! Masz darmową dostawę!'; // 👈 DODANE
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
-      const transparentBg = document.getElementById('transparentBg').checked; // 👈 DODANE
+      const transparentBg = document.getElementById('transparentBg').checked;
       const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
-      const marginTop = document.getElementById('marginTop').value; // 👈 DODANE
+      const marginTop = document.getElementById('marginTop').value;
       const fontSize = document.getElementById('fontSize').value;
       const fontWeight = document.getElementById('fontWeight').value;
       const borderWidth = document.getElementById('borderWidth').value;
@@ -558,17 +575,23 @@
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;
       }
       
-      // Zastąp placeholder w wiadomości
-      const finalMessage = message.replace('{amount}', minAmount + ' zł');
+      // Zastąp placeholder w wiadomości - pokazuj komunikat sukcesu gdy jest włączony
+      let finalMessage;
+      if (showSuccessMessage && Math.random() > 0.5) { // 👈 DODANE - losowo pokaż sukces w podglądzie
+        finalMessage = successMessage;
+        previewBar.style.backgroundColor = '#4CAF50'; // Zielony kolor sukcesu
+      } else {
+        finalMessage = message.replace('{amount}', minAmount + ' zł');
+        if (transparentBg) {
+          previewBar.style.backgroundColor = 'transparent';
+        } else {
+          previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
+        }
+      }
+      
       previewMessage.textContent = finalMessage;
       
       // Zastosuj style
-      if (transparentBg) {
-        previewBar.style.backgroundColor = 'transparent'; // 👈 DODANE
-      } else {
-        previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
-      }
-      
       previewBar.style.color = textColor;
       previewBar.style.fontSize = fontSize + 'px';
       previewBar.style.fontWeight = fontWeight;
@@ -576,8 +599,8 @@
       previewBar.style.maxWidth = '400px';
       previewBar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
       previewBar.style.borderRadius = borderRadius + 'px';
-      previewBar.style.opacity = opacity; // 👈 Przezroczystość całego paska
-      previewBar.style.marginTop = marginTop + 'px'; // 👈 DODANE
+      previewBar.style.opacity = opacity;
+      previewBar.style.marginTop = marginTop + 'px';
       
       // Cień
       if (shadowBlur > 0 || shadowDistance > 0) {
@@ -605,12 +628,14 @@
       const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
+        show_success_message: document.getElementById('showSuccessMessage').checked, // 👈 DODANE
+        success_message: document.getElementById('successMessage').value, // 👈 DODANE
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
         transparent_bg: document.getElementById('transparentBg').checked,
         position: document.getElementById('position').value,
         width: parseInt(document.getElementById('width').value),
-        margin_top: parseInt(document.getElementById('marginTop').value), // 👈 DODANE
+        margin_top: parseInt(document.getElementById('marginTop').value),
         opacity: parseInt(document.getElementById('opacity').value),
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
@@ -624,7 +649,7 @@
         closeable: true
       };
 
-      console.log('Zapisuję margin-top:', settings.margin_top); // 👈 DODANE
+      console.log('Zapisuję komunikat sukcesu:', settings.show_success_message, settings.success_message);
       
       try {
         const shop = getShopFromUrl();
@@ -672,9 +697,11 @@
         // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
+        document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false; // 👈 DODANE (domyślnie true)
+        document.getElementById('successMessage').value = settings.success_message || "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
         document.getElementById('textColor').value = settings.text_color || "#FFFFFF";
-        document.getElementById('transparentBg').checked = settings.transparent_bg || false; // 👈 DODANE
+        document.getElementById('transparentBg').checked = settings.transparent_bg || false;
         document.getElementById('position').value = settings.position || "fixed";
         
         // Załaduj nowe ustawienia z domyślnymi wartościami
@@ -701,6 +728,9 @@
         document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
         document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
 
+        // Pokaż/ukryj pole komunikatu sukcesu
+        toggleSuccessMessageField(); // 👈 DODANE
+        
         updatePreview();
         console.log('Ustawienia załadowane:', settings);
       } catch (err) {
@@ -713,9 +743,11 @@
       if (confirm('Czy na pewno chcesz przywrócić domyślne ustawienia?')) {
         document.getElementById('message').value = "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
         document.getElementById('minAmount').value = 199;
+        document.getElementById('showSuccessMessage').checked = true; // 👈 DODANE
+        document.getElementById('successMessage').value = "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = "#4CAF50";
         document.getElementById('textColor').value = "#FFFFFF";
-        document.getElementById('transparentBg').checked = false; // 👈 DODANE
+        document.getElementById('transparentBg').checked = false;
         document.getElementById('position').value = "fixed";
         document.getElementById('opacity').value = 100;
         document.getElementById('fontSize').value = 14;
@@ -740,9 +772,30 @@
         document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
         document.getElementById('marginTopValue').textContent = '20px'; // 👈 DODANE
 
+        toggleSuccessMessageField(); // 👈 DODANE
         updatePreview();
       }
     }
+
+    // NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
+    function toggleSuccessMessageField() {
+      const checkbox = document.getElementById('showSuccessMessage');
+      const messageGroup = document.getElementById('successMessageGroup');
+      
+      if (checkbox.checked) {
+        messageGroup.style.display = 'block';
+      } else {
+        messageGroup.style.display = 'none';
+      }
+    }
+
+    // Dodaj nasłuchiwacze
+    document.getElementById('showSuccessMessage').addEventListener('change', function() {
+      toggleSuccessMessageField();
+      updatePreview();
+    });
+
+    document.getElementById('successMessage').addEventListener('input', updatePreview);
 
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {

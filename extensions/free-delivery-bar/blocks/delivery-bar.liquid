@@ -51,13 +51,13 @@
     
     {% if settings.position == 'fixed' %}
       position: fixed;
-      top: {{ settings.margin_top | default: 20 }}px; /* 👈 DYNAMICZNY MARGIN-TOP */
+      margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
     {% else %}
       position: absolute;
       z-index: 1;
-      margin: {{ settings.margin_top | default: 20 }}px auto 0 auto; /* 👈 MARGIN-TOP RÓWNIEŻ DLA RELATIVE */
+      margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
     {% endif %}
@@ -90,9 +90,11 @@
      id="free-delivery-bar"
      data-threshold="{{ settings.min_amount | default: 199 }}"
      data-message="{{ settings.message | default: 'Darmowa dostawa przy zamówieniu powyżej 199 zł!' }}"
+     data-success-message="{{ settings.success_message | default: 'Gratulacje! Masz darmową dostawę!' }}"
+     data-show-success="{{ settings.show_success_message | default: true }}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
-     data-margin-top="{{ settings.margin_top | default: 20 }}"
+     data-margin-top="{{ settings.margin_top }}"
      data-transparent-bg="{{ settings.transparent_bg }}">
   <span id="delivery-message">
     {% assign message = settings.message | default: "Darmowa dostawa przy zamówieniu powyżej 199 zł!" %}
@@ -117,29 +119,20 @@
   
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
+  const successMessage = deliveryBar.getAttribute('data-success-message'); // 👈 DODANE
+  const showSuccess = deliveryBar.getAttribute('data-show-success') !== 'false'; // 👈 DODANE
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
-  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top')) || 20; // 👈 DODANE
+  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
-  
-  // DEBUG
-  console.log('=== DEBUG SZEROKOŚCI I MARGIN ===');
-  console.log('Width:', width);
-  console.log('Margin-top:', marginTop); // 👈 DODANE
+
+  console.log('=== DEBUG KOMUNIKATU SUKCESU ==='); // 👈 DODANE
+  console.log('Success message:', successMessage);
+  console.log('Show success:', showSuccess);
   
   // USTAW SZEROKOŚĆ I MARGIN DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
-  
-  // Ustaw margin-top w zależności od pozycji
-  const computedStyle = getComputedStyle(deliveryBar);
-  if (computedStyle.position === 'fixed') {
-    deliveryBar.style.setProperty('top', marginTop + 'px', 'important'); // 👈 DODANE
-  } else {
-    deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important'); // 👈 DODANE
-  }
-  
-  console.log('Ustawiona szerokość:', width + '%');
-  console.log('Ustawiony margin-top:', marginTop + 'px'); // 👈 DODANE
+  deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
@@ -155,11 +148,19 @@
         const cartTotal = cart.total_price / 100;
         
         if (cartTotal >= threshold) {
-          messageElement.innerHTML = '🎉 Masz darmową dostawę!';
+          // KOMUNIKAT SUKCESU 👈 DODANE
+          if (showSuccess && successMessage) {
+            messageElement.innerHTML = successMessage;
+          } else {
+            messageElement.innerHTML = '🎉 Masz darmową dostawę!'; // Fallback
+          }
+          
+          // Zmień kolor na zielony (sukces)
           if (!transparentBg) {
             deliveryBar.style.backgroundColor = '#4CAF50';
           }
         } else {
+          // NORMALNA WIADOMOŚĆ
           const remaining = threshold - cartTotal;
           let message = originalMessage;
           
@@ -167,6 +168,8 @@
           message = message.replace('{remaining}', remaining.toFixed(2) + ' zł');
           
           messageElement.innerHTML = message;
+          
+          // Przywróć oryginalny kolor
           if (!transparentBg) {
             deliveryBar.style.backgroundColor = bgColor;
           }
