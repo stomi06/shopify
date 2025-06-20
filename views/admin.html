@@ -770,64 +770,71 @@
 
     // Funkcja zapisywania ustawień
     async function saveSettings() {
-      const settings = {
-        message: document.getElementById('message').value,
-        min_amount: parseInt(document.getElementById('minAmount').value),
-        show_success_message: document.getElementById('showSuccessMessage').checked, // 👈 DODANE
-        success_message: document.getElementById('successMessage').value, // 👈 DODANE
-        background_color: document.getElementById('backgroundColor').value,
-        text_color: document.getElementById('textColor').value,
-        transparent_bg: document.getElementById('transparentBg').checked,
-        position: document.getElementById('position').value,
-        width: parseInt(document.getElementById('width').value),
-        margin_top: parseInt(document.getElementById('marginTop').value),
-        opacity: parseInt(document.getElementById('opacity').value),
-        font_size: parseInt(document.getElementById('fontSize').value),
-        font_weight: parseInt(document.getElementById('fontWeight').value),
-        border_width: parseInt(document.getElementById('borderWidth').value),
-        border_color: document.getElementById('borderColor').value,
-        border_radius: parseInt(document.getElementById('borderRadius').value),
-        shadow_color: document.getElementById('shadowColor').value,
-        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
-        shadow_blur: parseInt(document.getElementById('shadowBlur').value),
-        shadow_distance: parseInt(document.getElementById('shadowDistance').value),
-        show_icon: document.getElementById('showIcon').checked,
-        icon_type: iconChoice,
-        icon_image: iconImage,
-        icon_size: parseInt(document.getElementById('iconSize').value),
-        icon_gap: parseInt(document.getElementById('iconGap').value),
-        closeable: true
-      };
-
-      console.log('Saving success message:', settings.show_success_message, settings.success_message);
-      
       try {
-        const shop = getShopFromUrl();
+        // Sprawdź czy elementy istnieją przed użyciem
+        const iconChoiceElement = document.querySelector('input[name="iconChoice"]:checked');
+        const iconChoice = iconChoiceElement ? iconChoiceElement.value : 'default';
+        
+        let iconImage = null;
+        if (iconChoice === 'custom') {
+          const preview = document.getElementById('imagePreview');
+          if (preview) {
+            iconImage = preview.getAttribute('data-image');
+          }
+        }
+
+        const settings = {
+          message: document.getElementById('message').value || '🚚 Free delivery on orders over $199!',
+          min_amount: parseInt(document.getElementById('minAmount').value) || 199,
+          show_success_message: document.getElementById('showSuccessMessage').checked,
+          success_message: document.getElementById('successMessage').value || '🎉 Congratulations! You have free delivery!',
+          background_color: document.getElementById('backgroundColor').value || '#4CAF50',
+          text_color: document.getElementById('textColor').value || '#FFFFFF',
+          transparent_bg: document.getElementById('transparentBg').checked,
+          position: document.getElementById('position').value || 'top',
+          width: parseInt(document.getElementById('width').value) || 90,
+          margin_top: parseInt(document.getElementById('marginTop').value) || 20,
+          opacity: parseInt(document.getElementById('opacity').value) || 100,
+          font_size: parseInt(document.getElementById('fontSize').value) || 14,
+          font_weight: parseInt(document.getElementById('fontWeight').value) || 600,
+          border_width: parseInt(document.getElementById('borderWidth').value) || 0,
+          border_color: document.getElementById('borderColor').value || '#cccccc',
+          border_radius: parseInt(document.getElementById('borderRadius').value) || 6,
+          shadow_color: document.getElementById('shadowColor').value || '#000000',
+          shadow_opacity: parseInt(document.getElementById('shadowOpacity').value) || 20,
+          shadow_blur: parseInt(document.getElementById('shadowBlur').value) || 0,
+          shadow_distance: parseInt(document.getElementById('shadowDistance').value) || 0,
+          closeable: true,
+          
+          // Opcje ikon - tylko jeśli elementy istnieją
+          show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
+          icon_type: iconChoice,
+          icon_image: iconImage,
+          icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
+          icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
+        };
+
+        console.log('💾 Saving settings:', settings);
+
         const response = await fetch('/api/settings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ shop, settings })
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(settings)
         });
 
         if (response.ok) {
-          // Show success message
-          const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert success';
-          alertDiv.textContent = '✅ Settings saved successfully!';
-          document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
-          
-          setTimeout(() => alertDiv.remove(), 3000);
+          showMessage('✅ Settings saved successfully!', 'success');
+          console.log('✅ Settings saved successfully');
         } else {
-          throw new Error('Error while saving');
+          const errorText = await response.text();
+          showMessage('❌ Error saving settings: ' + errorText, 'error');
+          console.error('❌ Error saving settings:', errorText);
         }
       } catch (err) {
-        // Show error message
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert error';
-        alertDiv.textContent = '❌ Error saving settings: ' + err.message;
-        document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
-        
-        setTimeout(() => alertDiv.remove(), 5000);
+        showMessage('❌ Error: ' + err.message, 'error');
+        console.error('❌ Save error:', err);
       }
     }
 
