@@ -10,6 +10,12 @@ import crypto from "crypto";
 import session from "express-session";
 
 dotenv.config();
+
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Default delivery icon as Base64 - embedded directly
 const DEFAULT_DELIVERY_ICON = `${process.env.HOST}/assets/default-delivery-icon.png`;
 
@@ -138,6 +144,9 @@ const shopify = shopifyApi({
 });
 
 app.use(cookieParser()); // Usuń sekret z cookie-parser
+
+// Serwuj pliki statyczne z folderu assets PRZED innymi middleware
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Dodaj CORS middleware
 app.use((req, res, next) => {
@@ -462,17 +471,8 @@ app.get('/api/settings/:shop', async (req, res) => {
     }
   } catch (err) {
     console.error('❌ Błąd pobierania ustawień:', err.message);
-    res.status(500).json({ error: 'Błąd serwera: ' + err.message });
-  }
+    res.status(500).json({ error: 'Błąd serwera: ' + err.message });  }
 });
-
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serwuj pliki statyczne z folderu assets
-app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Endpoint dla domyślnej ikony dostawy
 app.get('/default-icon', (req, res) => {
