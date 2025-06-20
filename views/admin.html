@@ -579,8 +579,8 @@
     </div>
   </div>
 
-  <script>    // Domyślna ikona - twoja ikona z assets
-    const DEFAULT_DELIVERY_ICON = '/assets/default-delivery-icon.png';
+  <script>    // Domyślna ikona - serwowana z aplikacji
+    const DEFAULT_DELIVERY_ICON = `${window.location.origin}/assets/default-delivery-icon.png`;
 
     // Funkcje pomocnicze dla zakresów
     function updateRangeValue(rangeId, valueId, suffix = '') {
