@@ -549,8 +549,8 @@
       // Pobierz wszystkie wartości
       const message = document.getElementById('message').value || '🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!';
       const minAmount = document.getElementById('minAmount').value || 199;
-      const showSuccessMessage = document.getElementById('showSuccessMessage').checked; // 👈 DODANE
-      const successMessage = document.getElementById('successMessage').value || '🎉 Gratulacje! Masz darmową dostawę!'; // 👈 DODANE
+      const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
+      const successMessage = document.getElementById('successMessage').value || '🎉 Gratulacje! Masz darmową dostawę!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
       const transparentBg = document.getElementById('transparentBg').checked;
@@ -577,11 +577,22 @@
       
       // Zastąp placeholder w wiadomości - pokazuj komunikat sukcesu gdy jest włączony
       let finalMessage;
-      if (showSuccessMessage && Math.random() > 0.5) { // 👈 DODANE - losowo pokaż sukces w podglądzie
+      const isSuccessDemo = Math.random() > 0.5; // Losowo symuluj sukces
+      
+      if (isSuccessDemo && showSuccessMessage) {
+        // Pokaż komunikat sukcesu
         finalMessage = successMessage;
-        previewBar.style.backgroundColor = '#4CAF50'; // Zielony kolor sukcesu
+        previewBar.style.backgroundColor = '#4CAF50';
+        previewBar.style.display = 'block'; // Pokaż pasek
+      } else if (isSuccessDemo && !showSuccessMessage) {
+        // Ukryj pasek gdy sukces osiągnięty ale komunikat wyłączony
+        previewBar.style.display = 'none';
+        return; // Nie wykonuj reszty stylowania
       } else {
+        // Pokaż normalną wiadomość
         finalMessage = message.replace('{amount}', minAmount + ' zł');
+        previewBar.style.display = 'block';
+        
         if (transparentBg) {
           previewBar.style.backgroundColor = 'transparent';
         } else {

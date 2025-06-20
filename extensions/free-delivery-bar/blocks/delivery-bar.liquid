@@ -119,20 +119,23 @@
   
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
-  const successMessage = deliveryBar.getAttribute('data-success-message'); // 👈 DODANE
-  const showSuccess = deliveryBar.getAttribute('data-show-success') !== 'false'; // 👈 DODANE
+  const successMessage = deliveryBar.getAttribute('data-success-message');
+  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true'; // 👈 POPRAWIONE - strict checking
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;
   const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
 
-  console.log('=== DEBUG KOMUNIKATU SUKCESU ==='); // 👈 DODANE
+  console.log('=== DEBUG KOMUNIKATU SUKCESU ===');
   console.log('Success message:', successMessage);
-  console.log('Show success:', showSuccess);
+  console.log('Show success (raw):', deliveryBar.getAttribute('data-show-success'));
+  console.log('Show success (parsed):', showSuccess);
   
   // USTAW SZEROKOŚĆ I MARGIN DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
-  deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
+  if (marginTop) {
+    deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
+  }
   
   // Sprawdź czy pasek był wcześniej zamknięty
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
@@ -148,19 +151,29 @@
         const cartTotal = cart.total_price / 100;
         
         if (cartTotal >= threshold) {
-          // KOMUNIKAT SUKCESU 👈 DODANE
-          if (showSuccess && successMessage) {
-            messageElement.innerHTML = successMessage;
+          // 👇 POPRAWIONA LOGIKA - sprawdź czy pokazywać komunikat sukcesu
+          if (showSuccess) {
+            // Pokaż komunikat sukcesu (własny lub domyślny)
+            if (successMessage && successMessage.trim() !== '') {
+              messageElement.innerHTML = successMessage;
+            } else {
+              messageElement.innerHTML = '🎉 Masz darmową dostawę!'; // Fallback
+            }
+            
+            // Zmień kolor na zielony (sukces)
+            if (!transparentBg) {
+              deliveryBar.style.backgroundColor = '#4CAF50';
+            }
           } else {
-            messageElement.innerHTML = '🎉 Masz darmową dostawę!'; // Fallback
-          }
-          
-          // Zmień kolor na zielony (sukces)
-          if (!transparentBg) {
-            deliveryBar.style.backgroundColor = '#4CAF50';
+            // 👈 NOWE - ukryj pasek gdy nie ma pokazywać komunikatu sukcesu
+            deliveryBar.classList.add('hidden');
+            console.log('Ukrywam pasek - komunikat sukcesu wyłączony');
+            return;
           }
         } else {
-          // NORMALNA WIADOMOŚĆ
+          // NORMALNA WIADOMOŚĆ - pokaż pasek
+          deliveryBar.classList.remove('hidden');
+          
           const remaining = threshold - cartTotal;
           let message = originalMessage;
           
@@ -176,6 +189,8 @@
         }
       })
       .catch(() => {
+        // Fallback - pokaż pasek z domyślną wiadomością
+        deliveryBar.classList.remove('hidden');
         let message = originalMessage.replace('{amount}', threshold + ' zł');
         messageElement.innerHTML = message;
       });
