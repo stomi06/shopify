@@ -340,38 +340,33 @@ app.get("/", (req, res) => {
 // API endpoint do zapisywania ustawień do Metafields
 app.post('/api/settings', async (req, res) => {
   try {
-    // Pobierz shop z nagłówka lub z body
-    const shop = req.headers['x-shop-domain'] || req.body.shop || 'freedelivery-test.myshopify.com';
+    const { shop, settings } = req.body;
+    console.log('Zapisuję ustawienia do metafields dla sklepu:', shop);
+    console.log('Ustawienia:', settings);
     
-    console.log('📝 Saving settings for shop:', shop);
-    console.log('📦 Settings data:', req.body);
-
-    // Pobierz token dostępu dla tego sklepu
-    const accessToken = getAccessToken(shop);
-    if (!accessToken) {
-      console.error('❌ Brak tokenu dla sklepu:', shop);
+    // Pobierz access token dla tego sklepu
+    const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
+    
+    if (sessionResult.rows.length === 0) {
       return res.status(401).json({ error: 'Brak autoryzacji dla tego sklepu' });
     }
-
-    const settings = req.body;
     
-    // Dodaj app_url do ustawień
+    const accessToken = sessionResult.rows[0].access_token;
+    
+    // Zapisz ustawienia do Shop Metafields
     const settingsData = {
       ...settings,
-      app_url: APP_URL
+      app_url: APP_URL  // Dodaj URL aplikacji
     };
 
-    // Zapisz ustawienia do Shop Metafields
     const metafieldData = {
       metafield: {
         namespace: "free_delivery_app",
         key: "settings",
-        value: JSON.stringify(settingsData),
+        value: JSON.stringify(settingsData),  // Użyj settingsData zamiast settings
         type: "json"
       }
     };
-
-    console.log('🔄 Sending to Shopify API...');
     
     const response = await fetch(`https://${shop}/admin/api/2023-10/metafields.json`, {
       method: 'POST',
@@ -381,18 +376,19 @@ app.post('/api/settings', async (req, res) => {
       },
       body: JSON.stringify(metafieldData)
     });
-
-    if (response.ok) {
-      const result = await response.json();
-      console.log('✅ Ustawienia zapisane:', result);
-      res.json({ success: true, message: 'Ustawienia zapisane pomyślnie!' });
-    } else {
+    
+    if (!response.ok) {
       const error = await response.text();
-      console.error('❌ Błąd Shopify API:', error);
-      res.status(400).json({ error: 'Błąd zapisu: ' + error });
+      console.error('Błąd Shopify API:', error);
+      return res.status(500).json({ error: 'Błąd zapisywania do Shopify' });
     }
+    
+    const result = await response.json();
+    console.log('✅ Ustawienia zapisane do metafields:', result);
+    
+    res.json({ success: true, metafield: result });
   } catch (err) {
-    console.error('❌ Błąd serwera:', err);
+    console.error('❌ Błąd zapisywania ustawień:', err.message);
     res.status(500).json({ error: 'Błąd serwera: ' + err.message });
   }
 });
