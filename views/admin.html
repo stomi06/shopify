@@ -414,10 +414,16 @@
               </select>
             </div>
             <div class="form-group">
-              <label for="width">Szerokość paska: <span class="range-value" id="widthValue">100%</span></label>
-              <input type="range" id="width" min="0" max="100" value="100"/>
+              <label for="width">Szerokość paska: <span class="range-value" id="widthValue">90%</span></label>
+              <input type="range" id="width" min="50" max="100" step="5" />
               <div class="help-text">Maksymalna szerokość: 500px</div>
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="marginTop">Odległość od góry: <span class="range-value" id="marginTopValue">20px</span></label>
+            <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
+            <div class="help-text">Kontroluje odstęp od górnej krawędzi strony</div>
           </div>
         </div>
 
@@ -518,6 +524,7 @@
     updateRangeValue('shadowBlur', 'shadowBlurValue', 'px');
     updateRangeValue('shadowDistance', 'shadowDistanceValue', 'px');
     updateRangeValue('width', 'widthValue', '%');
+    updateRangeValue('marginTop', 'marginTopValue', 'px'); // 👈 DODANE
 
     // Funkcja aktualizacji podglądu
     function updatePreview() {
@@ -532,6 +539,7 @@
       const transparentBg = document.getElementById('transparentBg').checked; // 👈 DODANE
       const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
+      const marginTop = document.getElementById('marginTop').value; // 👈 DODANE
       const fontSize = document.getElementById('fontSize').value;
       const fontWeight = document.getElementById('fontWeight').value;
       const borderWidth = document.getElementById('borderWidth').value;
@@ -569,6 +577,7 @@
       previewBar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
       previewBar.style.borderRadius = borderRadius + 'px';
       previewBar.style.opacity = opacity; // 👈 Przezroczystość całego paska
+      previewBar.style.marginTop = marginTop + 'px'; // 👈 DODANE
       
       // Cień
       if (shadowBlur > 0 || shadowDistance > 0) {
@@ -598,9 +607,10 @@
         min_amount: parseInt(document.getElementById('minAmount').value),
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
-        transparent_bg: document.getElementById('transparentBg').checked, // 👈 DODANE
+        transparent_bg: document.getElementById('transparentBg').checked,
         position: document.getElementById('position').value,
         width: parseInt(document.getElementById('width').value),
+        margin_top: parseInt(document.getElementById('marginTop').value), // 👈 DODANE
         opacity: parseInt(document.getElementById('opacity').value),
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
@@ -614,8 +624,7 @@
         closeable: true
       };
 
-      console.log('Zapisuję szerokość:', settings.width);
-      console.log('Przezroczyste tło:', settings.transparent_bg); // 👈 DODANE
+      console.log('Zapisuję margin-top:', settings.margin_top); // 👈 DODANE
       
       try {
         const shop = getShopFromUrl();
@@ -680,6 +689,7 @@
         document.getElementById('shadowBlur').value = settings.shadow_blur || 4;
         document.getElementById('shadowDistance').value = settings.shadow_distance || 2;
         document.getElementById('width').value = settings.width || 90; // 👈 DODANE
+        document.getElementById('marginTop').value = settings.margin_top || 20; // 👈 DODANE
 
         // Zaktualizuj wyświetlane wartości zakresów
         document.getElementById('opacityValue').textContent = (settings.opacity || 100) + '%';
@@ -689,6 +699,7 @@
         document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';
         document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
+        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
 
         updatePreview();
         console.log('Ustawienia załadowane:', settings);
@@ -717,6 +728,7 @@
         document.getElementById('shadowBlur').value = 4;
         document.getElementById('shadowDistance').value = 2;
         document.getElementById('width').value = 90; // 👈 DODANE
+        document.getElementById('marginTop').value = 20; // 👈 DODANE
         
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';
@@ -726,6 +738,7 @@
         document.getElementById('shadowBlurValue').textContent = '4px';
         document.getElementById('shadowDistanceValue').textContent = '2px';
         document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
+        document.getElementById('marginTopValue').textContent = '20px'; // 👈 DODANE
 
         updatePreview();
       }
