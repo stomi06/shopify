@@ -344,22 +344,7 @@
             <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
 
-          <!-- NOWY CHECKBOX - pozostała kwota -->
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="showRemaining" style="margin-right: 8px;" checked>
-              Pokazuj pozostałą kwotę do darmowej dostawy
-            </label>
-            <div class="help-text">Gdy włączone, pasek będzie pokazywał ile jeszcze zostało do darmowej dostawy (np. "Zostało 150 zł")</div>
-          </div>
-
-          <div class="form-group" id="remainingMessageGroup">
-            <label for="remainingMessage">Format pozostałej kwoty</label>
-            <textarea id="remainingMessage" rows="2" placeholder="💰 Do darmowej dostawy zostało {remaining}!"></textarea>
-            <div class="help-text">Użyj {remaining} jako placeholder dla pozostałej kwoty. Ten tekst zastąpi główną wiadomość gdy koszyk nie jest pusty ale próg nie został osiągnięty.</div>
-          </div>
-
-          <!-- Komunikat sukcesu -->
+          <!-- NOWA SEKCJA - Komunikat sukcesu -->
           <div class="form-group">
             <label>
               <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
@@ -564,8 +549,6 @@
       // Pobierz wszystkie wartości
       const message = document.getElementById('message').value || '🚚 Darmowa dostawa przy zamówieniu powyżej 199 zł!';
       const minAmount = document.getElementById('minAmount').value || 199;
-      const showRemaining = document.getElementById('showRemaining').checked;
-      const remainingMessage = document.getElementById('remainingMessage').value || '💰 Do darmowej dostawy zostało {remaining}!';
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
       const successMessage = document.getElementById('successMessage').value || '🎉 Gratulacje! Masz darmową dostawę!';
       const backgroundColor = document.getElementById('backgroundColor').value;
@@ -656,8 +639,6 @@
       const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
-        show_remaining: document.getElementById('showRemaining').checked, // 👈 DODANE
-        remaining_message: document.getElementById('remainingMessage').value, // 👈 DODANE
         show_success_message: document.getElementById('showSuccessMessage').checked, // 👈 DODANE
         success_message: document.getElementById('successMessage').value, // 👈 DODANE
         background_color: document.getElementById('backgroundColor').value,
@@ -727,8 +708,6 @@
         // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
-        document.getElementById('showRemaining').checked = settings.show_remaining !== false; // 👈 DODANE (domyślnie true)
-        document.getElementById('remainingMessage').value = settings.remaining_message || "💰 Do darmowej dostawy zostało {remaining}!"; // 👈 DODANE
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false; // 👈 DODANE (domyślnie true)
         document.getElementById('successMessage').value = settings.success_message || "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
@@ -775,8 +754,6 @@
       if (confirm('Czy na pewno chcesz przywrócić domyślne ustawienia?')) {
         document.getElementById('message').value = "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!";
         document.getElementById('minAmount').value = 199;
-        document.getElementById('showRemaining').checked = true; // 👈 DODANE
-        document.getElementById('remainingMessage').value = "💰 Do darmowej dostawy zostało {remaining}!"; // 👈 DODANE
         document.getElementById('showSuccessMessage').checked = true; // 👈 DODANE
         document.getElementById('successMessage').value = "🎉 Gratulacje! Masz darmową dostawę!"; // 👈 DODANE
         document.getElementById('backgroundColor').value = "#4CAF50";
