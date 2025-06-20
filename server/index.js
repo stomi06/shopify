@@ -446,6 +446,7 @@ app.get('/api/settings/:shop', async (req, res) => {
 });
 
 app.get('/default-icon', (req, res) => {
+  const __dirname = path.dirname(new URL(import.meta.url).pathname);
   res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
 });
 
