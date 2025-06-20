@@ -566,7 +566,7 @@
             <div class="icon-choice">
               <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked>
               <label for="useDefaultIcon" class="radio-label">
-                <img src="/assets/free-delivery-icon.png" alt="Default icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
+                <img src="/default-icon" alt="Default icon" style="width: 24px; height: 24px; margin-right: 8px; vertical-align: middle;">
                 Użyj domyślnej ikony
               </label>
             </div>
@@ -698,12 +698,11 @@
         const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value;
         
         if (iconChoice === 'default') {
-          iconHtml = `<img src="/assets/free-delivery-icon.png" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
+          iconHtml = `<img src="/default-icon" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
         } else if (iconChoice === 'custom') {
-          const customImage = document.querySelector('#imagePreview').style.backgroundImage;
+          const customImage = document.getElementById('imagePreview').getAttribute('data-image');
           if (customImage) {
-            const imageSrc = customImage.slice(5, -2); // usuń url("...") wrapper
-            iconHtml = `<img src="${imageSrc}" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
+            iconHtml = `<img src="${customImage}" style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"> `;
           }
         }
       }

@@ -90,6 +90,32 @@
   .free-delivery-bar button:hover {
     opacity: 1;
   }
+  
+  .delivery-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .delivery-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .delivery-icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .delivery-bar-content {
+      gap: 6px;
+    }
+  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -107,7 +133,7 @@
       {% if settings.icon_type == 'custom' and settings.icon_image %}
         <img class="delivery-icon" src="{{ settings.icon_image }}" alt="Delivery" />
       {% else %}
-        <img class="delivery-icon" src="/assets/free-delivery-icon.png" alt="Delivery" />
+        <img class="delivery-icon" src="/default-icon" alt="Delivery" />
       {% endif %}
     {% endif %}
     
