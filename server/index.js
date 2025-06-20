@@ -445,4 +445,8 @@ app.get('/api/settings/:shop', async (req, res) => {
   }
 });
 
+app.get('/default-icon', (req, res) => {
+  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
+});
+
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));

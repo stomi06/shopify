@@ -90,6 +90,32 @@
   .free-delivery-bar button:hover {
     opacity: 1;
   }
+  
+  .delivery-bar-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .delivery-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  /* Mobile responsive */
+  @media (max-width: 768px) {
+    .delivery-icon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .delivery-bar-content {
+      gap: 6px;
+    }
+  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -102,10 +128,13 @@
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">
-  <span id="delivery-message">
-    {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
-    {{ message }}
-  </span>
+  <div class="delivery-bar-content">
+    <img class="delivery-icon" src="/default-icon" alt="Delivery" />
+    <span id="delivery-message">
+      {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
+      {{ message }}
+    </span>
+  </div>
   
   {% if settings.closeable == true %}
     <button id="close-delivery-bar">×</button>
