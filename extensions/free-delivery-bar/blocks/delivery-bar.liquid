@@ -145,11 +145,12 @@
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
       {{ message }}
     </span>
-  </div>
-  
-  {% if settings.closeable == true %}
+  </div>  {% if settings.closeable != false %}
     <button id="close-delivery-bar">×</button>
   {% endif %}
+  
+  <!-- Debug: sprawdź wartość closeable -->
+  <!-- settings.closeable = {{ settings.closeable }} -->
 </div>
 
 <script>
@@ -313,14 +314,15 @@
     setTimeout(() => {
       deliveryBar.classList.remove('fade-out');
     }, 10); // Krótkie opóźnienie
-  }
-    // Obsługa zamknięcia paska
+  }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
   if (closeButton) {
     closeButton.addEventListener('click', function() {
       deliveryBar.classList.add('hidden');
       localStorage.setItem('deliveryBarClosed', 'true');
       console.log('Bar closed by user');
     });
+  } else {
+    console.log('Close button not found - closeable setting is disabled');
   }
   
   // 🔥 NATYCHMIASTOWA AKTUALIZACJA

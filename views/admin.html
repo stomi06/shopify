@@ -796,10 +796,9 @@
         icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
-      };
-
-      console.log('💾 Saving complete settings object:', settings);
+      };      console.log('💾 Saving complete settings object:', settings);
       console.log('📏 Bar height being saved:', settings.bar_height);
+      console.log('🔒 Closeable being saved:', settings.closeable);
       
       try {
         const shop = getShopFromUrl();
@@ -1038,11 +1037,14 @@
       } else {
         messageGroup.style.display = 'none';
       }
-    }
-
-    // Dodaj nasłuchiwacze
+    }    // Dodaj nasłuchiwacze
     document.getElementById('showSuccessMessage').addEventListener('change', function() {
       toggleSuccessMessageField();
+      updatePreview();
+    });
+
+    document.getElementById('closeable').addEventListener('change', function() {
+      console.log('🔄 Closeable changed to:', this.checked);
       updatePreview();
     });
 
