@@ -49,9 +49,7 @@
       color: white;
       font-size: 12px;
       font-weight: bold;
-    }
-
-    .main-content {
+    }    .main-content {
       display: grid;
       grid-template-columns: 1fr 400px;
       gap: 24px;
@@ -64,8 +62,39 @@
       background: white;
       border-radius: 8px;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      padding: 0;
+      padding: 30px;
       overflow: hidden;
+    }
+    
+    .preview-bar {
+      width: 100%;
+      background: var(--background-color, #000000);
+      color: var(--text-color, #ffffff);
+      padding: 0;
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: var(--font-size, 14px);
+      font-weight: var(--font-weight, 600);
+      border-radius: var(--border-radius, 0px);
+      margin: 0 0 20px 0;
+      border: 1px solid #ddd;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: var(--bar-height, 40px);
+      padding: 0 20px;
+    }
+    
+    .preview-bar img {
+      width: var(--icon-size, 20px);
+      height: var(--icon-size, 20px);
+      object-fit: contain;
     }
 
     .settings-panel {
@@ -220,9 +249,7 @@
     .button-secondary:hover {
       background: #f6f6f7;
       border-color: #b5b8bb;
-    }
-
-    .preview-panel {
+    }    .preview-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -234,37 +261,6 @@
 
     .preview-content {
       padding: 24px;
-    }
-
-    .preview-bar {
-      width: 100%;
-      background: var(--background-color, #000000);
-      color: var(--text-color, #ffffff);
-      padding: 0;
-      text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: var(--font-size, 14px);
-      font-weight: var(--font-weight, 600);
-      border-radius: 0;
-      margin: 0;
-      border: none;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .preview-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      height: var(--bar-height, 40px);
-      padding: 0 20px;
-    }
-    
-    .preview-bar img {
-      width: var(--icon-size, 20px);
-      height: var(--icon-size, 20px);
-      object-fit: contain;
     }
 
     .alert {
@@ -334,16 +330,15 @@
     </h1>
     <div style="color: #6d7175; font-size: 14px;">Management Panel</div>
   </div>
-
   <div class="main-content">
-    <div class="panel-container">
-      <!-- Top Preview Bar -->
-      <div id="preview-bar" class="preview-bar" style="display: none;">
-        <div class="preview-content">
-          <span id="preview-message">Free delivery available!</span>
-        </div>
+    <!-- Top Preview Bar -->
+    <div id="preview-bar" class="preview-bar" style="display: none; position: fixed; top: 0; left: 0; right: 0; z-index: 1000; margin: 0;">
+      <div class="preview-content">
+        <span id="preview-message">Free delivery available!</span>
       </div>
-      
+    </div>
+    
+    <div class="panel-container">
       <div class="settings-panel">
         <div class="panel-header">
           <h2>Bar Configuration</h2>
@@ -591,10 +586,12 @@
           <div class="form-section">
             <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
             <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
-          </div>
-        </div>
-      </div>    <!-- Preview panel -->
-      <div class="preview-panel">
+          </div>        </div>
+      </div>
+    </div>
+
+    <!-- Preview panel -->
+    <div class="preview-panel">
         <div class="panel-header">
           <h2>Live Preview</h2>
           <p>See how messages will look in different scenarios</p>
