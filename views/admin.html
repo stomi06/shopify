@@ -351,11 +351,9 @@
             <label for="generalMessage">General Info Message</label>
             <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
             <div class="help-text">General message shown when cart is empty or below threshold</div>
-          </div>
-
-          <div class="form-group">
+          </div>          <div class="form-group">
             <label for="progressMessage">Progress Message</label>
-            <textarea id="progressMessage" rows="2" placeholder="Add {remaining} more for free delivery!"></textarea>
+            <textarea id="progressMessage" rows="2" placeholder="Add ${remaining} more for free delivery!"></textarea>
             <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
           </div><div class="form-group">
             <label for="minAmount">Minimum Amount ($)</label>
@@ -810,9 +808,8 @@
       if (previewGeneralMessage) {
         previewGeneralMessage.innerHTML = iconHtml + generalMessage;
       }
-      
-      if (previewProgressMessage) {
-        const sampleProgress = progressMessage.replace('{remaining}', '49');
+        if (previewProgressMessage) {
+        const sampleProgress = progressMessage.replace('${remaining}', '49').replace('{remaining}', '49');
         previewProgressMessage.innerHTML = iconHtml + sampleProgress;
       }
       
@@ -942,7 +939,7 @@
           console.log('Using default settings');          // Ustaw domyślne wartości przy pierwszym uruchomieniu
           document.getElementById('message').value = "Free delivery on orders over {amount}!";
           document.getElementById('generalMessage').value = "Free delivery available!";
-          document.getElementById('progressMessage').value = "Add {remaining} more for free delivery!";
+          document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
           document.getElementById('minAmount').value = 199;
           document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
@@ -1002,7 +999,7 @@
         }        // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "Free delivery on orders over {amount}!";
         document.getElementById('generalMessage').value = settings.general_message || "Free delivery available!";
-        document.getElementById('progressMessage').value = settings.progress_message || "Add {remaining} more for free delivery!";
+        document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free delivery!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
         document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
@@ -1074,7 +1071,7 @@
     function resetSettings() {
       if (confirm('Are you sure you want to restore default settings?')) {        document.getElementById('message').value = "Free delivery on orders over {amount}!";
         document.getElementById('generalMessage').value = "Free delivery available!";
-        document.getElementById('progressMessage').value = "Add {remaining} more for free delivery!";
+        document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
         document.getElementById('minAmount').value = 199;
         document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;

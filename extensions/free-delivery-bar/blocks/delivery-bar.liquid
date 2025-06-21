@@ -128,7 +128,7 @@
      id="free-delivery-bar"
      data-threshold="{{ settings.min_amount | default: 199 }}"     data-message="{{ settings.message | default: 'Free delivery on orders over $199!' }}"
      data-general-message="{{ settings.general_message | default: 'Free delivery available!' }}"
-     data-progress-message="{{ settings.progress_message | default: 'Add {remaining} more for free delivery!' }}"
+     data-progress-message="{{ settings.progress_message | default: 'Add $[remaining] more for free delivery!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
@@ -274,8 +274,8 @@
             // Koszyk niepusty ale poniżej progu - pokaż progress message
             const remaining = threshold - cartTotal;
             const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
-            
-            finalMessage = progressMessage
+              finalMessage = progressMessage
+              .replace('[remaining]', formattedRemaining)
               .replace('{remaining}', formattedRemaining)
               .replace('{amount}', threshold);
           }
