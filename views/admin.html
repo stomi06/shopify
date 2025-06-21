@@ -19,25 +19,6 @@
       line-height: 1.5;
     }
 
-    .topbar {
-      background: #fafbfb;
-      border-bottom: 1px solid #e1e3e5;
-      padding: 16px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05);
-    }
-
-    .topbar h1 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #202223;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
     .app-icon {
       width: 24px;
       height: 24px;
@@ -308,11 +289,79 @@
       background-color: #f6f6f7;
       border-color: #5c6ac4;
       border-style: solid;
-    }
-
-    #iconOptionsGroup input[type="radio"] {
+    }    #iconOptionsGroup input[type="radio"] {
       width: auto;
       margin-right: 8px;
+    }
+    
+    /* Tabs Styling */
+    .tabs-container {
+      margin-bottom: 20px;
+    }
+    
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #e1e3e5;
+      margin-bottom: 20px;
+    }
+    
+    .tab {
+      padding: 12px 24px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      color: #6d7175;
+      transition: all 0.2s ease;
+    }
+    
+    .tab:hover {
+      color: #202223;
+      background: #f6f6f7;
+    }
+    
+    .tab.active {
+      color: #5c6ac4;
+      border-bottom-color: #5c6ac4;
+      background: #f6f6f7;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+
+    .topbar {
+      background: white;
+      padding: 16px 24px;
+      border-bottom: 1px solid #e1e3e5;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .topbar h1 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #202223;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar h1 .app-icon {
+      font-size: 18px;
+      line-height: 1;
+    }
+
+    .topbar div {
+      color: #6d7175;
+      font-size: 14px;
     }
   </style>
 </head>
@@ -325,17 +374,25 @@
     <div style="color: #6d7175; font-size: 14px;">Management Panel</div>
   </div>
   <div class="main-content">
-    
     <div class="settings-panel">
         <div class="panel-header">
           <h2>Bar Configuration</h2>
           <p>Customize the appearance and behavior of the free delivery bar</p>
         </div>
-        
-        <div class="panel-content">
-          <!-- Content and behavior -->
-          <div class="form-section">
-            <div class="section-title">Content and Behavior</div>          <div class="form-group">
+          <div class="panel-content">
+          <!-- Tabs Navigation -->
+          <div class="tabs-container">
+            <div class="tabs">
+              <button class="tab active" onclick="switchTab('basic')">🎯 Basic Settings</button>
+              <button class="tab" onclick="switchTab('advanced')">⚙️ Advanced Settings</button>
+            </div>
+          </div>
+
+          <!-- Basic Settings Tab -->
+          <div id="basicTab" class="tab-content active">
+            <!-- Content and behavior -->
+            <div class="form-section">
+              <div class="section-title">Content and Behavior</div><div class="form-group">
               <label for="generalMessage">General Info Message</label>
               <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
               <div class="help-text">General message shown when cart is empty or below threshold</div>
@@ -385,11 +442,19 @@
               <label>
                 <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
                 Hide bar completely after reaching threshold
-              </label>
-              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
+              </label>              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
             </div>
           </div>
+          
+          <!-- Action buttons for Basic Tab -->
+          <div class="form-section">
+            <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
+            <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
 
+        <!-- Advanced Settings Tab -->
+        <div id="advancedTab" class="tab-content">
           <!-- Colors and transparency -->
           <div class="form-section">
             <div class="section-title">Colors and Transparency</div>
@@ -560,13 +625,12 @@
                 <input type="range" id="shadowDistance" min="0" max="10" value="0" step="1" />
               </div>
             </div>
-          </div>
-
-          <!-- Action buttons -->
+          </div>          <!-- Action buttons -->
           <div class="form-section">
             <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
             <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
-          </div>        </div>
+          </div>
+        </div>
       </div>
 
     <!-- Preview panel -->
@@ -989,8 +1053,8 @@
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 0) + 'px';
         document.getElementById('widthValue').textContent = (settings.width || 100) + '%';
         document.getElementById('marginTopValue').textContent = (settings.margin_top || 0) + 'px';
-        document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px'; // Nowe// Opcje ikon
-        document.getElementById('showIcon').checked = settings.show_icon || false; // Poprawione - domyślnie false
+        document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px'; // Nowe        // Opcje ikon
+        document.getElementById('showIcon').checked = settings.show_icon !== false; // Poprawione - domyślnie true
         const iconChoice = settings.icon_type || 'default';
         const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
         if (radioToCheck) {
@@ -1008,9 +1072,8 @@
         }
           document.getElementById('iconSize').value = settings.icon_size || 30;
         document.getElementById('iconGap').value = settings.icon_gap || 10;
-        
-        // Pokaż/ukryj sekcje ikon
-        const showIcon = settings.show_icon || false; // Poprawione
+          // Pokaż/ukryj sekcje ikon
+        const showIcon = settings.show_icon !== false; // Poprawione - domyślnie true
         document.getElementById('iconOptionsGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconSizeGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconGapGroup').style.display = showIcon ? 'block' : 'none';
@@ -1074,16 +1137,16 @@
         preview.removeAttribute('data-image');
         preview.style.backgroundImage = '';
         preview.style.display = 'none';
-        preview.classList.remove('has-image');
-        preview.innerHTML = '';
-          // Pokaż/ukryj sekcje - UKRYJ ikony na początku
-        document.getElementById('iconOptionsGroup').style.display = 'none';
-        document.getElementById('iconSizeGroup').style.display = 'none';
-        document.getElementById('iconGapGroup').style.display = 'none';
+        preview.classList.remove('has-image');        preview.innerHTML = '';
+        
+        // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
+        document.getElementById('iconOptionsGroup').style.display = 'block';
+        document.getElementById('iconSizeGroup').style.display = 'block';
+        document.getElementById('iconGapGroup').style.display = 'block';
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';          document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('iconSizeValue').textContent = '30px';document.getElementById('iconGapValue').textContent = '10px';
 
         toggleSuccessMessageField();
         toggleProgressMessageField();
@@ -1141,6 +1204,27 @@
 
     // Dodaj nasłuchiwacz dla checkbox'a:
     document.getElementById('transparentBg').addEventListener('change', updatePreview);
+    
+    // Funkcja do przełączania zakładek
+    function switchTab(tabName) {
+      // Ukryj wszystkie zakładki
+      document.getElementById('basicTab').classList.remove('active');
+      document.getElementById('advancedTab').classList.remove('active');
+      
+      // Usuń aktywną klasę ze wszystkich buttonów
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+      
+      // Pokaż wybraną zakładkę
+      if (tabName === 'basic') {
+        document.getElementById('basicTab').classList.add('active');
+        document.querySelector('button[onclick="switchTab(\'basic\')"]').classList.add('active');
+      } else if (tabName === 'advanced') {
+        document.getElementById('advancedTab').classList.add('active');
+        document.querySelector('button[onclick="switchTab(\'advanced\')"]').classList.add('active');
+      }
+    }
   </script>
 </body>
 </html>
