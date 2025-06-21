@@ -351,6 +351,34 @@ app.get("/", (req, res) => {
   res.sendFile(path.resolve("views/admin.html"));
 });
 
+// Update default settings in server
+const DEFAULT_SETTINGS = {
+  message: "🚚 Free delivery on orders over {amount}!",
+  min_amount: 199,
+  background_color: "#000000",
+  text_color: "#bbbbbb", 
+  position: "above-header",
+  closeable: true,
+  show_icon: false,
+  icon_type: 'default',
+  icon_size: 30,
+  icon_gap: 10,
+  bar_height: 40,
+  width: 100,
+  margin_top: 0,
+  opacity: 100,
+  font_size: 14,
+  font_weight: 600,
+  border_width: 0,
+  border_color: "#cccccc",
+  border_radius: 0,
+  shadow_color: "#000000",
+  shadow_opacity: 0,
+  shadow_blur: 0,
+  shadow_distance: 0,
+  transparent_bg: false
+};
+
 // API endpoint do zapisywania ustawień do Metafields
 app.post('/api/settings', async (req, res) => {
   try {
@@ -429,34 +457,22 @@ app.get('/api/settings/:shop', async (req, res) => {
         'Content-Type': 'application/json'
       }
     });
-      if (!response.ok) {
+    
+    if (!response.ok) {
       console.log('⚠️ Brak metafields, zwracam domyślne ustawienia');      return res.json({
-        message: "🚚 Free delivery on orders over {amount}!",
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
         min_amount: 199,
-        background_color: "#000000",
-        text_color: "#bbbbbb",
-        position: "fixed",
+        background_color: "#4CAF50",
+        text_color: "#FFFFFF",
+        position: "top",
         closeable: true,
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
-        icon_image: DEFAULT_DELIVERY_ICON,
-        icon_size: 30,
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 ZAWSZE DOMYŚLNA IKONA
+        icon_size: 20,
         icon_gap: 8,
-        bar_height: 40,
-        width: 100,
-        margin_top: 0,
-        opacity: 100,
-        font_size: 14,
-        font_weight: 600,
-        border_width: 0,
-        border_color: "#cccccc",
-        border_radius: 0,
-        shadow_color: "#000000",
-        shadow_opacity: 0,
-        shadow_blur: 0,
-        shadow_distance: 0,
-        transparent_bg: false
+        bar_height: 40
       });
     }
     
@@ -465,34 +481,22 @@ app.get('/api/settings/:shop', async (req, res) => {
     if (metafields.metafields && metafields.metafields.length > 0) {
       const settings = JSON.parse(metafields.metafields[0].value);
       console.log('✅ Znaleziono ustawienia w metafields:', settings);
-      res.json(settings);    } else {
+      res.json(settings);
+    } else {
       console.log('⚠️ Pusty metafield, zwracam domyślne');      res.json({
-        message: "🚚 Free delivery on orders over {amount}!",
+        message: "🚚 Darmowa dostawa przy zamówieniu powyżej {amount} zł!",
         min_amount: 199,
-        background_color: "#000000",
-        text_color: "#bbbbbb",
-        position: "fixed",
+        background_color: "#4CAF50",
+        text_color: "#FFFFFF",
+        position: "top",
         closeable: true,
         app_url: APP_URL,
         show_icon: false,
         icon_type: 'default',
-        icon_image: DEFAULT_DELIVERY_ICON,
-        icon_size: 30,
+        icon_image: DEFAULT_DELIVERY_ICON, // 👈 ZAWSZE DOMYŚLNA IKONA
+        icon_size: 20,
         icon_gap: 8,
-        bar_height: 40,
-        width: 100,
-        margin_top: 0,
-        opacity: 100,
-        font_size: 14,
-        font_weight: 600,
-        border_width: 0,
-        border_color: "#cccccc",
-        border_radius: 0,
-        shadow_color: "#000000",
-        shadow_opacity: 0,
-        shadow_blur: 0,
-        shadow_distance: 0,
-        transparent_bg: false
+        bar_height: 40
       });
     }
   } catch (err) {
