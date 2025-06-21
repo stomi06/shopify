@@ -340,18 +340,21 @@
       <div class="panel-content">
         <!-- Content and behavior -->
         <div class="form-section">
-          <div class="section-title">📝 Content and Behavior</div>
-            <div class="form-group">
-            <label for="message">Bar Message</label>
-            <textarea id="message" rows="2" placeholder="Free delivery on orders over {amount}!"></textarea>
-            <div class="help-text">Use {amount} as placeholder for the amount, {remaining} for the remaining amount</div>
-          </div>
-
-          <div class="form-group">
+          <div class="section-title">📝 Content and Behavior</div>          <div class="form-group">
             <label for="generalMessage">General Info Message</label>
             <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
             <div class="help-text">General message shown when cart is empty or below threshold</div>
-          </div>          <div class="form-group">
+          </div>
+
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="showProgressMessage" style="margin-right: 8px;" checked>
+              Show progress message when customer has items in cart
+            </label>
+            <div class="help-text">When enabled, the bar will show remaining amount needed for free delivery</div>
+          </div>
+
+          <div class="form-group" id="progressMessageGroup">
             <label for="progressMessage">Progress Message</label>
             <textarea id="progressMessage" rows="2" placeholder="Add ${remaining} more for free delivery!"></textarea>
             <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
@@ -366,9 +369,7 @@
               Allow users to close the bar
             </label>
             <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
-          </div>
-
-          <!-- SUCCESS MESSAGE SECTION -->
+          </div>          <!-- SUCCESS MESSAGE SECTION -->
           <div class="form-group">
             <label>
               <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
@@ -381,6 +382,14 @@
             <label for="successMessage">Success Message</label>
             <textarea id="successMessage" rows="2" placeholder="🎉 Congratulations! You have free delivery!"></textarea>
             <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
+          </div>
+
+          <div class="form-group" id="hideBarGroup" style="display: none;">
+            <label>
+              <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
+              Hide bar completely after reaching threshold
+            </label>
+            <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
           </div>
         </div>
 
@@ -698,11 +707,10 @@
       const previewGeneralMessage = document.getElementById('previewGeneralMessage');
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
-      
-      // Pobierz wszystkie wartości
-      const message = document.getElementById('message').value || 'Free delivery on orders over {amount}!';
+        // Pobierz wszystkie wartości
       const generalMessage = document.getElementById('generalMessage').value || 'Free delivery available!';
-      const progressMessage = document.getElementById('progressMessage').value || 'Add {remaining} more for free delivery!';
+      const showProgressMessage = document.getElementById('showProgressMessage').checked;
+      const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free delivery!';
       const minAmount = document.getElementById('minAmount').value || 199;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
       const successMessage = document.getElementById('successMessage').value || 'Congratulations! You have free delivery!';
@@ -797,11 +805,10 @@
           bar.style.boxShadow = 'none';
         }
       });
-      
-      // Success bar specjalny kolor
+        // Success bar ma takie same style jak inne
       const successBar = document.getElementById('previewBarSuccess');
       if (successBar && !transparentBg) {
-        successBar.style.backgroundColor = hexToRgba('#4CAF50', opacity);
+        successBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
       }
       
       // Aktualizuj treści wiadomości
@@ -867,12 +874,12 @@
           iconImage = preview.getAttribute('data-image');
         }
       }      const settings = {
-        message: document.getElementById('message').value,
         general_message: document.getElementById('generalMessage').value,
+        show_progress_message: document.getElementById('showProgressMessage').checked,
         progress_message: document.getElementById('progressMessage').value,
-        min_amount: parseInt(document.getElementById('minAmount').value),
-        closeable: document.getElementById('closeable').checked,
+        min_amount: parseInt(document.getElementById('minAmount').value),        closeable: document.getElementById('closeable').checked,
         show_success_message: document.getElementById('showSuccessMessage').checked,
+        hide_bar_after_threshold: document.getElementById('hideBarAfterThreshold').checked,
         success_message: document.getElementById('successMessage').value,
         background_color: document.getElementById('backgroundColor').value,
         text_color: document.getElementById('textColor').value,
@@ -937,8 +944,8 @@
         
         if (!response.ok) {
           console.log('Using default settings');          // Ustaw domyślne wartości przy pierwszym uruchomieniu
-          document.getElementById('message').value = "Free delivery on orders over {amount}!";
           document.getElementById('generalMessage').value = "Free delivery available!";
+          document.getElementById('showProgressMessage').checked = true;
           document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
           document.getElementById('minAmount').value = 199;
           document.getElementById('closeable').checked = true;
@@ -984,10 +991,10 @@
             // Pokaż/ukryj sekcje ikon
           document.getElementById('iconOptionsGroup').style.display = 'block';
           document.getElementById('iconSizeGroup').style.display = 'block';
-          document.getElementById('iconGapGroup').style.display = 'block';
-          document.getElementById('customIconUpload').style.display = 'none';
+          document.getElementById('iconGapGroup').style.display = 'block';          document.getElementById('customIconUpload').style.display = 'none';
           
           toggleSuccessMessageField();
+          toggleProgressMessageField();
           updatePreview();
           return;
         }
@@ -997,12 +1004,12 @@
         if (!DEFAULT_DELIVERY_ICON) {
           DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
         }        // Załaduj podstawowe ustawienia
-        document.getElementById('message').value = settings.message || "Free delivery on orders over {amount}!";
         document.getElementById('generalMessage').value = settings.general_message || "Free delivery available!";
+        document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
         document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free delivery!";
-        document.getElementById('minAmount').value = settings.min_amount || 199;
-        document.getElementById('closeable').checked = settings.closeable !== false;
+        document.getElementById('minAmount').value = settings.min_amount || 199;        document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
+        document.getElementById('hideBarAfterThreshold').checked = settings.hide_bar_after_threshold || false;
         document.getElementById('successMessage').value = settings.success_message || "Congratulations! You have free delivery!";document.getElementById('backgroundColor').value = settings.background_color || "#000000";
         document.getElementById('textColor').value = settings.text_color || "#bbbbbb";
         document.getElementById('transparentBg').checked = settings.transparent_bg || false;
@@ -1057,10 +1064,9 @@
         document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
           // Zaktualizuj wyświetlane wartości zakresów ikon
         document.getElementById('iconSizeValue').textContent = (settings.icon_size || 30) + 'px';
-        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 10) + 'px';
-
-        // Pokaż/ukryj pole komunikatu sukcesu
-        toggleSuccessMessageField(); // 👈 DODANE
+        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 10) + 'px';        // Pokaż/ukryj pole komunikatu sukcesu
+        toggleSuccessMessageField();
+        toggleProgressMessageField();
         
         updatePreview();
         console.log('Settings loaded:', settings);
@@ -1069,8 +1075,8 @@
       }
     }    // Funkcja resetowania ustawień
     function resetSettings() {
-      if (confirm('Are you sure you want to restore default settings?')) {        document.getElementById('message').value = "Free delivery on orders over {amount}!";
-        document.getElementById('generalMessage').value = "Free delivery available!";
+      if (confirm('Are you sure you want to restore default settings?')) {        document.getElementById('generalMessage').value = "Free delivery available!";
+        document.getElementById('showProgressMessage').checked = true;
         document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
         document.getElementById('minAmount').value = 199;
         document.getElementById('closeable').checked = true;
@@ -1126,18 +1132,31 @@
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';
-        document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('iconSizeValue').textContent = '30px';        document.getElementById('iconGapValue').textContent = '10px';
 
         toggleSuccessMessageField();
+        toggleProgressMessageField();
         updatePreview();
       }
-    }
-
-    // NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
+    }    // NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
     function toggleSuccessMessageField() {
       const checkbox = document.getElementById('showSuccessMessage');
       const messageGroup = document.getElementById('successMessageGroup');
+      const hideBarGroup = document.getElementById('hideBarGroup');
+      
+      if (checkbox.checked) {
+        messageGroup.style.display = 'block';
+        hideBarGroup.style.display = 'none';
+      } else {
+        messageGroup.style.display = 'none';
+        hideBarGroup.style.display = 'block';
+      }
+    }
+
+    // NOWA FUNKCJA - pokaż/ukryj pole progress message
+    function toggleProgressMessageField() {
+      const checkbox = document.getElementById('showProgressMessage');
+      const messageGroup = document.getElementById('progressMessageGroup');
       
       if (checkbox.checked) {
         messageGroup.style.display = 'block';
@@ -1148,14 +1167,20 @@
     document.getElementById('showSuccessMessage').addEventListener('change', function() {
       toggleSuccessMessageField();
       updatePreview();
-    });    document.getElementById('closeable').addEventListener('change', function() {
-      console.log('🔄 Closeable changed to:', this.checked);
+    });
+
+    document.getElementById('showProgressMessage').addEventListener('change', function() {
+      toggleProgressMessageField();
       updatePreview();
     });
 
-    document.getElementById('successMessage').addEventListener('input', updatePreview);
+    document.getElementById('closeable').addEventListener('change', function() {
+      console.log('🔄 Closeable changed to:', this.checked);
+      updatePreview();
+    });    document.getElementById('successMessage').addEventListener('input', updatePreview);
     document.getElementById('generalMessage').addEventListener('input', updatePreview);
     document.getElementById('progressMessage').addEventListener('input', updatePreview);
+    document.getElementById('hideBarAfterThreshold').addEventListener('change', updatePreview);
 
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {
