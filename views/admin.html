@@ -60,11 +60,20 @@
       margin: 0 auto;
     }
 
+    .panel-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 0;
+      overflow: hidden;
+    }
+
     .settings-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      flex: 1;
     }
 
     .panel-header {
@@ -86,7 +95,7 @@
     }
 
     .panel-content {
-      padding: 24px;
+      padding: 30px;
     }
 
     .form-section {
@@ -227,39 +236,35 @@
       padding: 24px;
     }
 
-    .preview-area {
-      background: #f6f6f7;
-      border: 2px dashed #c9cccf;
-      border-radius: 8px;
-      padding: 60px 20px;
-      text-align: center;
-      position: relative;
-      min-height: 200px;
-    }
-
     .preview-bar {
-      background-color: #4CAF50;
-      color: white;
-      padding: 12px 20px;
-      border-radius: 6px;
-      font-weight: 600;
+      width: 100%;
+      background: var(--background-color, #000000);
+      color: var(--text-color, #ffffff);
+      padding: 0;
       text-align: center;
-      position: relative;
-      margin: 20px auto;
-      max-width: 400px;
-      transition: all 0.3s ease;
-    }
-
-    .preview-close {
-      position: absolute;
-      top: 8px;
-      right: 12px;
-      background: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: var(--font-size, 14px);
+      font-weight: var(--font-weight, 600);
+      border-radius: 0;
+      margin: 0;
       border: none;
-      color: inherit;
-      font-size: 18px;
-      cursor: pointer;
-      opacity: 0.8;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .preview-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      height: var(--bar-height, 40px);
+      padding: 0 20px;
+    }
+    
+    .preview-bar img {
+      width: var(--icon-size, 20px);
+      height: var(--icon-size, 20px);
+      object-fit: contain;
     }
 
     .alert {
@@ -331,299 +336,308 @@
   </div>
 
   <div class="main-content">
-    <div class="settings-panel">
-      <div class="panel-header">
-        <h2>Bar Configuration</h2>
-        <p>Customize the appearance and behavior of the free delivery bar</p>
+    <div class="panel-container">
+      <!-- Top Preview Bar -->
+      <div id="preview-bar" class="preview-bar" style="display: none;">
+        <div class="preview-content">
+          <span id="preview-message">Free delivery available!</span>
+        </div>
       </div>
       
-      <div class="panel-content">
-        <!-- Content and behavior -->
-        <div class="form-section">
-          <div class="section-title">📝 Content and Behavior</div>          <div class="form-group">
-            <label for="generalMessage">General Info Message</label>
-            <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
-            <div class="help-text">General message shown when cart is empty or below threshold</div>
-          </div>
-
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="showProgressMessage" style="margin-right: 8px;" checked>
-              Show progress message when customer has items in cart
-            </label>
-            <div class="help-text">When enabled, the bar will show remaining amount needed for free delivery</div>
-          </div>
-
-          <div class="form-group" id="progressMessageGroup">
-            <label for="progressMessage">Progress Message</label>
-            <textarea id="progressMessage" rows="2" placeholder="Add ${remaining} more for free delivery!"></textarea>
-            <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
-          </div><div class="form-group">
-            <label for="minAmount">Minimum Amount ($)</label>
-            <input type="number" id="minAmount" min="0" step="1" value="199" />
-          </div>
-
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
-              Allow users to close the bar
-            </label>
-            <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
-          </div>          <!-- SUCCESS MESSAGE SECTION -->
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
-              Show message after reaching free delivery threshold
-            </label>
-            <div class="help-text">When enabled, the bar will change message after reaching the required amount</div>
-          </div>
-
-          <div class="form-group" id="successMessageGroup">
-            <label for="successMessage">Success Message</label>
-            <textarea id="successMessage" rows="2" placeholder="🎉 Congratulations! You have free delivery!"></textarea>
-            <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
-          </div>
-
-          <div class="form-group" id="hideBarGroup" style="display: none;">
-            <label>
-              <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
-              Hide bar completely after reaching threshold
-            </label>
-            <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
-          </div>
-        </div>
-
-        <!-- Colors and transparency -->
-        <div class="form-section">
-          <div class="section-title">🎨 Colors and Transparency</div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="backgroundColor">Background Color</label>
-              <input type="color" id="backgroundColor" value="#4CAF50" />
-            </div>
-            <div class="form-group">
-              <label for="textColor">Text Color</label>
-              <input type="color" id="textColor" value="#FFFFFF" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="transparentBg" style="margin-right: 8px;">
-              Transparent background (only text visible)
-            </label>
-            <div class="help-text">When enabled, the bar background will be completely transparent</div>
-          </div>
-
-          <div class="form-group">
-            <label for="opacity">Bar Transparency: <span class="range-value" id="opacityValue">100%</span></label>
-            <input type="range" id="opacity" min="0" max="100" value="100"/>
-            <div class="help-text">Controls the transparency of the entire bar (text + background)</div>
-          </div>
-        </div>
-
-        <!-- Typography -->
-        <div class="form-section">
-          <div class="section-title">✍️ Typography</div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="fontSize">Font Size</label>
-              <select id="fontSize">
-                <option value="12">Small (12px)</option>
-                <option value="14" selected>Medium (14px)</option>
-                <option value="16">Large (16px)</option>
-                <option value="18">Extra Large (18px)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="fontWeight">Font Weight</label>
-              <select id="fontWeight">
-                <option value="400">Normal</option>
-                <option value="500">Medium</option>
-                <option value="600" selected>Bold</option>
-                <option value="700">Extra Bold</option>
-              </select>
-            </div>
-          </div>
-        </div>        <!-- Delivery Icon -->
-        <div class="form-section">
-          <div class="section-title">🖼️ Delivery Icon</div>
-          
-          <div class="form-group">
-            <label>
-              <input type="checkbox" id="showIcon" style="margin-right: 8px;">
-              Show delivery icon
-            </label>
-            <div class="help-text">Display an icon next to the delivery message</div>
-          </div>
-
-          <div class="form-group" id="iconOptionsGroup" style="display: none;">
-            <label>Icon Type:</label>
-            
-            <div style="margin: 10px 0;">
-              <label style="margin-bottom: 8px;">
-                <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked style="margin-right: 8px;">
-                Use default delivery icon
-              </label>
-            </div>
-            
-            <div style="margin: 10px 0;">
-              <label style="margin-bottom: 8px;">
-                <input type="radio" id="useCustomIcon" name="iconChoice" value="custom" style="margin-right: 8px;">
-                Upload custom icon
-              </label>
-            </div>
-            
-            <div id="customIconUpload" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e1e3e5; border-radius: 6px; background: #f9f9f9;">
-              <input type="file" id="deliveryImage" accept="image/*">
-              <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
-              <div class="help-text">Recommended size: 24x24px, PNG/JPG format</div>
-            </div>
-          </div>
-
-          <div class="form-group" id="iconSizeGroup" style="display: none;">
-            <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">20px</span></label>
-            <input type="range" id="iconSize" min="12" max="40" value="20" step="2" />
-            <div class="help-text">Size of the delivery icon</div>
-          </div>
-
-          <div class="form-group" id="iconGapGroup" style="display: none;">
-            <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">8px</span></label>
-            <input type="range" id="iconGap" min="0" max="20" value="8" step="2" />
-            <div class="help-text">Space between icon and text</div>
-          </div>
-        </div>
-
-        <!-- Position and size -->
-        <div class="form-section">
-          <div class="section-title">📐 Position and Size</div>
-          
-          <div class="form-row">            <div class="form-group">
-              <label for="position">Bar Position</label>
-              <select id="position">
-                <option value="above-header">Above Header (recommended)</option>
-                <option value="fixed">Fixed (always visible)</option>
-                <option value="absolute">Absolute (static)</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="width">Bar Width: <span class="range-value" id="widthValue">90%</span></label>
-              <input type="range" id="width" min="50" max="100" step="5" />
-              <div class="help-text">Maximum width: 500px</div>
-            </div>
-          </div>          <div class="form-group">
-            <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">20px</span></label>
-            <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
-            <div class="help-text">Controls the spacing from the top edge of the page</div>
-          </div>
-
-          <div class="form-group">
-            <label for="barHeight">Bar Height: <span class="range-value" id="barHeightValue">40px</span></label>
-            <input type="range" id="barHeight" min="30" max="80" value="40" step="2" />
-            <div class="help-text">Controls the height of the delivery bar</div>
-          </div>
-        </div>
-
-        <!-- Border -->
-        <div class="form-section">
-          <div class="section-title">🔲 Border</div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="borderWidth">Border Width: <span class="range-value" id="borderWidthValue">0px</span></label>
-              <input type="range" id="borderWidth" min="0" max="10" value="0" step="1" />
-            </div>
-            <div class="form-group">
-              <label for="borderColor">Border Color</label>
-              <input type="color" id="borderColor" value="#cccccc" />
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">6px</span></label>
-            <input type="range" id="borderRadius" min="0" max="50" value="6" step="1" />
-          </div>
-        </div>
-
-        <!-- Shadow -->
-        <div class="form-section">
-          <div class="section-title">🌑 Shadow</div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label for="shadowColor">Shadow Color</label>
-              <input type="color" id="shadowColor" value="#000000" />
-            </div>
-            <div class="form-group">
-              <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">20%</span></label>
-              <input type="range" id="shadowOpacity" min="0" max="100" value="20" step="5" />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">4px</span></label>
-              <input type="range" id="shadowBlur" min="0" max="20" value="4" step="1" />
-            </div>
-            <div class="form-group">
-              <label for="shadowDistance">Shadow Distance: <span class="range-value" id="shadowDistanceValue">2px</span></label>
-              <input type="range" id="shadowDistance" min="0" max="10" value="2" step="1" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Action buttons -->
-        <div class="form-section">
-          <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
-          <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
-        </div>
-      </div>
-    </div>    <!-- Preview panel -->
-    <div class="preview-panel">
-      <div class="panel-header">
-        <h2>Live Preview</h2>
-        <p>See how messages will look in different scenarios</p>
-      </div>
-      
-      <div class="preview-content">
-        <!-- Message States Preview -->
-        <div style="margin-bottom: 24px;">
-          <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #202223;">Message States:</h3>
-          
-          <!-- Empty Cart -->
-          <div style="margin-bottom: 16px;">
-            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">📋 Empty Cart:</div>
-            <div class="preview-bar" id="previewBarEmpty" style="margin: 0; max-width: 100%;">
-              <span id="previewGeneralMessage">Free delivery available!</span>
-            </div>
-          </div>
-          
-          <!-- Progress -->
-          <div style="margin-bottom: 16px;">
-            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">🛒 Progress ($150 in cart):</div>
-            <div class="preview-bar" id="previewBarProgress" style="margin: 0; max-width: 100%;">
-              <span id="previewProgressMessage">Add $49 more for free delivery!</span>
-            </div>
-          </div>
-          
-          <!-- Success -->
-          <div style="margin-bottom: 16px;">
-            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">✅ Threshold Reached:</div>
-            <div class="preview-bar" id="previewBarSuccess" style="margin: 0; max-width: 100%; background-color: #4CAF50;">
-              <span id="previewSuccessMessage">Congratulations! You have free delivery!</span>
-            </div>
-          </div>
+      <div class="settings-panel">
+        <div class="panel-header">
+          <h2>Bar Configuration</h2>
+          <p>Customize the appearance and behavior of the free delivery bar</p>
         </div>
         
-        <div class="preview-area">
-          <div class="preview-bar" id="previewBar">
-            <span id="previewMessage">Free delivery available!</span>
-            <button class="preview-close">×</button>
+        <div class="panel-content">
+          <!-- Content and behavior -->
+          <div class="form-section">
+            <div class="section-title">📝 Content and Behavior</div>          <div class="form-group">
+              <label for="generalMessage">General Info Message</label>
+              <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
+              <div class="help-text">General message shown when cart is empty or below threshold</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="showProgressMessage" style="margin-right: 8px;" checked>
+                Show progress message when customer has items in cart
+              </label>
+              <div class="help-text">When enabled, the bar will show remaining amount needed for free delivery</div>
+            </div>
+
+            <div class="form-group" id="progressMessageGroup">
+              <label for="progressMessage">Progress Message</label>
+              <textarea id="progressMessage" rows="2" placeholder="Add ${remaining} more for free delivery!"></textarea>
+              <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
+            </div><div class="form-group">
+              <label for="minAmount">Minimum Amount ($)</label>
+              <input type="number" id="minAmount" min="0" step="1" value="199" />
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
+                Allow users to close the bar
+              </label>
+              <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
+            </div>          <!-- SUCCESS MESSAGE SECTION -->
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
+                Show message after reaching free delivery threshold
+              </label>
+              <div class="help-text">When enabled, the bar will change message after reaching the required amount</div>
+            </div>
+
+            <div class="form-group" id="successMessageGroup">
+              <label for="successMessage">Success Message</label>
+              <textarea id="successMessage" rows="2" placeholder="🎉 Congratulations! You have free delivery!"></textarea>
+              <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
+            </div>
+
+            <div class="form-group" id="hideBarGroup" style="display: none;">
+              <label>
+                <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
+                Hide bar completely after reaching threshold
+              </label>
+              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
+            </div>
           </div>
-          <div style="color: #6d7175; font-size: 12px; margin-top: 16px;">
-            Current preview shows the selected message state
+
+          <!-- Colors and transparency -->
+          <div class="form-section">
+            <div class="section-title">🎨 Colors and Transparency</div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="backgroundColor">Background Color</label>
+                <input type="color" id="backgroundColor" value="#4CAF50" />
+              </div>
+              <div class="form-group">
+                <label for="textColor">Text Color</label>
+                <input type="color" id="textColor" value="#FFFFFF" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="transparentBg" style="margin-right: 8px;">
+                Transparent background (only text visible)
+              </label>
+              <div class="help-text">When enabled, the bar background will be completely transparent</div>
+            </div>
+
+            <div class="form-group">
+              <label for="opacity">Bar Transparency: <span class="range-value" id="opacityValue">100%</span></label>
+              <input type="range" id="opacity" min="0" max="100" value="100"/>
+              <div class="help-text">Controls the transparency of the entire bar (text + background)</div>
+            </div>
+          </div>
+
+          <!-- Typography -->
+          <div class="form-section">
+            <div class="section-title">✍️ Typography</div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="fontSize">Font Size</label>
+                <select id="fontSize">
+                  <option value="12">Small (12px)</option>
+                  <option value="14" selected>Medium (14px)</option>
+                  <option value="16">Large (16px)</option>
+                  <option value="18">Extra Large (18px)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="fontWeight">Font Weight</label>
+                <select id="fontWeight">
+                  <option value="400">Normal</option>
+                  <option value="500">Medium</option>
+                  <option value="600" selected>Bold</option>
+                  <option value="700">Extra Bold</option>
+                </select>
+              </div>
+            </div>
+          </div>        <!-- Delivery Icon -->
+          <div class="form-section">
+            <div class="section-title">🖼️ Delivery Icon</div>
+            
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="showIcon" style="margin-right: 8px;">
+                Show delivery icon
+              </label>
+              <div class="help-text">Display an icon next to the delivery message</div>
+            </div>
+
+            <div class="form-group" id="iconOptionsGroup" style="display: none;">
+              <label>Icon Type:</label>
+              
+              <div style="margin: 10px 0;">
+                <label style="margin-bottom: 8px;">
+                  <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked style="margin-right: 8px;">
+                  Use default delivery icon
+                </label>
+              </div>
+              
+              <div style="margin: 10px 0;">
+                <label style="margin-bottom: 8px;">
+                  <input type="radio" id="useCustomIcon" name="iconChoice" value="custom" style="margin-right: 8px;">
+                  Upload custom icon
+                </label>
+              </div>
+              
+              <div id="customIconUpload" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e1e3e5; border-radius: 6px; background: #f9f9f9;">
+                <input type="file" id="deliveryImage" accept="image/*">
+                <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+                <div class="help-text">Recommended size: 24x24px, PNG/JPG format</div>
+              </div>
+            </div>
+
+            <div class="form-group" id="iconSizeGroup" style="display: none;">
+              <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">20px</span></label>
+              <input type="range" id="iconSize" min="12" max="40" value="20" step="2" />
+              <div class="help-text">Size of the delivery icon</div>
+            </div>
+
+            <div class="form-group" id="iconGapGroup" style="display: none;">
+              <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">8px</span></label>
+              <input type="range" id="iconGap" min="0" max="20" value="8" step="2" />
+              <div class="help-text">Space between icon and text</div>
+            </div>
+          </div>
+
+          <!-- Position and size -->
+          <div class="form-section">
+            <div class="section-title">📐 Position and Size</div>
+            
+            <div class="form-row">            <div class="form-group">
+                <label for="position">Bar Position</label>
+                <select id="position">
+                  <option value="above-header">Above Header (recommended)</option>
+                  <option value="fixed">Fixed (always visible)</option>
+                  <option value="absolute">Absolute (static)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="width">Bar Width: <span class="range-value" id="widthValue">90%</span></label>
+                <input type="range" id="width" min="50" max="100" step="5" />
+                <div class="help-text">Maximum width: 500px</div>
+              </div>
+            </div>          <div class="form-group">
+              <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">20px</span></label>
+              <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
+              <div class="help-text">Controls the spacing from the top edge of the page</div>
+            </div>
+
+            <div class="form-group">
+              <label for="barHeight">Bar Height: <span class="range-value" id="barHeightValue">40px</span></label>
+              <input type="range" id="barHeight" min="30" max="80" value="40" step="2" />
+              <div class="help-text">Controls the height of the delivery bar</div>
+            </div>
+          </div>
+
+          <!-- Border -->
+          <div class="form-section">
+            <div class="section-title">🔲 Border</div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="borderWidth">Border Width: <span class="range-value" id="borderWidthValue">0px</span></label>
+                <input type="range" id="borderWidth" min="0" max="10" value="0" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="borderColor">Border Color</label>
+                <input type="color" id="borderColor" value="#cccccc" />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">6px</span></label>
+              <input type="range" id="borderRadius" min="0" max="50" value="6" step="1" />
+            </div>
+          </div>
+
+          <!-- Shadow -->
+          <div class="form-section">
+            <div class="section-title">🌑 Shadow</div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="shadowColor">Shadow Color</label>
+                <input type="color" id="shadowColor" value="#000000" />
+              </div>
+              <div class="form-group">
+                <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">20%</span></label>
+                <input type="range" id="shadowOpacity" min="0" max="100" value="20" step="5" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">4px</span></label>
+                <input type="range" id="shadowBlur" min="0" max="20" value="4" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="shadowDistance">Shadow Distance: <span class="range-value" id="shadowDistanceValue">2px</span></label>
+                <input type="range" id="shadowDistance" min="0" max="10" value="2" step="1" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="form-section">
+            <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
+            <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
+          </div>
+        </div>
+      </div>    <!-- Preview panel -->
+      <div class="preview-panel">
+        <div class="panel-header">
+          <h2>Live Preview</h2>
+          <p>See how messages will look in different scenarios</p>
+        </div>
+        
+        <div class="preview-content">
+          <!-- Message States Preview -->
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #202223;">Message States:</h3>
+            
+            <!-- Empty Cart -->
+            <div style="margin-bottom: 16px;">
+              <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">📋 Empty Cart:</div>
+              <div class="preview-bar" id="previewBarEmpty" style="margin: 0; max-width: 100%;">
+                <span id="previewGeneralMessage">Free delivery available!</span>
+              </div>
+            </div>
+            
+            <!-- Progress -->
+            <div style="margin-bottom: 16px;">
+              <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">🛒 Progress ($150 in cart):</div>
+              <div class="preview-bar" id="previewBarProgress" style="margin: 0; max-width: 100%;">
+                <span id="previewProgressMessage">Add $49 more for free delivery!</span>
+              </div>
+            </div>
+            
+            <!-- Success -->
+            <div style="margin-bottom: 16px;">
+              <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">✅ Threshold Reached:</div>
+              <div class="preview-bar" id="previewBarSuccess" style="margin: 0; max-width: 100%; background-color: #4CAF50;">
+                <span id="previewSuccessMessage">Congratulations! You have free delivery!</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="preview-area">
+            <div class="preview-bar" id="previewBar">
+              <span id="previewMessage">Free delivery available!</span>
+              <button class="preview-close">×</button>
+            </div>
+            <div style="color: #6d7175; font-size: 12px; margin-top: 16px;">
+              Current preview shows the selected message state
+            </div>
           </div>
         </div>
       </div>

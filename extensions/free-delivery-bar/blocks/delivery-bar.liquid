@@ -66,12 +66,32 @@
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
-    {% endif %}  }
-  
-  /* Remove body padding for above-header position */
+    {% endif %}  }  /* Remove body padding for above-header position */
   {% if settings.position == 'above-header' %}
-  header {
+  header.header {
     padding-top: {{ settings.bar_height | default: 40 }}px !important;
+    transition: padding-top 0.3s ease !important;
+  }
+  
+  /* Force higher specificity to override theme styles */
+  .shopify-section header.header,
+  #shopify-section-header header.header,
+  body header.header,
+  html header.header {
+    padding-top: {{ settings.bar_height | default: 40 }}px !important;
+    transition: padding-top 0.3s ease !important;
+  }
+  
+  /* Emergency override for when bar is hidden - INSTANT */
+  header.header.delivery-bar-hidden {
+    padding-top: 0px !important;
+    transition: none !important;
+  }
+  
+  /* Animated hiding when bar fades out */
+  header.header.delivery-bar-hiding {
+    padding-top: 0px !important;
+    transition: padding-top 1s ease !important;
   }
   {% endif %}
   
@@ -130,7 +150,8 @@
      data-progress-message="{{ settings.progress_message | default: 'Add $[remaining] more for free delivery!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
-     data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
+     data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
+     data-position="{{ settings.position | default: 'above-header' }}"data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-bar-height="{{ settings.bar_height | default: 40 }}"
@@ -194,24 +215,59 @@
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const generalMessage = deliveryBar.getAttribute('data-general-message');
   const showProgress = deliveryBar.getAttribute('data-show-progress') === 'true';  const progressMessage = deliveryBar.getAttribute('data-progress-message');
-  const successMessage = deliveryBar.getAttribute('data-success-message');
-  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
-  const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';const bgColor = deliveryBar.getAttribute('data-bg-color');
+  const successMessage = deliveryBar.getAttribute('data-success-message');  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
+  const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
+  const position = deliveryBar.getAttribute('data-position') || 'above-header';const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
-  console.log('=== FREE DELIVERY BAR INIT ===');
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
+  console.log('Position:', position);
+  console.log('Bar height:', barHeight);
+    // Debug - sprawdź czy header istnieje i ma padding
+  if (position === 'above-header') {
+    const header = document.querySelector('header.header');
+    console.log('Header found:', !!header);
+    if (header) {
+      console.log('Current header padding-top:', getComputedStyle(header).paddingTop);
+      console.log('Header element:', header);
+    }
+  }
   
   // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
   deliveryBar.style.setProperty('width', width + '%', 'important');
   deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
   deliveryBar.style.setProperty('height', barHeight + 'px', 'important');
-  
   // Check if bar was previously closed
   if (localStorage.getItem('deliveryBarClosed') === 'true') {
     deliveryBar.classList.add('hidden');
+    // Usuń padding z header jeśli pasek był zamknięty
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      if (header) {
+        header.classList.add('delivery-bar-hidden');
+        header.style.setProperty('padding-top', '0px', 'important');
+      }
+    }
     return;
+  }
+  
+  // 🔥 SPRAWDŹ CZY PASEK POWINIEN BYĆ SCHOWANY NA POCZĄTKU
+  if (position === 'above-header') {
+    const header = document.querySelector('header.header');
+    if (header) {
+      // Jeśli pasek jest ukryty ale header ma padding - napraw to
+      if (deliveryBar.classList.contains('hidden')) {
+        header.classList.add('delivery-bar-hidden');
+        header.style.setProperty('padding-top', '0px', 'important');
+        console.log('🔧 Fixed header padding on page load - bar was hidden');
+      } else {
+        // Jeśli pasek jest widoczny ale header nie ma padding - napraw to
+        header.classList.remove('delivery-bar-hidden');
+        header.style.removeProperty('padding-top');
+        console.log('🔧 Fixed header padding on page load - bar was visible');
+      }
+    }
   }
   
   let isBarVisible = !deliveryBar.classList.contains('hidden');
@@ -247,9 +303,9 @@
               deliveryBar.style.backgroundColor = bgColor;
             }
             
-            console.log('✅ Showing success message');
-          } else if (hideBarAfterThreshold) {
+            console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
             // Ukryj pasek całkowicie
+            console.log('🚫 Hide bar after threshold is enabled - hiding bar');
             if (isBarVisible) {
               fadeOutBar(() => {
                 localStorage.setItem('deliveryBarState', 'hidden');
@@ -273,7 +329,7 @@
             }
             
             console.log('📋 Showing general message after threshold');
-          }} else {
+          }        } else {
           // PRÓG NIE OSIĄGNIĘTY
           // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
           if (!isBarVisible) {
@@ -317,22 +373,65 @@
         let message = generalMessage || 'Free delivery available!';
         messageElement.textContent = message;
       });
-  }
-  
-  // Funkcje animacji
+  }  // Funkcje animacji
   function fadeOutBar(callback) {
+    console.log('🎬 fadeOutBar called, position:', position);
+    
+    // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      console.log('🔍 Looking for header.header:', !!header);
+      if (header) {
+        console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
+        
+        // Dodaj klasę animowanego chowania
+        header.classList.remove('delivery-bar-hidden');
+        header.classList.add('delivery-bar-hiding');
+        
+        // Ustaw też inline style jako backup
+        header.style.setProperty('padding-top', '0px', 'important');
+        
+        console.log('🔧 Added .delivery-bar-hiding class for animated removal');
+        console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
+      }
+    }
+    
     deliveryBar.classList.add('fade-out');
+    
     setTimeout(() => {
       deliveryBar.classList.add('hidden');
       deliveryBar.classList.remove('fade-out');
+      
+      // Po zakończeniu animacji zastąp klasę hiding na hidden
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        if (header) {
+          header.classList.remove('delivery-bar-hiding');
+          header.classList.add('delivery-bar-hidden');
+        }
+      }
+      
       if (callback) callback();
-    }, 400);
+    }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
   }
 
   function fadeInBar() {
     // 🔥 NAJPIERW USTAW OPACITY NA 0
     deliveryBar.classList.add('fade-out');
     deliveryBar.classList.remove('hidden');
+    
+    // Jeśli pozycja to above-header, przywróć padding do header
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      if (header) {
+        // Usuń klasę CSS i inline style
+        header.classList.remove('delivery-bar-hidden');
+        header.style.removeProperty('padding-top');
+        
+        console.log('🔧 Removed .delivery-bar-hidden class and inline style');
+        console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
+      }
+    }
     
     // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
     deliveryBar.offsetHeight; // Force reflow
@@ -343,6 +442,16 @@
   }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
   if (closeButton) {
     closeButton.addEventListener('click', function() {
+      // Jeśli pozycja to above-header, usuń padding z header
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        if (header) {
+          header.classList.add('delivery-bar-hidden');
+          header.style.setProperty('padding-top', '0px', 'important');
+          console.log('🔧 Removing padding from main header on close:', header.className);
+        }
+      }
+      
       deliveryBar.classList.add('hidden');
       localStorage.setItem('deliveryBarClosed', 'true');
       console.log('Bar closed by user');
@@ -350,8 +459,7 @@
   } else {
     console.log('Close button not found - closeable setting is disabled');
   }
-  
-  // 🔥 NATYCHMIASTOWA AKTUALIZACJA
+    // 🔥 NATYCHMIASTOWA AKTUALIZACJA
   let lastCartTotal = null;
   
   // Polling function - sprawdza co sekundę
@@ -380,11 +488,10 @@
     'cartChanged',
     'ajaxCart:updated'
   ];
-  
-  cartEvents.forEach(eventName => {
+    cartEvents.forEach(eventName => {
     document.addEventListener(eventName, function() {
       console.log('🔔 Cart event:', eventName);
-      setTimeout(updateDeliveryMessage, 100);
+      updateDeliveryMessage(); // ← USUNIĘTO setTimeout
     });
   });
     // Intercept fetch requests do koszyka
@@ -401,17 +508,29 @@
       url.includes('/cart/clear')
     )) {      promise.then(() => {
         console.log('🔔 Cart fetch detected:', url);
-        setTimeout(updateDeliveryMessage, 200);
+        updateDeliveryMessage(); // ← USUNIĘTO setTimeout 200ms
       }).catch(() => {});
     }
     
     return promise;
   };
+    // Polling jako backup - co sekundę
+  setInterval(pollCartChanges, 500); // ← ZMIENIONO z 1000ms na 500ms (2x szybciej)
   
-  // Polling jako backup - co sekundę
-  setInterval(pollCartChanges, 1000);
-    // Inicjalizacja
+  // Inicjalizacja
   console.log('🚀 Initializing...');
+  
+  // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
+  if (savedBarState === 'hidden' && position === 'above-header') {
+    const header = document.querySelector('header.header');
+    if (header) {
+      header.classList.add('delivery-bar-hidden');
+      header.style.setProperty('padding-top', '0px', 'important');
+      console.log('🔧 Hiding header padding on init - bar state was hidden');
+    }
+  }
+  
+  // 🔥 NATYCHMIAST uruchom pierwszą aktualizację bez delay
   updateDeliveryMessage();
   
 })();
