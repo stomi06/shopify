@@ -46,9 +46,8 @@
       box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }});
     {% else %}
       box-shadow: none;
-    {% endif %}
-      {% if settings.position == 'above-header' %}
-      position: relative;
+    {% endif %}    {% if settings.position == 'above-header' %}
+      position: absolute;
       top: 0;
       left: 0;
       right: 0;

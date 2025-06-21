@@ -19,13 +19,13 @@ const __dirname = path.dirname(__filename);
 
 // Update default settings in server
 const DEFAULT_SETTINGS = {
-  message: "🚚 Free delivery on orders over {amount}!",
+  message: "Free delivery on orders over {amount}!",
   min_amount: 199,
   background_color: "#000000",
   text_color: "#bbbbbb", 
   position: "above-header",
   closeable: true,
-  show_icon: false,
+  show_icon: true,
   icon_type: 'default',
   icon_size: 30,
   icon_gap: 10,
