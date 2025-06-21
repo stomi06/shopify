@@ -48,14 +48,17 @@
     {% else %}
       box-shadow: none;
     {% endif %}
-    
-    {% if settings.position == 'fixed' %}
+      {% if settings.position == 'fixed' %}
       position: fixed;
-      margin-top: {{ settings.margin_top }}px;
-      left: 50%;
-      transform: translateX(-50%);
+      top: 0;
+      left: 0;
+      right: 0;
+      width: 100% !important;
+      z-index: 9999;
+      margin-top: 0;
+      transform: none;
     {% else %}
-      position: absolute;
+      position: relative;
       z-index: 1;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
@@ -109,6 +112,20 @@
     object-fit: contain !important;
     flex-shrink: 0 !important;
     display: block !important;
+  }
+  
+  /* Automatycznie dopasuj kolor do nagłówka */
+  .free-delivery-bar.auto-header-color {
+    background-color: var(--header-background, #ffffff) !important;
+    color: var(--header-text-color, #000000) !important;
+  }
+  
+  /* Przesuń nagłówek w dół gdy pasek jest fixed */
+  body.delivery-bar-fixed header,
+  body.delivery-bar-fixed .header,
+  body.delivery-bar-fixed #shopify-section-header {
+    margin-top: {{ settings.bar_height | default: 40 }}px !important;
+    transition: margin-top 0.3s ease;
   }
 </style>
 
@@ -370,8 +387,37 @@
   
   // Polling jako backup - co sekundę
   setInterval(pollCartChanges, 1000);
-    // Inicjalizacja
+  // Inicjalizacja
   console.log('🚀 Initializing...');
+  
+  // Sprawdź czy position to fixed i dodaj odpowiednie klasy
+  {% if settings.position == 'fixed' %}
+    document.body.classList.add('delivery-bar-fixed');
+    
+    // Automatyczne dopasowanie kolorów do nagłówka
+    function matchHeaderColors() {
+      const header = document.querySelector('header, .header, #shopify-section-header');
+      if (header) {
+        const headerStyles = getComputedStyle(header);
+        const headerBg = headerStyles.backgroundColor;
+        const headerColor = headerStyles.color;
+        
+        if (headerBg && headerBg !== 'rgba(0, 0, 0, 0)' && headerBg !== 'transparent') {
+          deliveryBar.style.setProperty('background-color', headerBg, 'important');
+          console.log('🎨 Matched header background:', headerBg);
+        }
+        
+        if (headerColor) {
+          deliveryBar.style.setProperty('color', headerColor, 'important');
+          console.log('🎨 Matched header text color:', headerColor);
+        }
+      }
+    }
+    
+    // Dopasuj kolory po załadowaniu
+    setTimeout(matchHeaderColors, 100);
+  {% endif %}
+  
   updateDeliveryMessage();
   
 })();
