@@ -918,15 +918,14 @@
       }
     }
 
-    // Funkcja resetowania ustawień
-    function resetSettings() {
+    // Funkcja resetowania ustawień    function resetSettings() {
       if (confirm('Are you sure you want to restore default settings?')) {
-        document.getElementById('message').value = "🚚 Free delivery on orders over ${amount}!";
+        document.getElementById('message').value = "🚚 Free delivery on orders over {amount}!";
         document.getElementById('minAmount').value = 199;
-        document.getElementById('showSuccessMessage').checked = true; // 👈 DODANE
-        document.getElementById('successMessage').value = "🎉 Congratulations! You have free delivery!"; // 👈 DODANE
-        document.getElementById('backgroundColor').value = "#4CAF50";
-        document.getElementById('textColor').value = "#FFFFFF";
+        document.getElementById('showSuccessMessage').checked = true;
+        document.getElementById('successMessage').value = "🎉 Congratulations! You have free delivery!";
+        document.getElementById('backgroundColor').value = "#000000";
+        document.getElementById('textColor').value = "#bbbbbb";
         document.getElementById('transparentBg').checked = false;
         document.getElementById('position').value = "fixed";
         document.getElementById('opacity').value = 100;
@@ -934,29 +933,30 @@
         document.getElementById('fontWeight').value = 600;
         document.getElementById('borderWidth').value = 0;
         document.getElementById('borderColor').value = "#cccccc";
-        document.getElementById('borderRadius').value = 6;
+        document.getElementById('borderRadius').value = 0;
         document.getElementById('shadowColor').value = "#000000";
-        document.getElementById('shadowOpacity').value = 20;
-        document.getElementById('shadowBlur').value = 4;
-        document.getElementById('shadowDistance').value = 2;        document.getElementById('width').value = 90; // 👈 DODANE
-        document.getElementById('marginTop').value = 20; // 👈 DODANE
-        document.getElementById('barHeight').value = 40; // Nowe
-        
+        document.getElementById('shadowOpacity').value = 0;
+        document.getElementById('shadowBlur').value = 0;
+        document.getElementById('shadowDistance').value = 0;
+        document.getElementById('width').value = 100;
+        document.getElementById('marginTop').value = 0;
+        document.getElementById('barHeight').value = 40;        
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';
         document.getElementById('borderWidthValue').textContent = '0px';
-        document.getElementById('borderRadiusValue').textContent = '6px';
-        document.getElementById('shadowOpacityValue').textContent = '20%';
-        document.getElementById('shadowBlurValue').textContent = '4px';
-        document.getElementById('shadowDistanceValue').textContent = '2px';        document.getElementById('widthValue').textContent = '90%'; // 👈 DODANE
-        document.getElementById('marginTopValue').textContent = '20px'; // 👈 DODANE
-        document.getElementById('barHeightValue').textContent = '40px'; // Nowe
+        document.getElementById('borderRadiusValue').textContent = '0px';
+        document.getElementById('shadowOpacityValue').textContent = '0%';
+        document.getElementById('shadowBlurValue').textContent = '0px';
+        document.getElementById('shadowDistanceValue').textContent = '0px';
+        document.getElementById('widthValue').textContent = '100%';
+        document.getElementById('marginTopValue').textContent = '0px';
+        document.getElementById('barHeightValue').textContent = '40px';
 
         // Reset ikon
         document.getElementById('showIcon').checked = false;
         document.getElementById('useDefaultIcon').checked = true;
         document.getElementById('useCustomIcon').checked = false;
-        document.getElementById('iconSize').value = 20;
+        document.getElementById('iconSize').value = 30;
         document.getElementById('iconGap').value = 8;
         
         // Wyczyść podgląd
@@ -971,16 +971,13 @@
         document.getElementById('iconOptionsGroup').style.display = 'none';
         document.getElementById('iconSizeGroup').style.display = 'none';
         document.getElementById('iconGapGroup').style.display = 'none';
-        document.getElementById('customIconUpload').style.display = 'none';
-        
-        // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '20px';
+        document.getElementById('customIconUpload').style.display = 'none';        // Zaktualizuj wyświetlane wartości
+        document.getElementById('iconSizeValue').textContent = '30px';
         document.getElementById('iconGapValue').textContent = '8px';
 
-        toggleSuccessMessageField(); // 👈 DODANE
+        toggleSuccessMessageField();
         updatePreview();
       }
-    }
 
     // NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
     function toggleSuccessMessageField() {

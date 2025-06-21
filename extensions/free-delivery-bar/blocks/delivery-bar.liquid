@@ -23,14 +23,14 @@
     {% if settings.transparent_bg == true %}
       background-color: transparent;
     {% else %}
-      background-color: {{ settings.background_color | default: '#4CAF50' }};
+      background-color: {{ settings.background_color | default: '#000000' }};
     {% endif %}
     
     /* Pozostałe style */
-    color: {{ settings.text_color | default: '#ffffff' }};
+    color: {{ settings.text_color | default: '#bbbbbb' }};
     font-size: {{ settings.font_size | default: 14 }}px;
     font-weight: {{ settings.font_weight | default: 600 }};
-    border-radius: {{ settings.border_radius | default: 6 }}px;
+    border-radius: {{ settings.border_radius | default: 0 }}px;
     
     /* Ramka */
     {% if settings.border_width and settings.border_width > 0 %}
@@ -107,8 +107,8 @@
     height: 100%; /* Dodaj tę linię */
   }  /* Podstawowe style dla ikon */
   .delivery-icon {
-    width: {{ settings.icon_size | default: 20 }}px !important;
-    height: {{ settings.icon_size | default: 20 }}px !important;
+    width: {{ settings.icon_size | default: 30 }}px !important;
+    height: {{ settings.icon_size | default: 30 }}px !important;
     object-fit: contain !important;
     flex-shrink: 0 !important;
     display: block !important;
