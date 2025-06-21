@@ -346,11 +346,17 @@
             <label for="message">Bar Message</label>
             <textarea id="message" rows="2" placeholder="🚚 Free delivery on orders over {amount}!"></textarea>
             <div class="help-text">Use {amount} as placeholder for the amount, {remaining} for the remaining amount</div>
+          </div>          <div class="form-group">
+            <label for="minAmount">Minimum Amount ($)</label>
+            <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
 
           <div class="form-group">
-            <label for="minAmount">Minimum Amount ($)</label>
-            <input type="number" id="minAmount" min="0" step="1" value="199" />
+            <label>
+              <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
+              Allow users to close the bar
+            </label>
+            <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
           </div>
 
           <!-- SUCCESS MESSAGE SECTION -->
@@ -761,11 +767,10 @@
         if (preview) {
           iconImage = preview.getAttribute('data-image');
         }
-      }
-
-      const settings = {
+      }      const settings = {
         message: document.getElementById('message').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
+        closeable: document.getElementById('closeable').checked,
         show_success_message: document.getElementById('showSuccessMessage').checked,
         success_message: document.getElementById('successMessage').value,
         background_color: document.getElementById('backgroundColor').value,
@@ -834,6 +839,7 @@
           console.log('Using default settings');          // Ustaw domyślne wartości przy pierwszym uruchomieniu
           document.getElementById('message').value = "Free delivery on orders over {amount}!";
           document.getElementById('minAmount').value = 199;
+          document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
           document.getElementById('successMessage').value = "Congratulations! You have free delivery!";
           document.getElementById('backgroundColor').value = "#000000";
@@ -891,6 +897,7 @@
         }        // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "Free delivery on orders over {amount}!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
+        document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
         document.getElementById('successMessage').value = settings.success_message || "Congratulations! You have free delivery!";document.getElementById('backgroundColor').value = settings.background_color || "#000000";
         document.getElementById('textColor').value = settings.text_color || "#bbbbbb";
@@ -960,6 +967,7 @@
     function resetSettings() {
       if (confirm('Are you sure you want to restore default settings?')) {        document.getElementById('message').value = "Free delivery on orders over {amount}!";
         document.getElementById('minAmount').value = 199;
+        document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;
         document.getElementById('successMessage').value = "Congratulations! You have free delivery!";
         document.getElementById('backgroundColor').value = "#000000";
