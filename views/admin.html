@@ -49,14 +49,21 @@
       color: white;
       font-size: 12px;
       font-weight: bold;
-    }    
-    .main-content {
-      display: flex;
-      flex-direction: column-reverse;
+    }    .main-content {
+      display: grid;
+      grid-template-columns: 1fr 400px;
       gap: 24px;
       padding: 24px;
       max-width: 1400px;
       margin: 0 auto;
+    }
+
+    .panel-container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      padding: 30px;
+      overflow: hidden;
     }
     
     .preview-bar {
@@ -77,13 +84,11 @@
     
     .preview-content {
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 10px;
       height: var(--bar-height, 40px);
       padding: 0 20px;
-      height: auto;
     }
     
     .preview-bar img {
@@ -103,7 +108,7 @@
     .panel-header {
       background: #fafbfb;
       border-bottom: 1px solid #e1e3e5;
-      padding: 15px;
+      padding: 20px 24px;
     }
 
     .panel-header h2 {
@@ -120,8 +125,6 @@
 
     .panel-content {
       padding: 30px;
-      overflow-y: auto;
-      height: calc(100dvh - 510px);
     }
 
     .form-section {
@@ -246,17 +249,18 @@
     .button-secondary:hover {
       background: #f6f6f7;
       border-color: #b5b8bb;
-    }    
-    .preview-panel {
+    }    .preview-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       height: fit-content;
-      position: flex;
-      display: flex;
-      flex-direction: column;
+      position: sticky;
       top: 24px;
+    }
+
+    .preview-content {
+      padding: 24px;
     }
 
     .alert {
@@ -305,6 +309,17 @@
       width: auto;
       margin-right: 8px;
     }
+
+    @media (max-width: 1200px) {
+      .main-content {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .preview-panel {
+        order: -1;
+      }
+    }
   </style>
 </head>
 <body>
@@ -323,7 +338,8 @@
       </div>
     </div>
     
-    <div class="settings-panel">
+    <div class="panel-container">
+      <div class="settings-panel">
         <div class="panel-header">
           <h2>Bar Configuration</h2>
           <p>Customize the appearance and behavior of the free delivery bar</p>
@@ -574,6 +590,7 @@
             <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
           </div>        </div>
       </div>
+    </div>
 
     <!-- Preview panel -->
     <div class="preview-panel">
@@ -584,7 +601,8 @@
         
         <div class="preview-content">
           <!-- Message States Preview -->
-          <div style="margin-bottom: 24px; width: 90%;">
+          <div style="margin-bottom: 24px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #202223;">Message States:</h3>
             
             <!-- Empty Cart -->
             <div style="margin-bottom: 16px;">
@@ -608,6 +626,16 @@
               <div class="preview-bar" id="previewBarSuccess" style="margin: 0; max-width: 100%; background-color: #4CAF50;">
                 <span id="previewSuccessMessage">Congratulations! You have free delivery!</span>
               </div>
+            </div>
+          </div>
+          
+          <div class="preview-area">
+            <div class="preview-bar" id="previewBar">
+              <span id="previewMessage">Free delivery available!</span>
+              <button class="preview-close">×</button>
+            </div>
+            <div style="color: #6d7175; font-size: 12px; margin-top: 16px;">
+              Current preview shows the selected message state
             </div>
           </div>
         </div>
