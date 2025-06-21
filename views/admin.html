@@ -30,14 +30,21 @@
       color: white;
       font-size: 12px;
       font-weight: bold;
-    }    
-    .main-content {
+    }      .main-content {
       display: flex;
-      flex-direction: column-reverse;
+      flex-direction: row;
       gap: 24px;
       padding: 24px;
-      max-width: 1000px;
+      max-width: 1400px;
       margin: 0 auto;
+      min-height: calc(100vh - 80px);
+    }
+    
+    @media (max-width: 768px) {
+      .main-content {
+        flex-direction: column-reverse;
+        max-width: 1000px;
+      }
     }
     
     .preview-bar {
@@ -80,14 +87,13 @@
       width: var(--icon-size, 20px);
       height: var(--icon-size, 20px);
       object-fit: contain;
-    }
-
-    .settings-panel {
+    }    .settings-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      flex: 1;
+      flex: 2;
+      min-height: calc(100vh - 120px);
     }
 
     .panel-header {
@@ -106,12 +112,16 @@
     .panel-header p {
       color: #6d7175;
       font-size: 14px;
-    }
-
-    .panel-content {
+    }    .panel-content {
       padding: 30px;
       overflow-y: auto;
-      height: calc(100dvh - 600px);
+      height: calc(100vh - 200px);
+    }
+    
+    @media (max-width: 768px) {
+      .panel-content {
+        height: calc(100dvh - 600px);
+      }
     }
 
     .form-section {
@@ -236,17 +246,24 @@
     .button-secondary:hover {
       background: #f6f6f7;
       border-color: #b5b8bb;
-    }    
-    .preview-panel {
+    }      .preview-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
+      flex: 1;
       height: fit-content;
-      position: flex;
-      display: flex;
-      flex-direction: column;
+      position: sticky;
       top: 24px;
+      max-height: calc(100vh - 120px);
+    }
+    
+    @media (max-width: 768px) {
+      .preview-panel {
+        position: relative;
+        top: 0;
+        max-height: none;
+      }
     }
 
     .alert {
