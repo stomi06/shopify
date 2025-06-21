@@ -13,7 +13,7 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: none;
       min-height: 100vh;
       color: #202223;
       line-height: 1.5;
@@ -30,21 +30,15 @@
       color: white;
       font-size: 12px;
       font-weight: bold;
-    }      .main-content {
+    }    
+    .main-content {
+      width: 100%;
       display: flex;
       flex-direction: row;
       gap: 24px;
       padding: 24px;
-      max-width: 1400px;
+      max-width: 1100px;
       margin: 0 auto;
-      min-height: calc(100vh - 80px);
-    }
-    
-    @media (max-width: 768px) {
-      .main-content {
-        flex-direction: column-reverse;
-        max-width: 1000px;
-      }
     }
     
     .preview-bar {
@@ -64,6 +58,7 @@
     }
 
     .preview-item{
+      width: 100%;
       margin-bottom: 16px; 
       display: flex; 
       gap: 5px;
@@ -87,13 +82,14 @@
       width: var(--icon-size, 20px);
       height: var(--icon-size, 20px);
       object-fit: contain;
-    }    .settings-panel {
+    }
+
+    .settings-panel {
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      flex: 2;
-      min-height: calc(100vh - 120px);
+      flex: 1;
     }
 
     .panel-header {
@@ -112,16 +108,12 @@
     .panel-header p {
       color: #6d7175;
       font-size: 14px;
-    }    .panel-content {
-      padding: 30px;
-      overflow-y: auto;
-      height: calc(100vh - 200px);
     }
-    
-    @media (max-width: 768px) {
-      .panel-content {
-        height: calc(100dvh - 600px);
-      }
+
+    .panel-content {
+      padding: 15px;
+      overflow-y: auto;
+      height: calc(100dvh - 600px);
     }
 
     .form-section {
@@ -246,24 +238,18 @@
     .button-secondary:hover {
       background: #f6f6f7;
       border-color: #b5b8bb;
-    }      .preview-panel {
+    }    
+    .preview-panel {
+      width: 400px;
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
-      flex: 1;
       height: fit-content;
-      position: sticky;
+      position: flex;
+      display: flex;
+      flex-direction: column;
       top: 24px;
-      max-height: calc(100vh - 120px);
-    }
-    
-    @media (max-width: 768px) {
-      .preview-panel {
-        position: relative;
-        top: 0;
-        max-height: none;
-      }
     }
 
     .alert {
@@ -323,7 +309,7 @@
     }
     
     .tab {
-      padding: 12px 24px;
+      padding: 8px 16px;
       background: none;
       border: none;
       border-bottom: 2px solid transparent;
@@ -352,6 +338,11 @@
     .tab-content.active {
       display: block;
     }
+    @media (max-width: 900px) {
+      .main-content {
+        flex-direction: column;
+      }
+    }
   </style>
 </head>
 <body>
@@ -365,8 +356,8 @@
           <!-- Tabs Navigation -->
           <div class="tabs-container">
             <div class="tabs">
-              <button class="tab active" onclick="switchTab('basic')">🎯 Basic Settings</button>
-              <button class="tab" onclick="switchTab('advanced')">⚙️ Advanced Settings</button>
+              <button class="tab active" onclick="switchTab('basic')">Basic Settings</button>
+              <button class="tab" onclick="switchTab('advanced')">Advanced Settings</button>
             </div>
           </div>
 
@@ -376,7 +367,7 @@
             <div class="form-section">
               <div class="section-title">Content and Behavior</div><div class="form-group">
               <label for="generalMessage">General Info Message</label>
-              <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
+              <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
               <div class="help-text">General message shown when cart is empty or below threshold</div>
             </div>
 
@@ -390,7 +381,7 @@
 
             <div class="form-group" id="progressMessageGroup">
               <label for="progressMessage">Progress Message</label>
-              <textarea id="progressMessage" rows="2" placeholder="Add ${remaining} more for free delivery!"></textarea>
+              <textarea id="progressMessage" style="resize: none;" rows="1" placeholder="Add ${remaining} more for free shipping!"></textarea>
               <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
             </div><div class="form-group">
               <label for="minAmount">Minimum Amount</label>
@@ -416,7 +407,7 @@
 
             <div class="form-group" id="successMessageGroup">
               <label for="successMessage">Success Message</label>
-              <textarea id="successMessage" rows="2" placeholder="Congratulations! You have free delivery!"></textarea>
+              <textarea id="successMessage" style="resize: none;" rows="1" placeholder="Enjoy free shipping!"></textarea>
               <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
             </div>
 
@@ -426,12 +417,6 @@
                 Hide bar completely after reaching threshold
               </label>              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
             </div>
-          </div>
-          
-          <!-- Action buttons for Basic Tab -->
-          <div class="form-section">
-            <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
-            <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
           </div>
         </div>
 
@@ -443,7 +428,8 @@
             
             <div class="form-row">
               <div class="form-group">
-                <label for="backgroundColor">Background Color</label>                <input type="color" id="backgroundColor" value="#000000" />
+                <label for="backgroundColor">Background Color</label>                
+                <input type="color" id="backgroundColor" value="#000000" />
               </div>
               <div class="form-group">
                 <label for="textColor">Text Color</label>
@@ -578,7 +564,8 @@
                 <label for="borderColor">Border Color</label>
                 <input type="color" id="borderColor" value="#cccccc" />
               </div>
-            </div>            <div class="form-group">
+            </div>            
+            <div class="form-group">
               <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">0px</span></label>
               <input type="range" id="borderRadius" min="0" max="50" value="0" step="1" />
             </div>
@@ -592,13 +579,15 @@
               <div class="form-group">
                 <label for="shadowColor">Shadow Color</label>
                 <input type="color" id="shadowColor" value="#000000" />
-              </div>              <div class="form-group">
+              </div>              
+              <div class="form-group">
                 <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">0%</span></label>
                 <input type="range" id="shadowOpacity" min="0" max="100" value="0" step="5" />
               </div>
             </div>
 
-            <div class="form-row">              <div class="form-group">
+            <div class="form-row">              
+              <div class="form-group">
                 <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">0px</span></label>
                 <input type="range" id="shadowBlur" min="0" max="20" value="0" step="1" />
               </div>
@@ -607,13 +596,10 @@
                 <input type="range" id="shadowDistance" min="0" max="10" value="0" step="1" />
               </div>
             </div>
-          </div>          <!-- Action buttons -->
-          <div class="form-section">
-            <button type="button" class="button-secondary" onclick="resetSettings()">Reset to Defaults</button>
-            <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
           </div>
         </div>
       </div>
+    </div>
 
     <!-- Preview panel -->
     <div class="preview-panel">
@@ -624,20 +610,20 @@
         
         <div class="preview-content">
           <!-- Message States Preview -->
-          <div style="margin: 10px 0; width: 90%;">
+          <div style="margin: 10px 0; width: 100%;">
             <!-- Empty Cart -->
             <div class="preview-item">
               <div style="font-size: 12px; color: #6d7175;">Empty Cart:</div>
               <div class="preview-bar" id="previewBarEmpty">
-                <span id="previewGeneralMessage">Free delivery available!</span>
+                <span id="previewGeneralMessage">Free shipping from $100</span>
               </div>
             </div>
             
             <!-- Progress -->
             <div class="preview-item">
-              <div style="font-size: 12px; color: #6d7175;">Progress ($150 in cart):</div>
+              <div style="font-size: 12px; color: #6d7175;">Progress:</div>
               <div class="preview-bar" id="previewBarProgress">
-                <span id="previewProgressMessage">Add $49 more for free delivery!</span>
+                <span id="previewProgressMessage">Add $25 more for free shipping!</span>
               </div>
             </div>
             
@@ -645,13 +631,12 @@
             <div class="preview-item">
               <div style="font-size: 12px; color: #6d7175;">Threshold Reached:</div>
               <div class="preview-bar" id="previewBarSuccess">
-                <span id="previewSuccessMessage">Congratulations! You have free delivery!</span>
+                <span id="previewSuccessMessage">Enjoy free shipping!</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
   </div>
 
   <script>
@@ -730,12 +715,12 @@
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
         // Pobierz wszystkie wartości
-      const generalMessage = document.getElementById('generalMessage').value || 'Free delivery available!';
+      const generalMessage = document.getElementById('generalMessage').value || 'Free shipping from $100';
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
-      const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free delivery!';
+      const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free shipping!';
       const minAmount = document.getElementById('minAmount').value || 199;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
-      const successMessage = document.getElementById('successMessage').value || 'Congratulations! You have free delivery!';
+      const successMessage = document.getElementById('successMessage').value || 'Enjoy free shipping!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
       const transparentBg = document.getElementById('transparentBg').checked;const opacity = document.getElementById('opacity').value / 100;
@@ -827,7 +812,7 @@
         previewGeneralMessage.innerHTML = iconHtml + generalMessage;
       }
         if (previewProgressMessage) {
-        const sampleProgress = progressMessage.replace('${remaining}', '$49').replace('{remaining}', '49');
+        const sampleProgress = progressMessage.replace('${remaining}', '$25');
         previewProgressMessage.innerHTML = iconHtml + sampleProgress;
       }
         if (previewSuccessMessage) {
@@ -926,13 +911,13 @@
         const shop = getShopFromUrl();
         const response = await fetch(`/api/settings/${shop}`);
           if (!response.ok) {
-          document.getElementById('generalMessage').value = "Free delivery available!";
+          document.getElementById('generalMessage').value = "Free shipping from $100";
           document.getElementById('showProgressMessage').checked = true;
-          document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
+          document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
           document.getElementById('minAmount').value = 199;
           document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
-          document.getElementById('successMessage').value = "Congratulations! You have free delivery!";
+          document.getElementById('successMessage').value = "Enjoy free shipping!";
           document.getElementById('backgroundColor').value = "#000000";
           document.getElementById('textColor').value = "#bbbbbb";
           document.getElementById('transparentBg').checked = false;
@@ -1000,14 +985,14 @@
         if (!DEFAULT_DELIVERY_ICON) {
           DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
         }        // Załaduj podstawowe ustawienia
-        document.getElementById('generalMessage').value = settings.general_message || "Free delivery available!";
+        document.getElementById('generalMessage').value = settings.general_message || "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
-        document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free delivery!";
+        document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free shipping!";
         document.getElementById('minAmount').value = settings.min_amount || 199;        
         document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
         document.getElementById('hideBarAfterThreshold').checked = settings.hide_bar_after_threshold || false;
-        document.getElementById('successMessage').value = settings.success_message || "Congratulations! You have free delivery!";
+        document.getElementById('successMessage').value = settings.success_message || "Enjoy free shipping!";
         document.getElementById('backgroundColor').value = settings.background_color || "#000000";
         document.getElementById('textColor').value = settings.text_color || "#bbbbbb";
         document.getElementById('transparentBg').checked = settings.transparent_bg || false;
@@ -1073,13 +1058,13 @@
       }
     }    // Funkcja resetowania ustawień
     function resetSettings() {     
-        document.getElementById('generalMessage').value = "Free delivery available!";
+        document.getElementById('generalMessage').value = "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = true;
-        document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
+        document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
         document.getElementById('minAmount').value = 199;
         document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;
-        document.getElementById('successMessage').value = "Congratulations! You have free delivery!";
+        document.getElementById('successMessage').value = "Enjoy free shipping!";
         document.getElementById('backgroundColor').value = "#000000";
         document.getElementById('textColor').value = "#bbbbbb";
         document.getElementById('transparentBg').checked = false;
