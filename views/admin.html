@@ -341,12 +341,23 @@
         <!-- Content and behavior -->
         <div class="form-section">
           <div class="section-title">📝 Content and Behavior</div>
-          
-          <div class="form-group">
+            <div class="form-group">
             <label for="message">Bar Message</label>
-            <textarea id="message" rows="2" placeholder="🚚 Free delivery on orders over {amount}!"></textarea>
+            <textarea id="message" rows="2" placeholder="Free delivery on orders over {amount}!"></textarea>
             <div class="help-text">Use {amount} as placeholder for the amount, {remaining} for the remaining amount</div>
-          </div>          <div class="form-group">
+          </div>
+
+          <div class="form-group">
+            <label for="generalMessage">General Info Message</label>
+            <textarea id="generalMessage" rows="2" placeholder="Free delivery available!"></textarea>
+            <div class="help-text">General message shown when cart is empty or below threshold</div>
+          </div>
+
+          <div class="form-group">
+            <label for="progressMessage">Progress Message</label>
+            <textarea id="progressMessage" rows="2" placeholder="Add {remaining} more for free delivery!"></textarea>
+            <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
+          </div><div class="form-group">
             <label for="minAmount">Minimum Amount ($)</label>
             <input type="number" id="minAmount" min="0" step="1" value="199" />
           </div>
@@ -562,23 +573,50 @@
           <button type="button" class="button-primary" onclick="saveSettings()">Save Settings</button>
         </div>
       </div>
-    </div>
-
-    <!-- Preview panel -->
+    </div>    <!-- Preview panel -->
     <div class="preview-panel">
       <div class="panel-header">
         <h2>Live Preview</h2>
-        <p>See how the bar will look</p>
+        <p>See how messages will look in different scenarios</p>
       </div>
       
       <div class="preview-content">
+        <!-- Message States Preview -->
+        <div style="margin-bottom: 24px;">
+          <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #202223;">Message States:</h3>
+          
+          <!-- Empty Cart -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">📋 Empty Cart:</div>
+            <div class="preview-bar" id="previewBarEmpty" style="margin: 0; max-width: 100%;">
+              <span id="previewGeneralMessage">Free delivery available!</span>
+            </div>
+          </div>
+          
+          <!-- Progress -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">🛒 Progress ($150 in cart):</div>
+            <div class="preview-bar" id="previewBarProgress" style="margin: 0; max-width: 100%;">
+              <span id="previewProgressMessage">Add $49 more for free delivery!</span>
+            </div>
+          </div>
+          
+          <!-- Success -->
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 12px; color: #6d7175; margin-bottom: 4px;">✅ Threshold Reached:</div>
+            <div class="preview-bar" id="previewBarSuccess" style="margin: 0; max-width: 100%; background-color: #4CAF50;">
+              <span id="previewSuccessMessage">Congratulations! You have free delivery!</span>
+            </div>
+          </div>
+        </div>
+        
         <div class="preview-area">
           <div class="preview-bar" id="previewBar">
-            <span id="previewMessage">🚚 Free delivery on orders over $199!</span>
+            <span id="previewMessage">Free delivery available!</span>
             <button class="preview-close">×</button>
           </div>
           <div style="color: #6d7175; font-size: 12px; margin-top: 16px;">
-            This is how the bar will appear on your store
+            Current preview shows the selected message state
           </div>
         </div>
       </div>
@@ -655,21 +693,24 @@
         };
         reader.readAsDataURL(file);
       }
-    });
-
-    // Funkcja aktualizacji podglądu
+    });    // Funkcja aktualizacji podglądu
     function updatePreview() {
       const previewBar = document.getElementById('previewBar');
       const previewMessage = document.getElementById('previewMessage');
+      const previewGeneralMessage = document.getElementById('previewGeneralMessage');
+      const previewProgressMessage = document.getElementById('previewProgressMessage');
+      const previewSuccessMessage = document.getElementById('previewSuccessMessage');
       
       // Pobierz wszystkie wartości
-      const message = document.getElementById('message').value || '🚚 Free delivery on orders over $199!';
+      const message = document.getElementById('message').value || 'Free delivery on orders over {amount}!';
+      const generalMessage = document.getElementById('generalMessage').value || 'Free delivery available!';
+      const progressMessage = document.getElementById('progressMessage').value || 'Add {remaining} more for free delivery!';
       const minAmount = document.getElementById('minAmount').value || 199;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
-      const successMessage = document.getElementById('successMessage').value || '🎉 Congratulations! You have free delivery!';
+      const successMessage = document.getElementById('successMessage').value || 'Congratulations! You have free delivery!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
-      const transparentBg = document.getElementById('transparentBg').checked;      const opacity = document.getElementById('opacity').value / 100;
+      const transparentBg = document.getElementById('transparentBg').checked;const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
       const marginTop = document.getElementById('marginTop').value;
       const barHeight = document.getElementById('barHeight').value;
@@ -717,9 +758,70 @@
             iconHtml = `<img src="${customImage}" style="width: ${iconSize}px; height: ${iconSize}px; margin-right: ${iconGap}px; vertical-align: middle; object-fit: contain;"> `;
           }
         }
+      }      
+      // Zaktualizuj wszystkie podglądy
+      const allPreviewBars = [
+        document.getElementById('previewBarEmpty'),
+        document.getElementById('previewBarProgress'), 
+        document.getElementById('previewBarSuccess'),
+        previewBar
+      ];
+      
+      allPreviewBars.forEach(bar => {
+        if (!bar) return;
+        
+        if (transparentBg) {
+          bar.style.backgroundColor = 'transparent';
+        } else {
+          bar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
+        }
+        
+        bar.style.color = textColor;
+        bar.style.fontSize = fontSize + 'px';
+        bar.style.fontWeight = fontWeight;
+        bar.style.width = width + '%';
+        bar.style.maxWidth = '400px';
+        bar.style.height = barHeight + 'px';
+        bar.style.display = 'flex';
+        bar.style.alignItems = 'center';
+        bar.style.justifyContent = 'center';
+        bar.style.padding = '0 20px';
+        bar.style.border = borderWidth > 0 ? `${borderWidth}px solid ${borderColor}` : 'none';
+        bar.style.borderRadius = borderRadius + 'px';
+        bar.style.opacity = opacity;
+        bar.style.marginTop = marginTop + 'px';
+        
+        // Cień
+        if (shadowBlur > 0 || shadowDistance > 0) {
+          const shadowRgba = hexToRgba(shadowColor, shadowOpacity);
+          bar.style.boxShadow = `0 ${shadowDistance}px ${shadowBlur}px ${shadowRgba}`;
+        } else {
+          bar.style.boxShadow = 'none';
+        }
+      });
+      
+      // Success bar specjalny kolor
+      const successBar = document.getElementById('previewBarSuccess');
+      if (successBar && !transparentBg) {
+        successBar.style.backgroundColor = hexToRgba('#4CAF50', opacity);
       }
       
-      previewMessage.innerHTML = iconHtml + finalMessage;
+      // Aktualizuj treści wiadomości
+      if (previewGeneralMessage) {
+        previewGeneralMessage.innerHTML = iconHtml + generalMessage;
+      }
+      
+      if (previewProgressMessage) {
+        const sampleProgress = progressMessage.replace('{remaining}', '49');
+        previewProgressMessage.innerHTML = iconHtml + sampleProgress;
+      }
+      
+      if (previewSuccessMessage) {
+        previewSuccessMessage.innerHTML = iconHtml + successMessage;
+      }
+      
+      // Główny podgląd - pokaż general message
+      previewMessage.innerHTML = iconHtml + generalMessage;
         // Zastosuj style
       previewBar.style.color = textColor;
       previewBar.style.fontSize = fontSize + 'px';
@@ -769,6 +871,8 @@
         }
       }      const settings = {
         message: document.getElementById('message').value,
+        general_message: document.getElementById('generalMessage').value,
+        progress_message: document.getElementById('progressMessage').value,
         min_amount: parseInt(document.getElementById('minAmount').value),
         closeable: document.getElementById('closeable').checked,
         show_success_message: document.getElementById('showSuccessMessage').checked,
@@ -837,6 +941,8 @@
         if (!response.ok) {
           console.log('Using default settings');          // Ustaw domyślne wartości przy pierwszym uruchomieniu
           document.getElementById('message').value = "Free delivery on orders over {amount}!";
+          document.getElementById('generalMessage').value = "Free delivery available!";
+          document.getElementById('progressMessage').value = "Add {remaining} more for free delivery!";
           document.getElementById('minAmount').value = 199;
           document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
@@ -895,6 +1001,8 @@
           DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
         }        // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "Free delivery on orders over {amount}!";
+        document.getElementById('generalMessage').value = settings.general_message || "Free delivery available!";
+        document.getElementById('progressMessage').value = settings.progress_message || "Add {remaining} more for free delivery!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
         document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
@@ -965,6 +1073,8 @@
     }    // Funkcja resetowania ustawień
     function resetSettings() {
       if (confirm('Are you sure you want to restore default settings?')) {        document.getElementById('message').value = "Free delivery on orders over {amount}!";
+        document.getElementById('generalMessage').value = "Free delivery available!";
+        document.getElementById('progressMessage').value = "Add {remaining} more for free delivery!";
         document.getElementById('minAmount').value = 199;
         document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;
@@ -1041,14 +1151,14 @@
     document.getElementById('showSuccessMessage').addEventListener('change', function() {
       toggleSuccessMessageField();
       updatePreview();
-    });
-
-    document.getElementById('closeable').addEventListener('change', function() {
+    });    document.getElementById('closeable').addEventListener('change', function() {
       console.log('🔄 Closeable changed to:', this.checked);
       updatePreview();
     });
 
     document.getElementById('successMessage').addEventListener('input', updatePreview);
+    document.getElementById('generalMessage').addEventListener('input', updatePreview);
+    document.getElementById('progressMessage').addEventListener('input', updatePreview);
 
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {

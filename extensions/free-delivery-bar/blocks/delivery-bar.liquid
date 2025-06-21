@@ -126,8 +126,9 @@
 
 <div class="free-delivery-bar" 
      id="free-delivery-bar"
-     data-threshold="{{ settings.min_amount | default: 199 }}"
-     data-message="{{ settings.message | default: 'Free delivery on orders over $199!' }}"
+     data-threshold="{{ settings.min_amount | default: 199 }}"     data-message="{{ settings.message | default: 'Free delivery on orders over $199!' }}"
+     data-general-message="{{ settings.general_message | default: 'Free delivery available!' }}"
+     data-progress-message="{{ settings.progress_message | default: 'Add {remaining} more for free delivery!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
@@ -190,9 +191,10 @@
     deliveryBar.classList.remove('hidden');
     console.log('📱 Restored bar state: visible');
   }
-  
-  const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
+    const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const originalMessage = deliveryBar.getAttribute('data-message');
+  const generalMessage = deliveryBar.getAttribute('data-general-message');
+  const progressMessage = deliveryBar.getAttribute('data-progress-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');
   const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';  const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
@@ -256,8 +258,7 @@
             }
             isBarVisible = false;
             return;
-          }
-        } else {
+          }        } else {
           // PRÓG NIE OSIĄGNIĘTY
           // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
           if (!isBarVisible) {
@@ -266,19 +267,27 @@
           isBarVisible = true;
           localStorage.setItem('deliveryBarState', 'visible');
           
-          const remaining = threshold - cartTotal;
-            finalMessage = originalMessage
-            .replace('{amount}', threshold)
-            .replace('{remaining}', remaining.toFixed(2));
+          if (cartTotal === 0) {
+            // Koszyk pusty - pokaż ogólną wiadomość
+            finalMessage = generalMessage || originalMessage.replace('{amount}', threshold);
+          } else {
+            // Koszyk niepusty ale poniżej progu - pokaż progress message
+            const remaining = threshold - cartTotal;
+            const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
+            
+            finalMessage = progressMessage
+              .replace('{remaining}', formattedRemaining)
+              .replace('{amount}', threshold);
+          }
           
-          messageElement.textContent = finalMessage; // ← textContent zamiast innerHTML!
+          messageElement.textContent = finalMessage;
           
           // Przywróć oryginalny kolor
           if (!transparentBg) {
             deliveryBar.style.backgroundColor = bgColor;
           }
           
-          console.log('📊 Normal message - remaining:', remaining.toFixed(2));
+          console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : 'progress');
         }
         
         // 🔥 ZAPISZ W LOCALSTORAGE
