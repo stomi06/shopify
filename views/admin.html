@@ -85,6 +85,7 @@
     }
 
     .settings-panel {
+      height: 95dvh;
       background: white;
       border-radius: 12px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -113,7 +114,7 @@
     .panel-content {
       padding: 15px;
       overflow-y: auto;
-      height: calc(100dvh - 600px);
+      height: calc(95dvh - 165px);
     }
 
     .form-section {
@@ -123,7 +124,16 @@
     .form-section:last-child {
       margin-bottom: 0;
     }
-
+    .buttons{
+      width: 100%;
+      background: #fafbfb;
+      height: 83px;
+      align-items: center;
+      display: flex;
+      gap: 15px;
+      flex-direction: row;
+      border-top: 1px solid #e1e3e5;
+    }
     .section-title {
       font-size: 16px;
       font-weight: 600;
@@ -204,40 +214,39 @@
     }
 
     .button-primary {
-      background: linear-gradient(180deg, #5c6ac4 0%, #4339ca 100%);
+      background: linear-gradient(135deg, #0092d5 0%, #ce00ff 200%);
       color: white;
       border: none;
-      padding: 12px 24px;
+      height: 40px;
+      width: 100px;
       border-radius: 6px;
       font-weight: 600;
       font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-      width: 100%;
     }
 
     .button-primary:hover {
-      background: linear-gradient(180deg, #4339ca 0%, #3629b7 100%);
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
+      filter: brightness(0.8);
     }
 
     .button-secondary {
-      background: white;
-      color: #6d7175;
-      border: 1px solid #c9cccf;
+      background: linear-gradient(135deg, rgb(200,0,0) 0%, #ce00ff 200%);
+      color: white;
+      border: none;
       padding: 10px 16px;
       border-radius: 6px;
-      font-weight: 500;
+      width: 100px;
+      height: 40px;
+      font-weight: 600;
       font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin-right: 12px;
     }
 
     .button-secondary:hover {
-      background: #f6f6f7;
-      border-color: #b5b8bb;
+      filter: brightness(0.8);
     }    
     .preview-panel {
       width: 400px;
@@ -318,6 +327,7 @@
       font-weight: 500;
       color: #6d7175;
       transition: all 0.2s ease;
+      border-radius: 10px 10px 0 0;
     }
     
     .tab:hover {
@@ -338,9 +348,13 @@
     .tab-content.active {
       display: block;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 940px) {
       .main-content {
-        flex-direction: column;
+        width: 80%;
+        flex-direction: column-reverse;
+      }
+      .preview-panel {
+        width: 100%;
       }
     }
   </style>
@@ -365,9 +379,9 @@
           <div id="basicTab" class="tab-content active">
             <!-- Content and behavior -->
             <div class="form-section">
-              <div class="section-title">Content and Behavior</div><div class="form-group">
-              <label for="generalMessage">General Info Message</label>
-              <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
+              <div class="form-group">
+                <label for="generalMessage">General Info Message</label>
+                <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
               <div class="help-text">General message shown when cart is empty or below threshold</div>
             </div>
 
@@ -385,17 +399,9 @@
               <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
             </div><div class="form-group">
               <label for="minAmount">Minimum Amount</label>
-              <input type="number" id="minAmount" min="0" step="1" value="199" />
-            </div>
-
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
-                Allow users to close the bar
-              </label>
-              <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
-            </div>          
-            
+              <input type="number" id="minAmount" min="0" step="1" value="100" />
+            </div>        
+          
             <!-- SUCCESS MESSAGE SECTION -->
             <div class="form-group">
               <label>
@@ -415,7 +421,16 @@
               <label>
                 <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
                 Hide bar completely after reaching threshold
-              </label>              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
+              </label>              
+              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
+                Allow users to close the bar
+              </label>
+              <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
             </div>
           </div>
         </div>
@@ -553,7 +568,7 @@
 
           <!-- Border -->
           <div class="form-section">
-            <div class="section-title">🔲 Border</div>
+            <div class="section-title">Border</div>
             
             <div class="form-row">
               <div class="form-group">
@@ -598,6 +613,10 @@
             </div>
           </div>
         </div>
+      </div>
+      <div class="buttons panel-header">
+        <button type="button" class="button-secondary" onclick="resetSettings()">Reset</button>
+        <button type="button" class="button-primary" onclick="saveSettings()">Save</button>
       </div>
     </div>
 
@@ -718,7 +737,7 @@
       const generalMessage = document.getElementById('generalMessage').value || 'Free shipping from $100';
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
       const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free shipping!';
-      const minAmount = document.getElementById('minAmount').value || 199;
+      const minAmount = document.getElementById('minAmount').value || 100;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
       const successMessage = document.getElementById('successMessage').value || 'Enjoy free shipping!';
       const backgroundColor = document.getElementById('backgroundColor').value;
@@ -914,7 +933,7 @@
           document.getElementById('generalMessage').value = "Free shipping from $100";
           document.getElementById('showProgressMessage').checked = true;
           document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
-          document.getElementById('minAmount').value = 199;
+          document.getElementById('minAmount').value = 100;
           document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
           document.getElementById('successMessage').value = "Enjoy free shipping!";
@@ -988,7 +1007,7 @@
         document.getElementById('generalMessage').value = settings.general_message || "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
         document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free shipping!";
-        document.getElementById('minAmount').value = settings.min_amount || 199;        
+        document.getElementById('minAmount').value = settings.min_amount || 100;        
         document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
         document.getElementById('hideBarAfterThreshold').checked = settings.hide_bar_after_threshold || false;
@@ -1061,7 +1080,7 @@
         document.getElementById('generalMessage').value = "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = true;
         document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
-        document.getElementById('minAmount').value = 199;
+        document.getElementById('minAmount').value = 100;
         document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;
         document.getElementById('successMessage').value = "Enjoy free shipping!";
