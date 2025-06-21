@@ -786,11 +786,11 @@
         border_width: parseInt(document.getElementById('borderWidth').value),
         border_color: document.getElementById('borderColor').value,
         border_radius: parseInt(document.getElementById('borderRadius').value),
-        shadow_color: document.getElementById('shadowColor').value,
-        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
+        shadow_color: document.getElementById('shadowColor').value,        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
-        closeable: true,        // Opcje ikon
+        
+        // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
         icon_type: iconChoice,
         icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
