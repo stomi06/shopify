@@ -351,34 +351,6 @@ app.get("/", (req, res) => {
   res.sendFile(path.resolve("views/admin.html"));
 });
 
-// Update default settings in server
-const DEFAULT_SETTINGS = {
-  message: "🚚 Free delivery on orders over {amount}!",
-  min_amount: 199,
-  background_color: "#000000",
-  text_color: "#bbbbbb", 
-  position: "above-header",
-  closeable: true,
-  show_icon: false,
-  icon_type: 'default',
-  icon_size: 30,
-  icon_gap: 10,
-  bar_height: 40,
-  width: 100,
-  margin_top: 0,
-  opacity: 100,
-  font_size: 14,
-  font_weight: 600,
-  border_width: 0,
-  border_color: "#cccccc",
-  border_radius: 0,
-  shadow_color: "#000000",
-  shadow_opacity: 0,
-  shadow_blur: 0,
-  shadow_distance: 0,
-  transparent_bg: false
-};
-
 // API endpoint do zapisywania ustawień do Metafields
 app.post('/api/settings', async (req, res) => {
   try {

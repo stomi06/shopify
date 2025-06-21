@@ -476,10 +476,10 @@
         <div class="form-section">
           <div class="section-title">📐 Position and Size</div>
           
-          <div class="form-row">            <div class="form-group">
+          <div class="form-row">
+            <div class="form-group">
               <label for="position">Bar Position</label>
               <select id="position">
-                <option value="above-header">Above Header (recommended)</option>
                 <option value="fixed">Fixed (always visible)</option>
                 <option value="absolute">Absolute (static)</option>
               </select>
@@ -579,8 +579,8 @@
     </div>
   </div>
 
-  <script>    // Domyślna ikona - serwowana z aplikacji  
-    let DEFAULT_DELIVERY_ICON = null;
+  <script>    // Domyślna ikona - serwowana z aplikacji
+    const DEFAULT_DELIVERY_ICON = `${window.location.origin}/assets/default-delivery-icon.png`;
 
     // Funkcje pomocnicze dla zakresów
     function updateRangeValue(rangeId, valueId, suffix = '') {
@@ -841,10 +841,6 @@
         }
         
         const settings = await response.json();
-
-        if (!DEFAULT_DELIVERY_ICON) {
-          DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
-        }
 
         // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "🚚 Free delivery on orders over ${amount}!";
