@@ -700,11 +700,10 @@
         previewBar.style.backgroundColor = 'transparent';
       } else {
         previewBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
-      }
-        // Obsługa ikony
+      }      // Obsługa ikony
       let iconHtml = '';
       if (showIcon) {
-        if (iconChoice === 'default') {
+        if (iconChoice === 'default' && DEFAULT_DELIVERY_ICON) {
           iconHtml = `<img src="${DEFAULT_DELIVERY_ICON}" style="width: ${iconSize}px; height: ${iconSize}px; margin-right: ${iconGap}px; vertical-align: middle; object-fit: contain;"> `;
         } else if (iconChoice === 'custom') {
           const customImage = document.getElementById('imagePreview').getAttribute('data-image');
@@ -848,34 +847,32 @@
         document.getElementById('message').value = settings.message || "🚚 Free delivery on orders over ${amount}!";
         document.getElementById('minAmount').value = settings.min_amount || 199;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false; // 👈 DODANE (domyślnie true)
-        document.getElementById('successMessage').value = settings.success_message || "🎉 Congratulations! You have free delivery!"; // 👈 DODANE
-        document.getElementById('backgroundColor').value = settings.background_color || "#4CAF50";
-        document.getElementById('textColor').value = settings.text_color || "#FFFFFF";
+        document.getElementById('successMessage').value = settings.success_message || "🎉 Congratulations! You have free delivery!"; // 👈 DODANE        document.getElementById('backgroundColor').value = settings.background_color || "#000000";
+        document.getElementById('textColor').value = settings.text_color || "#bbbbbb";
         document.getElementById('transparentBg').checked = settings.transparent_bg || false;
-        document.getElementById('position').value = settings.position || "fixed";
+        document.getElementById('position').value = settings.position || "above-header";
         
         // Załaduj nowe ustawienia z domyślnymi wartościami
         document.getElementById('opacity').value = settings.opacity || 100;
         document.getElementById('fontSize').value = settings.font_size || 14;
         document.getElementById('fontWeight').value = settings.font_weight || 600;
         document.getElementById('borderWidth').value = settings.border_width || 0;
-        document.getElementById('borderColor').value = settings.border_color || "#cccccc";
-        document.getElementById('borderRadius').value = settings.border_radius || 6;
+        document.getElementById('borderColor').value = settings.border_color || "#cccccc";        document.getElementById('borderRadius').value = settings.border_radius || 0;
         document.getElementById('shadowColor').value = settings.shadow_color || "#000000";
-        document.getElementById('shadowOpacity').value = settings.shadow_opacity || 20;
-        document.getElementById('shadowBlur').value = settings.shadow_blur || 4;
-        document.getElementById('shadowDistance').value = settings.shadow_distance || 2;        document.getElementById('width').value = settings.width || 90; // 👈 DODANE
-        document.getElementById('marginTop').value = settings.margin_top || 20; // 👈 DODANE
-        document.getElementById('barHeight').value = settings.bar_height || 40; // Nowe
-
-        // Zaktualizuj wyświetlane wartości zakresów
+        document.getElementById('shadowOpacity').value = settings.shadow_opacity || 0;
+        document.getElementById('shadowBlur').value = settings.shadow_blur || 0;
+        document.getElementById('shadowDistance').value = settings.shadow_distance || 0;
+        document.getElementById('width').value = settings.width || 100;
+        document.getElementById('marginTop').value = settings.margin_top || 0;
+        document.getElementById('barHeight').value = settings.bar_height || 40; // Nowe        // Zaktualizuj wyświetlane wartości zakresów
         document.getElementById('opacityValue').textContent = (settings.opacity || 100) + '%';
         document.getElementById('borderWidthValue').textContent = (settings.border_width || 0) + 'px';
-        document.getElementById('borderRadiusValue').textContent = (settings.border_radius || 6) + 'px';
-        document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 20) + '%';
-        document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 4) + 'px';
-        document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 2) + 'px';        document.getElementById('widthValue').textContent = (settings.width || 90) + '%'; // 👈 DODANE
-        document.getElementById('marginTopValue').textContent = (settings.margin_top || 20) + 'px'; // 👈 DODANE
+        document.getElementById('borderRadiusValue').textContent = (settings.border_radius || 0) + 'px';
+        document.getElementById('shadowOpacityValue').textContent = (settings.shadow_opacity || 0) + '%';
+        document.getElementById('shadowBlurValue').textContent = (settings.shadow_blur || 0) + 'px';
+        document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 0) + 'px';
+        document.getElementById('widthValue').textContent = (settings.width || 100) + '%';
+        document.getElementById('marginTopValue').textContent = (settings.margin_top || 0) + 'px';
         document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px'; // Nowe// Opcje ikon
         document.getElementById('showIcon').checked = settings.show_icon || false; // Poprawione - domyślnie false
         const iconChoice = settings.icon_type || 'default';
@@ -893,9 +890,8 @@
           preview.classList.add('has-image');
           preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Image loaded</div>';
         }
-        
-        document.getElementById('iconSize').value = settings.icon_size || 20;
-        document.getElementById('iconGap').value = settings.icon_gap || 8;
+          document.getElementById('iconSize').value = settings.icon_size || 30;
+        document.getElementById('iconGap').value = settings.icon_gap || 10;
         
         // Pokaż/ukryj sekcje ikon
         const showIcon = settings.show_icon || false; // Poprawione
@@ -903,10 +899,9 @@
         document.getElementById('iconSizeGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconGapGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
-        
-        // Zaktualizuj wyświetlane wartości zakresów ikon
-        document.getElementById('iconSizeValue').textContent = (settings.icon_size || 20) + 'px';
-        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 8) + 'px';
+          // Zaktualizuj wyświetlane wartości zakresów ikon
+        document.getElementById('iconSizeValue').textContent = (settings.icon_size || 30) + 'px';
+        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 10) + 'px';
 
         // Pokaż/ukryj pole komunikatu sukcesu
         toggleSuccessMessageField(); // 👈 DODANE
