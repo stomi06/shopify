@@ -579,10 +579,8 @@
     </div>
   </div>
 
-  <script>    // Domyślna ikona - serwowana z aplikacji
-    const DEFAULT_DELIVERY_ICON = `${window.location.origin}/assets/default-delivery-icon.png`;
-
-    // Funkcje pomocnicze dla zakresów
+  <script>
+    let DEFAULT_DELIVERY_ICON = null;
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
       const valueSpan = document.getElementById(valueId);
@@ -695,7 +693,7 @@
       let finalMessage;
       
       // Zawsze pokaż normalną wiadomość w podglądzie
-      finalMessage = message.replace('{amount}', '$' + minAmount);
+      finalMessage = message.replace('{amount}' + minAmount);
       previewBar.style.display = 'block';
       
       if (transparentBg) {
@@ -841,6 +839,10 @@
         }
         
         const settings = await response.json();
+
+        if (!DEFAULT_DELIVERY_ICON) {
+          DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
+        }
 
         // Załaduj podstawowe ustawienia
         document.getElementById('message').value = settings.message || "🚚 Free delivery on orders over ${amount}!";
