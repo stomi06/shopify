@@ -438,9 +438,9 @@
                 <label for="fontWeight">Font Weight</label>
                 <select id="fontWeight">
                   <option value="400">Normal</option>
-                  <option value="500">Medium</option>
-                  <option value="600" selected>Bold</option>
-                  <option value="700">Extra Bold</option>
+                  <option value="600">Medium</option>
+                  <option value="800" selected>Bold</option>
+                  <option value="1000">Extra Bold</option>
                 </select>
               </div>
             </div>
@@ -888,8 +888,7 @@
       try {
         const shop = getShopFromUrl();
         const response = await fetch(`/api/settings/${shop}`);
-        
-        if (!response.ok) {
+          if (!response.ok) {
           document.getElementById('generalMessage').value = "Free delivery available!";
           document.getElementById('showProgressMessage').checked = true;
           document.getElementById('progressMessage').value = "Add ${remaining} more for free delivery!";
@@ -903,7 +902,7 @@
           document.getElementById('position').value = "above-header";
           document.getElementById('opacity').value = 100;
           document.getElementById('fontSize').value = 14;
-          document.getElementById('fontWeight').value = 600;
+          document.getElementById('fontWeight').value = 800;
           document.getElementById('borderWidth').value = 0;
           document.getElementById('borderColor').value = "#cccccc";
           document.getElementById('borderRadius').value = 0;
@@ -924,10 +923,8 @@
           document.getElementById('shadowDistanceValue').textContent = '0px';
           document.getElementById('widthValue').textContent = '100%';
           document.getElementById('marginTopValue').textContent = '0px';
-          document.getElementById('barHeightValue').textContent = '40px';
-
-          // Reset ikon
-          document.getElementById('showIcon').checked = true;
+          document.getElementById('barHeightValue').textContent = '40px';          // Reset ikon - IKONY WYŁĄCZONE na początku
+          document.getElementById('showIcon').checked = false;
           document.getElementById('useDefaultIcon').checked = true;
           document.getElementById('useCustomIcon').checked = false;
           document.getElementById('iconSize').value = 30;
@@ -940,15 +937,14 @@
           preview.style.display = 'none';
           preview.classList.remove('has-image');
           preview.innerHTML = '';
-            // Pokaż/ukryj sekcje
-          document.getElementById('iconOptionsGroup').style.display = 'block';
-          document.getElementById('iconSizeGroup').style.display = 'block';
-          document.getElementById('iconGapGroup').style.display = 'block';
+            // Pokaż/ukryj sekcje - UKRYJ ikony na początku
+          document.getElementById('iconOptionsGroup').style.display = 'none';
+          document.getElementById('iconSizeGroup').style.display = 'none';
+          document.getElementById('iconGapGroup').style.display = 'none';
           document.getElementById('customIconUpload').style.display = 'none';
           
           // Zaktualizuj wyświetlane wartości
-          document.getElementById('iconSizeValue').textContent = '30px';        
-          document.getElementById('iconGapValue').textContent = '10px';
+          document.getElementById('iconSizeValue').textContent = '30px';document.getElementById('iconGapValue').textContent = '10px';
           
           toggleSuccessMessageField();
           toggleProgressMessageField();
@@ -977,7 +973,7 @@
         // Załaduj nowe ustawienia z domyślnymi wartościami
         document.getElementById('opacity').value = settings.opacity || 100;
         document.getElementById('fontSize').value = settings.font_size || 14;
-        document.getElementById('fontWeight').value = settings.font_weight || 600;
+        document.getElementById('fontWeight').value = settings.font_weight || 800;
         document.getElementById('borderWidth').value = settings.border_width || 0;
         document.getElementById('borderColor').value = settings.border_color || "#cccccc";        
         document.getElementById('borderRadius').value = settings.border_radius || 0;
@@ -1048,7 +1044,7 @@
         document.getElementById('position').value = "above-header";
         document.getElementById('opacity').value = 100;
         document.getElementById('fontSize').value = 14;
-        document.getElementById('fontWeight').value = 600;
+        document.getElementById('fontWeight').value = 800;
         document.getElementById('borderWidth').value = 0;
         document.getElementById('borderColor').value = "#cccccc";
         document.getElementById('borderRadius').value = 0;
@@ -1071,8 +1067,8 @@
         document.getElementById('marginTopValue').textContent = '0px';
         document.getElementById('barHeightValue').textContent = '40px';
 
-        // Reset ikon
-        document.getElementById('showIcon').checked = true;
+        // Reset ikon - IKONY WYŁĄCZONE jak w defaultach
+        document.getElementById('showIcon').checked = false;
         document.getElementById('useDefaultIcon').checked = true;
         document.getElementById('useCustomIcon').checked = false;
         document.getElementById('iconSize').value = 30;
@@ -1085,10 +1081,10 @@
         preview.style.display = 'none';
         preview.classList.remove('has-image');
         preview.innerHTML = '';
-          // Pokaż/ukryj sekcje
-        document.getElementById('iconOptionsGroup').style.display = 'block';
-        document.getElementById('iconSizeGroup').style.display = 'block';
-        document.getElementById('iconGapGroup').style.display = 'block';
+          // Pokaż/ukryj sekcje - UKRYJ ikony na początku
+        document.getElementById('iconOptionsGroup').style.display = 'none';
+        document.getElementById('iconSizeGroup').style.display = 'none';
+        document.getElementById('iconGapGroup').style.display = 'none';
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
@@ -1098,7 +1094,7 @@
         toggleSuccessMessageField();
         toggleProgressMessageField();
         updatePreview();
-    }    // NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
+    }// NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
     function toggleSuccessMessageField() {
       const checkbox = document.getElementById('showSuccessMessage');
       const messageGroup = document.getElementById('successMessageGroup');
