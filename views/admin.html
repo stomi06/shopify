@@ -446,16 +446,15 @@
           </div>        <!-- Delivery Icon -->
           <div class="form-section">
             <div class="section-title">Delivery Icon</div>
-            
-            <div class="form-group">
+              <div class="form-group">
               <label>
-                <input type="checkbox" id="showIcon" style="margin-right: 8px;">
+                <input type="checkbox" id="showIcon" style="margin-right: 8px;" checked>
                 Show delivery icon
               </label>
               <div class="help-text">Display an icon next to the delivery message</div>
             </div>
 
-            <div class="form-group" id="iconOptionsGroup" style="display: none;">
+            <div class="form-group" id="iconOptionsGroup" style="display: block;">
               <label>Icon Type:</label>
               
               <div style="margin: 10px 0;">
@@ -477,17 +476,15 @@
                 <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
                 <div class="help-text">Recommended size: 24x24px, PNG/JPG format</div>
               </div>
-            </div>
-
-            <div class="form-group" id="iconSizeGroup" style="display: none;">
-              <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">20px</span></label>
-              <input type="range" id="iconSize" min="12" max="40" value="20" step="2" />
+            </div>            <div class="form-group" id="iconSizeGroup" style="display: block;">
+              <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">30px</span></label>
+              <input type="range" id="iconSize" min="12" max="40" value="30" step="2" />
               <div class="help-text">Size of the delivery icon</div>
             </div>
 
-            <div class="form-group" id="iconGapGroup" style="display: none;">
-              <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">8px</span></label>
-              <input type="range" id="iconGap" min="0" max="20" value="8" step="2" />
+            <div class="form-group" id="iconGapGroup" style="display: block;">
+              <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">10px</span></label>
+              <input type="range" id="iconGap" min="0" max="20" value="10" step="2" />
               <div class="help-text">Space between icon and text</div>
             </div>
           </div>
@@ -917,8 +914,8 @@
           document.getElementById('shadowDistanceValue').textContent = '0px';
           document.getElementById('widthValue').textContent = '100%';
           document.getElementById('marginTopValue').textContent = '0px';
-          document.getElementById('barHeightValue').textContent = '40px';          // Reset ikon - IKONY WYŁĄCZONE na początku
-          document.getElementById('showIcon').checked = false;
+          document.getElementById('barHeightValue').textContent = '40px';          // Reset ikon - IKONY WŁĄCZONE na początku
+          document.getElementById('showIcon').checked = true;
           document.getElementById('useDefaultIcon').checked = true;
           document.getElementById('useCustomIcon').checked = false;
           document.getElementById('iconSize').value = 30;
@@ -936,9 +933,15 @@
           document.getElementById('iconSizeGroup').style.display = 'none';
           document.getElementById('iconGapGroup').style.display = 'none';
           document.getElementById('customIconUpload').style.display = 'none';
+            // Zaktualizuj wyświetlane wartości
+          document.getElementById('iconSizeValue').textContent = '30px';          
+          document.getElementById('iconGapValue').textContent = '10px';
           
-          // Zaktualizuj wyświetlane wartości
-          document.getElementById('iconSizeValue').textContent = '30px';document.getElementById('iconGapValue').textContent = '10px';
+          // Pokaż sekcje ikon na początku przy defaultach
+          document.getElementById('iconOptionsGroup').style.display = 'block';
+          document.getElementById('iconSizeGroup').style.display = 'block';
+          document.getElementById('iconGapGroup').style.display = 'block';
+          document.getElementById('customIconUpload').style.display = 'none';
           
           toggleSuccessMessageField();
           toggleProgressMessageField();
@@ -1059,10 +1062,8 @@
         document.getElementById('shadowDistanceValue').textContent = '0px';
         document.getElementById('widthValue').textContent = '100%';
         document.getElementById('marginTopValue').textContent = '0px';
-        document.getElementById('barHeightValue').textContent = '40px';
-
-        // Reset ikon - IKONY WYŁĄCZONE jak w defaultach
-        document.getElementById('showIcon').checked = false;
+        document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+        document.getElementById('showIcon').checked = true;
         document.getElementById('useDefaultIcon').checked = true;
         document.getElementById('useCustomIcon').checked = false;
         document.getElementById('iconSize').value = 30;
@@ -1082,8 +1083,7 @@
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';        
-        document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('iconSizeValue').textContent = '30px';          document.getElementById('iconGapValue').textContent = '10px';
 
         toggleSuccessMessageField();
         toggleProgressMessageField();
