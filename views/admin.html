@@ -396,12 +396,11 @@
             
             <div class="form-row">
               <div class="form-group">
-                <label for="backgroundColor">Background Color</label>
-                <input type="color" id="backgroundColor" value="#4CAF50" />
+                <label for="backgroundColor">Background Color</label>                <input type="color" id="backgroundColor" value="#000000" />
               </div>
               <div class="form-group">
                 <label for="textColor">Text Color</label>
-                <input type="color" id="textColor" value="#FFFFFF" />
+                <input type="color" id="textColor" value="#bbbbbb" />
               </div>
             </div>
 
@@ -504,15 +503,14 @@
                   <option value="fixed">Fixed (always visible)</option>
                   <option value="absolute">Absolute (static)</option>
                 </select>
-              </div>
-              <div class="form-group">
-                <label for="width">Bar Width: <span class="range-value" id="widthValue">90%</span></label>
-                <input type="range" id="width" min="50" max="100" step="5" />
+              </div>              <div class="form-group">
+                <label for="width">Bar Width: <span class="range-value" id="widthValue">100%</span></label>
+                <input type="range" id="width" min="50" max="100" step="5" value="100" />
                 <div class="help-text">Maximum width: 500px</div>
               </div>
             </div>          <div class="form-group">
-              <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">20px</span></label>
-              <input type="range" id="marginTop" min="0" max="100" value="20" step="5" />
+              <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">0px</span></label>
+              <input type="range" id="marginTop" min="0" max="100" value="0" step="5" />
               <div class="help-text">Controls the spacing from the top edge of the page</div>
             </div>
 
@@ -536,11 +534,9 @@
                 <label for="borderColor">Border Color</label>
                 <input type="color" id="borderColor" value="#cccccc" />
               </div>
-            </div>
-
-            <div class="form-group">
-              <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">6px</span></label>
-              <input type="range" id="borderRadius" min="0" max="50" value="6" step="1" />
+            </div>            <div class="form-group">
+              <label for="borderRadius">Corner Radius: <span class="range-value" id="borderRadiusValue">0px</span></label>
+              <input type="range" id="borderRadius" min="0" max="50" value="0" step="1" />
             </div>
           </div>
 
@@ -552,21 +548,19 @@
               <div class="form-group">
                 <label for="shadowColor">Shadow Color</label>
                 <input type="color" id="shadowColor" value="#000000" />
-              </div>
-              <div class="form-group">
-                <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">20%</span></label>
-                <input type="range" id="shadowOpacity" min="0" max="100" value="20" step="5" />
+              </div>              <div class="form-group">
+                <label for="shadowOpacity">Shadow Transparency: <span class="range-value" id="shadowOpacityValue">0%</span></label>
+                <input type="range" id="shadowOpacity" min="0" max="100" value="0" step="5" />
               </div>
             </div>
 
-            <div class="form-row">
-              <div class="form-group">
-                <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">4px</span></label>
-                <input type="range" id="shadowBlur" min="0" max="20" value="4" step="1" />
+            <div class="form-row">              <div class="form-group">
+                <label for="shadowBlur">Shadow Blur: <span class="range-value" id="shadowBlurValue">0px</span></label>
+                <input type="range" id="shadowBlur" min="0" max="20" value="0" step="1" />
               </div>
               <div class="form-group">
-                <label for="shadowDistance">Shadow Distance: <span class="range-value" id="shadowDistanceValue">2px</span></label>
-                <input type="range" id="shadowDistance" min="0" max="10" value="2" step="1" />
+                <label for="shadowDistance">Shadow Distance: <span class="range-value" id="shadowDistanceValue">0px</span></label>
+                <input type="range" id="shadowDistance" min="0" max="10" value="0" step="1" />
               </div>
             </div>
           </div>
