@@ -5,41 +5,42 @@
 
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
 
-<!-- Google Fonts Loading -->
-{% if settings.font_family and settings.font_family != 'system' %}
+<!-- Google Fonts Loading with preload for better performance -->
+{% assign google_fonts = 'roboto,open-sans,lato,montserrat,poppins,source-sans,nunito,raleway' | split: ',' %}
+{% if settings.font_family and google_fonts contains settings.font_family %}
   {% case settings.font_family %}
     {% when 'roboto' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     {% when 'open-sans' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     {% when 'lato' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
     {% when 'montserrat' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     {% when 'poppins' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     {% when 'source-sans' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     {% when 'nunito' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     {% when 'raleway' %}
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   {% endcase %}
 {% endif %}
 
@@ -61,21 +62,21 @@
       {% when 'trebuchet' %}
         font-family: "Trebuchet MS", Helvetica, sans-serif;
       {% when 'roboto' %}
-        font-family: "Roboto", sans-serif;
+        font-family: "Roboto", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'open-sans' %}
-        font-family: "Open Sans", sans-serif;
+        font-family: "Open Sans", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'lato' %}
-        font-family: "Lato", sans-serif;
+        font-family: "Lato", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'montserrat' %}
-        font-family: "Montserrat", sans-serif;
+        font-family: "Montserrat", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'poppins' %}
-        font-family: "Poppins", sans-serif;
+        font-family: "Poppins", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'source-sans' %}
-        font-family: "Source Sans Pro", sans-serif;
+        font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'nunito' %}
-        font-family: "Nunito", sans-serif;
+        font-family: "Nunito", -apple-system, BlinkMacSystemFont, sans-serif;
       {% when 'raleway' %}
-        font-family: "Raleway", sans-serif;
+        font-family: "Raleway", -apple-system, BlinkMacSystemFont, sans-serif;
       {% else %}
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     {% endcase %}
@@ -88,7 +89,11 @@
     transition: opacity 0.4s ease;
     left: 50%;
     transform: translateX(-50%);
-      /* TŁO - przezroczyste lub kolorowe */
+    
+    /* Font loading optimization */
+    font-display: swap;
+    
+    /* TŁO - przezroczyste lub kolorowe */
     {% if settings.transparent_bg == true %}
       background-color: transparent;
     {% else %}

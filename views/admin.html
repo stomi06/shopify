@@ -809,16 +809,48 @@
           'times': '"Times New Roman", Times, serif',
           'verdana': 'Verdana, Geneva, sans-serif',
           'trebuchet': '"Trebuchet MS", Helvetica, sans-serif',
-          'roboto': '"Roboto", sans-serif',
-          'open-sans': '"Open Sans", sans-serif',
-          'lato': '"Lato", sans-serif',
-          'montserrat': '"Montserrat", sans-serif',
-          'poppins': '"Poppins", sans-serif',
-          'source-sans': '"Source Sans Pro", sans-serif',
-          'nunito': '"Nunito", sans-serif',
-          'raleway': '"Raleway", sans-serif'
+          'roboto': '"Roboto", -apple-system, BlinkMacSystemFont, sans-serif',
+          'open-sans': '"Open Sans", -apple-system, BlinkMacSystemFont, sans-serif',
+          'lato': '"Lato", -apple-system, BlinkMacSystemFont, sans-serif',
+          'montserrat': '"Montserrat", -apple-system, BlinkMacSystemFont, sans-serif',
+          'poppins': '"Poppins", -apple-system, BlinkMacSystemFont, sans-serif',
+          'source-sans': '"Source Sans Pro", -apple-system, BlinkMacSystemFont, sans-serif',
+          'nunito': '"Nunito", -apple-system, BlinkMacSystemFont, sans-serif',
+          'raleway': '"Raleway", -apple-system, BlinkMacSystemFont, sans-serif'
         };
         return fontMap[fontFamily] || fontMap['system'];
+      }
+      
+      // Load Google Fonts for preview
+      function loadGoogleFontForPreview(fontFamily) {
+        const googleFonts = ['roboto', 'open-sans', 'lato', 'montserrat', 'poppins', 'source-sans', 'nunito', 'raleway'];
+        
+        if (!googleFonts.includes(fontFamily)) return;
+        
+        // Check if font is already loaded
+        const existingLink = document.querySelector(`link[data-font="${fontFamily}"]`);
+        if (existingLink) return;
+        
+        const fontUrls = {
+          'roboto': 'https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700;800;900&display=swap',
+          'open-sans': 'https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700;800&display=swap',
+          'lato': 'https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700;900&display=swap',
+          'montserrat': 'https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap',
+          'poppins': 'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap',
+          'source-sans': 'https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700;900&display=swap',
+          'nunito': 'https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700;800;900&display=swap',
+          'raleway': 'https://fonts.googleapis.com/css2?family=Raleway:wght@300;400;500;600;700;800;900&display=swap'
+        };
+        
+        if (fontUrls[fontFamily]) {
+          const link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = fontUrls[fontFamily];
+          link.setAttribute('data-font', fontFamily);
+          document.head.appendChild(link);
+          
+          console.log('🔤 Loading Google Font for preview:', fontFamily);
+        }
       }
       
       let finalMessage = generalMessage;
@@ -844,6 +876,9 @@
       allPreviewBars.forEach(bar => {
         if (!bar) return;
         
+        // Load Google Font if needed
+        loadGoogleFontForPreview(fontFamily);
+        
         if (transparentBg) {
           bar.style.backgroundColor = 'transparent';
         } else {
@@ -851,6 +886,7 @@
         }
         
         bar.style.color = textColor;
+        bar.style.fontFamily = getFontFamilyCSS(fontFamily);
         bar.style.fontSize = fontSize + 'px';
         bar.style.fontWeight = fontWeight;
         bar.style.width = width + '%';
@@ -863,7 +899,6 @@
         bar.style.borderRadius = borderRadius + 'px';
         bar.style.opacity = opacity;
         bar.style.marginTop = marginTop + 'px';
-        bar.style.fontFamily = getFontFamilyCSS(fontFamily);
         
         // Cień
         if (shadowBlur > 0 || shadowDistance > 0) {
