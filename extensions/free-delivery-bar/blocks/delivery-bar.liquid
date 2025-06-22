@@ -54,15 +54,12 @@
       margin-top: 0;
     {% elsif settings.position == 'fixed' %}
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
       width: 100% !important;
       z-index: 3;
       margin-top: 0;
     {% else %}
-      position: relative;
-      z-index: 3;
+      position: absolute;
+      z-index: 2;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
@@ -72,7 +69,7 @@
     padding-top: {{ settings.bar_height | default: 40 }}px !important;
     transition: padding-top 0.3s ease !important;
   }
-  
+
   /* Force higher specificity to override theme styles */
   .shopify-section header.header,
   #shopify-section-header header.header,
@@ -92,6 +89,25 @@
   header.header.delivery-bar-hiding {
     padding-top: 0px !important;
     transition: padding-top 1s ease !important;
+  }
+  {% else %}
+  /* For fixed and absolute positions - set higher z-index for header and menu */
+  header.header,
+  .shopify-section header.header,
+  #shopify-section-header header.header,
+  body header.header,
+  html header.header {
+    z-index: 4 !important;
+  }
+  
+  /* Menu drawer z-index */
+  .menu-drawer,
+  .menu-drawer__inner-container,
+  .menu-drawer__navigation-container,
+  .menu-drawer__navigation,
+  .menu-drawer__utility-links,
+  .menu-drawer-container menu-opening{
+    z-index: 4 !important;
   }
   {% endif %}
   
