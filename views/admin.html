@@ -477,6 +477,28 @@
           <div class="form-section">
             <div class="section-title">Typography</div>
             
+            <div class="form-group">
+              <label for="fontFamily">Font Family</label>
+              <select id="fontFamily">
+                <option value="system">System Default</option>
+                <option value="arial">Arial</option>
+                <option value="helvetica">Helvetica</option>
+                <option value="georgia">Georgia</option>
+                <option value="times">Times New Roman</option>
+                <option value="verdana">Verdana</option>
+                <option value="trebuchet">Trebuchet MS</option>
+                <option value="roboto">Roboto (Google Font)</option>
+                <option value="open-sans">Open Sans (Google Font)</option>
+                <option value="lato">Lato (Google Font)</option>
+                <option value="montserrat">Montserrat (Google Font)</option>
+                <option value="poppins">Poppins (Google Font)</option>
+                <option value="source-sans">Source Sans Pro (Google Font)</option>
+                <option value="nunito">Nunito (Google Font)</option>
+                <option value="raleway">Raleway (Google Font)</option>
+              </select>
+              <div class="help-text">Choose from web-safe fonts or Google Fonts for better typography</div>
+            </div>
+            
             <div class="form-row">
               <div class="form-group">
                 <label for="fontSize">Font Size</label>
@@ -748,10 +770,12 @@
       const successMessage = document.getElementById('successMessage').value || 'Enjoy free shipping!';
       const backgroundColor = document.getElementById('backgroundColor').value;
       const textColor = document.getElementById('textColor').value;
-      const transparentBg = document.getElementById('transparentBg').checked;const opacity = document.getElementById('opacity').value / 100;
+      const transparentBg = document.getElementById('transparentBg').checked;
+      const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
       const marginTop = document.getElementById('marginTop').value;
       const barHeight = document.getElementById('barHeight').value;
+      const fontFamily = document.getElementById('fontFamily').value;
       const fontSize = document.getElementById('fontSize').value;
       const fontWeight = document.getElementById('fontWeight').value;
       const borderWidth = document.getElementById('borderWidth').value;
@@ -774,6 +798,28 @@
         const g = parseInt(hex.slice(3, 5), 16);
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;      }
+      
+      // Get font family CSS value
+      function getFontFamilyCSS(fontFamily) {
+        const fontMap = {
+          'system': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          'arial': 'Arial, sans-serif',
+          'helvetica': 'Helvetica, Arial, sans-serif',
+          'georgia': 'Georgia, serif',
+          'times': '"Times New Roman", Times, serif',
+          'verdana': 'Verdana, Geneva, sans-serif',
+          'trebuchet': '"Trebuchet MS", Helvetica, sans-serif',
+          'roboto': '"Roboto", sans-serif',
+          'open-sans': '"Open Sans", sans-serif',
+          'lato': '"Lato", sans-serif',
+          'montserrat': '"Montserrat", sans-serif',
+          'poppins': '"Poppins", sans-serif',
+          'source-sans': '"Source Sans Pro", sans-serif',
+          'nunito': '"Nunito", sans-serif',
+          'raleway': '"Raleway", sans-serif'
+        };
+        return fontMap[fontFamily] || fontMap['system'];
+      }
       
       let finalMessage = generalMessage;
       
@@ -817,6 +863,7 @@
         bar.style.borderRadius = borderRadius + 'px';
         bar.style.opacity = opacity;
         bar.style.marginTop = marginTop + 'px';
+        bar.style.fontFamily = getFontFamilyCSS(fontFamily);
         
         // Cień
         if (shadowBlur > 0 || shadowDistance > 0) {
@@ -883,6 +930,7 @@
         margin_top: parseInt(document.getElementById('marginTop').value),
         bar_height: parseInt(document.getElementById('barHeight').value),
         opacity: parseInt(document.getElementById('opacity').value),
+        font_family: document.getElementById('fontFamily').value,
         font_size: parseInt(document.getElementById('fontSize').value),
         font_weight: parseInt(document.getElementById('fontWeight').value),
         border_width: parseInt(document.getElementById('borderWidth').value),
@@ -984,7 +1032,7 @@
           preview.style.display = 'none';
           preview.classList.remove('has-image');
           preview.innerHTML = '';
-            // Pokaż/ukryj sekcje - UKRYJ ikony na początku
+            // Pokaż/ukryj sekcje - UKRYJ ikony na początku przy defaultach
           document.getElementById('iconOptionsGroup').style.display = 'none';
           document.getElementById('iconSizeGroup').style.display = 'none';
           document.getElementById('iconGapGroup').style.display = 'none';
@@ -993,7 +1041,7 @@
           document.getElementById('iconSizeValue').textContent = '30px';          
           document.getElementById('iconGapValue').textContent = '10px';
           
-          // Pokaż sekcje ikon na początku przy defaultach
+          // Pokaż sekcje ikon na początku przy resecie
           document.getElementById('iconOptionsGroup').style.display = 'block';
           document.getElementById('iconSizeGroup').style.display = 'block';
           document.getElementById('iconGapGroup').style.display = 'block';
@@ -1025,6 +1073,7 @@
         
         // Załaduj nowe ustawienia z domyślnymi wartościami
         document.getElementById('opacity').value = settings.opacity || 100;
+        document.getElementById('fontFamily').value = settings.font_family || "system";
         document.getElementById('fontSize').value = settings.font_size || 14;
         document.getElementById('fontWeight').value = settings.font_weight || 800;
         document.getElementById('borderWidth').value = settings.border_width || 0;
@@ -1095,6 +1144,7 @@
         document.getElementById('transparentBg').checked = false;
         document.getElementById('position').value = "above-header";
         document.getElementById('opacity').value = 100;
+        document.getElementById('fontFamily').value = "system";
         document.getElementById('fontSize').value = 14;
         document.getElementById('fontWeight').value = 800;
         document.getElementById('borderWidth').value = 0;
