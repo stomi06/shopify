@@ -237,12 +237,17 @@
 
 <div class="free-delivery-bar" 
      id="free-delivery-bar"
-     data-threshold="{{ settings.min_amount | default: 199 }}"     data-general-message="{{ settings.general_message | default: 'Free delivery available!' }}"     data-show-progress="{% if settings.show_progress_message == false %}false{% else %}true{% endif %}"
+     data-threshold="{{ settings.min_amount | default: 199 }}"
+     data-general-message="{{ settings.general_message | default: 'Free delivery available!' }}"
+     data-show-progress="{% if settings.show_progress_message == false %}false{% else %}true{% endif %}"
      data-progress-message="{{ settings.progress_message | default: 'Add $[remaining] more for free delivery!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
      data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
-     data-position="{{ settings.position | default: 'above-header' }}"data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
+     data-show-timer="{% if settings.show_timer == true %}true{% else %}false{% endif %}"
+     data-timer-limit="{{ settings.timer_limit | default: 24 }}"
+     data-position="{{ settings.position | default: 'above-header' }}"
+     data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-bar-height="{{ settings.bar_height | default: 40 }}"
@@ -309,14 +314,20 @@
   const showProgress = deliveryBar.getAttribute('data-show-progress') === 'true';  const progressMessage = deliveryBar.getAttribute('data-progress-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
   const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
-  const position = deliveryBar.getAttribute('data-position') || 'above-header';const bgColor = deliveryBar.getAttribute('data-bg-color');
+  const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
+  const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
+  const position = deliveryBar.getAttribute('data-position') || 'above-header';
+  const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
   const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
   console.log('Position:', position);
   console.log('Bar height:', barHeight);
-    // Debug - sprawdź czy header istnieje i ma padding
+  console.log('Show timer:', showTimer);
+  console.log('Timer limit:', timerLimit, 'hours');
+  
+  // Debug - sprawdź czy header istnieje i ma padding
   if (position === 'above-header') {
     const header = document.querySelector('header.header');
     console.log('Header found:', !!header);
@@ -364,6 +375,83 @@
   
   let isBarVisible = !deliveryBar.classList.contains('hidden');
 
+  // Timer functionality
+  let timerInterval = null;
+  let timerEndTime = null;
+
+  function initTimer() {
+    if (!showTimer) return;
+    
+    // Check if timer end time is stored in localStorage
+    const storedEndTime = localStorage.getItem('deliveryTimerEndTime');
+    const now = new Date().getTime();
+    
+    if (storedEndTime && parseInt(storedEndTime) > now) {
+      // Use existing timer
+      timerEndTime = parseInt(storedEndTime);
+      console.log('📱 Restored timer from localStorage');
+    } else {
+      // Create new timer
+      timerEndTime = now + (timerLimit * 60 * 60 * 1000); // Convert hours to milliseconds
+      localStorage.setItem('deliveryTimerEndTime', timerEndTime);
+      console.log('⏰ Created new timer for', timerLimit, 'hours');
+    }
+    
+    startTimer();
+  }
+
+  function startTimer() {
+    if (!showTimer || !timerEndTime) return;
+    
+    // Clear existing interval
+    if (timerInterval) {
+      clearInterval(timerInterval);
+    }
+    
+    timerInterval = setInterval(updateTimerDisplay, 1000);
+    updateTimerDisplay(); // Initial update
+  }
+
+  function updateTimerDisplay() {
+    if (!showTimer || !timerEndTime) return;
+    
+    const now = new Date().getTime();
+    const timeLeft = timerEndTime - now;
+    
+    if (timeLeft <= 0) {
+      // Timer expired
+      clearInterval(timerInterval);
+      localStorage.removeItem('deliveryTimerEndTime');
+      console.log('⏰ Timer expired');
+      
+      // Reset timer for next session
+      setTimeout(() => {
+        initTimer();
+      }, 1000);
+      
+      return '00:00:00';
+    }
+    
+    // Calculate hours, minutes, seconds
+    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+    
+    // Format as HH:MM:SS
+    const formattedTime = [hours, minutes, seconds]
+      .map(unit => unit.toString().padStart(2, '0'))
+      .join(':');
+    
+    return formattedTime;
+  }
+
+  function replaceTimerInMessage(message) {
+    if (!showTimer) return message;
+    
+    const timerString = updateTimerDisplay();
+    return message.replace(/{timer}/g, timerString);
+  }
+
   // Update delivery message based on cart value
   function updateDeliveryMessage() {
     fetch('/cart.js')
@@ -389,6 +477,7 @@
               finalMessage = '🎉 You have free delivery!';
             }
             
+            finalMessage = replaceTimerInMessage(finalMessage);
             messageElement.textContent = finalMessage;
               
             if (!transparentBg) {
@@ -414,6 +503,7 @@
             localStorage.setItem('deliveryBarState', 'visible');
             
             finalMessage = generalMessage;
+            finalMessage = replaceTimerInMessage(finalMessage);
             messageElement.textContent = finalMessage;
             
             if (!transparentBg) {
@@ -446,6 +536,7 @@
             finalMessage = generalMessage;
           }
           
+          finalMessage = replaceTimerInMessage(finalMessage);
           messageElement.textContent = finalMessage;
           
           // Przywróć oryginalny kolor
@@ -772,6 +863,11 @@
       header.style.setProperty('padding-top', '0px', 'important');
       console.log('🔧 Hiding header padding on init - bar state was hidden');
     }
+  }
+  
+  // Initialize timer if enabled
+  if (showTimer) {
+    initTimer();
   }
   
   // Initial update on page load

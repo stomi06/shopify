@@ -388,7 +388,7 @@
               <div class="form-group">
                 <label for="generalMessage">General Info Message</label>
                 <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
-              <div class="help-text">General message shown when cart is empty or below threshold</div>
+              <div class="help-text">General message shown when cart is empty or below threshold. Use {timer} to show countdown timer.</div>
             </div>
 
             <div class="form-group">
@@ -402,11 +402,28 @@
             <div class="form-group" id="progressMessageGroup">
               <label for="progressMessage">Progress Message</label>
               <textarea id="progressMessage" style="resize: none;" rows="1" placeholder="Add ${remaining} more for free shipping!"></textarea>
-              <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount</div>
-            </div><div class="form-group">
+              <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount and {timer} for countdown.</div>
+            </div>
+
+            <div class="form-group">
               <label for="minAmount">Minimum Amount</label>
               <input type="number" id="minAmount" min="0" step="1" value="100" />
-            </div>        
+            </div>
+
+            <!-- TIMER SECTION -->
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="showTimer" style="margin-right: 8px;">
+                Show delivery countdown timer
+              </label>
+              <div class="help-text">When enabled, displays a countdown timer for delivery deadline. Use {timer} in your messages to show the timer.</div>
+            </div>
+
+            <div class="form-group" id="timerLimitGroup" style="display: none;">
+              <label for="timerLimit">Timer Duration (hours)</label>
+              <input type="number" id="timerLimit" min="1" max="72" step="1" value="24" />
+              <div class="help-text">How many hours until delivery deadline (1-72 hours)</div>
+            </div>
           
             <!-- SUCCESS MESSAGE SECTION -->
             <div class="form-group">
@@ -420,7 +437,7 @@
             <div class="form-group" id="successMessageGroup">
               <label for="successMessage">Success Message</label>
               <textarea id="successMessage" style="resize: none;" rows="1" placeholder="Enjoy free shipping!"></textarea>
-              <div class="help-text">Message displayed when customer reaches the free delivery threshold</div>
+              <div class="help-text">Message displayed when customer reaches the free delivery threshold. Use {timer} to show countdown.</div>
             </div>
 
             <div class="form-group" id="hideBarGroup" style="display: none;">
@@ -766,6 +783,8 @@
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
       const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free shipping!';
       const minAmount = document.getElementById('minAmount').value || 100;
+      const showTimer = document.getElementById('showTimer').checked;
+      const timerLimit = document.getElementById('timerLimit').value || 24;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
       const successMessage = document.getElementById('successMessage').value || 'Enjoy free shipping!';
       const backgroundColor = document.getElementById('backgroundColor').value;
@@ -853,6 +872,15 @@
         }
       }
       
+      // Funkcja do zastąpienia {timer} przykładowym timerem
+      function replaceTimerPlaceholder(message) {
+        if (!showTimer) return message;
+        
+        // Przykładowy timer dla podglądu
+        const sampleTimer = '23:45:30';
+        return message.replace(/{timer}/g, sampleTimer);
+      }
+      
       let finalMessage = generalMessage;
       
       // Obsługa ikony
@@ -914,16 +942,19 @@
         successBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
       }
       
-      // Aktualizuj treści wiadomości
+      // Aktualizuj treści wiadomości z timerem
       if (previewGeneralMessage) {
-        previewGeneralMessage.innerHTML = iconHtml + generalMessage;
+        const messageWithTimer = replaceTimerPlaceholder(generalMessage);
+        previewGeneralMessage.innerHTML = iconHtml + messageWithTimer;
       }
         if (previewProgressMessage) {
         const sampleProgress = progressMessage.replace('${remaining}', '$25');
-        previewProgressMessage.innerHTML = iconHtml + sampleProgress;
+        const messageWithTimer = replaceTimerPlaceholder(sampleProgress);
+        previewProgressMessage.innerHTML = iconHtml + messageWithTimer;
       }
         if (previewSuccessMessage) {
-        previewSuccessMessage.innerHTML = iconHtml + successMessage;
+        const messageWithTimer = replaceTimerPlaceholder(successMessage);
+        previewSuccessMessage.innerHTML = iconHtml + messageWithTimer;
       }
     }
 
@@ -953,7 +984,10 @@
         general_message: document.getElementById('generalMessage').value,
         show_progress_message: document.getElementById('showProgressMessage').checked,
         progress_message: document.getElementById('progressMessage').value,
-        min_amount: parseInt(document.getElementById('minAmount').value),        closeable: document.getElementById('closeable').checked,
+        min_amount: parseInt(document.getElementById('minAmount').value),
+        show_timer: document.getElementById('showTimer').checked,
+        timer_limit: parseInt(document.getElementById('timerLimit').value),
+        closeable: document.getElementById('closeable').checked,
         show_success_message: document.getElementById('showSuccessMessage').checked,
         hide_bar_after_threshold: document.getElementById('hideBarAfterThreshold').checked,
         success_message: document.getElementById('successMessage').value,
@@ -1023,6 +1057,12 @@
           document.getElementById('showProgressMessage').checked = true;
           document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
           document.getElementById('minAmount').value = 100;
+          document.getElementById('showTimer').checked = false;
+          document.getElementById('timerLimit').value = 24;
+          
+          // Ukryj pole timer limit przy defaultach
+          document.getElementById('timerLimitGroup').style.display = 'none';
+          
           document.getElementById('closeable').checked = true;
           document.getElementById('showSuccessMessage').checked = true;
           document.getElementById('successMessage').value = "Enjoy free shipping!";
@@ -1096,7 +1136,14 @@
         document.getElementById('generalMessage').value = settings.general_message || "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
         document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free shipping!";
-        document.getElementById('minAmount').value = settings.min_amount || 100;        
+        document.getElementById('minAmount').value = settings.min_amount || 100;
+        document.getElementById('showTimer').checked = settings.show_timer || false;
+        document.getElementById('timerLimit').value = settings.timer_limit || 24;
+        
+        // Pokaż/ukryj pole timer limit
+        const timerLimitGroup = document.getElementById('timerLimitGroup');
+        timerLimitGroup.style.display = settings.show_timer ? 'block' : 'none';
+        
         document.getElementById('closeable').checked = settings.closeable !== false;
         document.getElementById('showSuccessMessage').checked = settings.show_success_message !== false;
         document.getElementById('hideBarAfterThreshold').checked = settings.hide_bar_after_threshold || false;
@@ -1171,6 +1218,12 @@
         document.getElementById('showProgressMessage').checked = true;
         document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
         document.getElementById('minAmount').value = 100;
+        document.getElementById('showTimer').checked = false;
+        document.getElementById('timerLimit').value = 24;
+        
+        // Ukryj pole timer limit przy resecie
+        document.getElementById('timerLimitGroup').style.display = 'none';
+        
         document.getElementById('closeable').checked = true;
         document.getElementById('showSuccessMessage').checked = true;
         document.getElementById('successMessage').value = "Enjoy free shipping!";
