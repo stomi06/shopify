@@ -1326,6 +1326,18 @@
     document.getElementById('progressMessage').addEventListener('input', updatePreview);
     document.getElementById('hideBarAfterThreshold').addEventListener('change', updatePreview);
 
+    // Obsługa pokazywania/ukrywania pola timer limit
+    document.getElementById('showTimer').addEventListener('change', function() {
+      const timerLimitGroup = document.getElementById('timerLimitGroup');
+      
+      if (this.checked) {
+        timerLimitGroup.style.display = 'block';
+      } else {
+        timerLimitGroup.style.display = 'none';
+      }
+      updatePreview();
+    });
+
     // Załaduj ustawienia przy starcie
     document.addEventListener('DOMContentLoaded', function() {
       loadSettings();
