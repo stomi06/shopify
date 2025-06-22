@@ -207,7 +207,8 @@
     console.error('Nie znaleziono elementu free-delivery-bar');
     return;
   }
-    // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
+  
+  // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
   const savedMessage = localStorage.getItem('deliveryBarMessage');
   const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
 
@@ -384,12 +385,15 @@
         localStorage.setItem('deliveryBarMessage', finalMessage);
       })
       .catch((error) => {
-        console.error('❌ Cart fetch error:', error);        // Fallback
+        console.error('❌ Cart fetch error:', error);
+        // Fallback
         deliveryBar.classList.remove('hidden');
         let message = generalMessage || 'Free delivery available!';
         messageElement.textContent = message;
       });
-  }  // Funkcje animacji
+  }
+
+  // Funkcje animacji
   function fadeOutBar(callback) {
     console.log('🎬 fadeOutBar called, position:', position);
     
@@ -475,64 +479,213 @@
   } else {
     console.log('Close button not found - closeable setting is disabled');
   }
-    // 🔥 NATYCHMIASTOWA AKTUALIZACJA
-  let lastCartTotal = null;
+
+  // === CART EVENT LISTENERS ===
   
-  // Polling function - sprawdza co sekundę
-  function pollCartChanges() {
+  // Standard Shopify cart events
+  const cartEvents = [
+    'cart:updated',
+    'cart:changed', 
+    'cart:refresh',
+    'cartChanged',
+    'ajaxCart:updated',
+    'cart:build',
+    'cart:requestComplete',
+    'product:added-to-cart',
+    'cart:item-added',
+    'cart:item-removed',
+    'cart:item-updated',
+    'cart:cleared'
+  ];
+
+  cartEvents.forEach(eventName => {
+    document.addEventListener(eventName, function(event) {
+      console.log('🔔 Cart event detected:', eventName, event.detail);
+      setTimeout(() => updateDeliveryMessage(), 100); // Small delay to ensure cart is updated
+    });
+  });
+
+  // Window-level cart events
+  window.addEventListener('cart:updated', function(event) {
+    console.log('🔔 Window cart event:', event);
+    setTimeout(() => updateDeliveryMessage(), 100);
+  });
+
+  // Theme-specific events (Dawn, Impulse, Brooklyn, etc.)
+  const themeEvents = [
+    'theme:cart:change',
+    'theme:cart:updated', 
+    'cart-drawer:open',
+    'cart-drawer:close',
+    'mini-cart:open',
+    'mini-cart:close',
+    'variant:add',
+    'variant:remove'
+  ];
+
+  themeEvents.forEach(eventName => {
+    document.addEventListener(eventName, function(event) {
+      console.log('🔔 Theme cart event:', eventName);
+      setTimeout(() => updateDeliveryMessage(), 100);
+    });
+  });
+
+  // Custom event for manual triggering
+  window.addEventListener('freeDeliveryBar:update', function() {
+    console.log('🔔 Manual update triggered');
+    updateDeliveryMessage();
+  });
+
+  // Enhanced fetch interception for cart endpoints
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    const promise = originalFetch.apply(this, args);
+    
+    const url = args[0];
+    const isCartRequest = typeof url === 'string' && (
+      url.includes('/cart/add') || 
+      url.includes('/cart/update') || 
+      url.includes('/cart/change') ||
+      url.includes('/cart/clear') ||
+      url.includes('/cart.js') ||
+      url.includes('/cart/') ||
+      url.endsWith('/cart')
+    );
+    
+    if (isCartRequest) {
+      promise.then((response) => {
+        if (response.ok) {
+          console.log('🔔 Cart fetch intercepted:', url);
+          setTimeout(() => updateDeliveryMessage(), 150);
+        }
+      }).catch(() => {
+        // Ignore fetch errors
+      });
+    }
+    
+    return promise;
+  };
+
+  // Intercept XMLHttpRequest for older implementations
+  const originalXHROpen = XMLHttpRequest.prototype.open;
+  const originalXHRSend = XMLHttpRequest.prototype.send;
+
+  XMLHttpRequest.prototype.open = function(method, url, ...args) {
+    this._url = url;
+    return originalXHROpen.call(this, method, url, ...args);
+  };
+
+  XMLHttpRequest.prototype.send = function(...args) {
+    const xhr = this;
+    
+    const isCartRequest = this._url && (
+      this._url.includes('/cart/add') ||
+      this._url.includes('/cart/update') ||
+      this._url.includes('/cart/change') ||
+      this._url.includes('/cart/clear') ||
+      this._url.includes('/cart.js') ||
+      this._url.includes('/cart/')
+    );
+
+    if (isCartRequest) {
+      xhr.addEventListener('readystatechange', function() {
+        if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+          console.log('🔔 XHR cart request intercepted:', xhr._url);
+          setTimeout(() => updateDeliveryMessage(), 150);
+        }
+      });
+    }
+
+    return originalXHRSend.call(this, ...args);
+  };
+
+  // Listen for form submissions to cart
+  document.addEventListener('submit', function(event) {
+    const form = event.target;
+    if (form && form.action && (
+      form.action.includes('/cart/add') ||
+      form.action.includes('/cart/update') ||
+      form.action.includes('/cart') ||
+      form.querySelector('input[name="id"]') // Product form
+    )) {
+      console.log('🔔 Cart form submission detected');
+      setTimeout(() => updateDeliveryMessage(), 200);
+    }
+  });
+
+  // Listen for clicks on cart buttons (add to cart, quantity changes)
+  document.addEventListener('click', function(event) {
+    const target = event.target;
+    const button = target.closest('button');
+    
+    if (button && (
+      button.type === 'submit' ||
+      button.classList.contains('btn-cart') ||
+      button.classList.contains('add-to-cart') ||
+      button.classList.contains('cart-item__remove') ||
+      button.classList.contains('quantity__button') ||
+      button.name === 'add' ||
+      button.name === 'update' ||
+      button.getAttribute('data-action') === 'add-to-cart'
+    )) {
+      console.log('🔔 Cart button clicked');
+      setTimeout(() => updateDeliveryMessage(), 300);
+    }
+  });
+
+  // MutationObserver for cart drawer/popup changes
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.type === 'childList') {
+        const cartSelectors = [
+          '.cart-drawer',
+          '.cart-popup',
+          '.mini-cart',
+          '.cart-items',
+          '.cart-item',
+          '[id*="cart"]',
+          '[class*="cart"]'
+        ];
+        
+        cartSelectors.forEach(selector => {
+          if (mutation.target.matches && mutation.target.matches(selector)) {
+            console.log('🔔 Cart DOM change detected');
+            setTimeout(() => updateDeliveryMessage(), 100);
+          }
+        });
+      }
+    });
+  });
+
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: false
+  });
+
+  // Fallback polling only as last resort - much less frequent
+  let lastCartTotal = null;
+  function fallbackCartCheck() {
     fetch('/cart.js')
       .then(response => response.json())
       .then(cart => {
         const currentTotal = cart.total_price / 100;
         
-        // Aktualizuj tylko gdy wartość się zmieniła
+        // Only update if value changed
         if (currentTotal !== lastCartTotal) {
           lastCartTotal = currentTotal;
-          console.log('🔔 Cart change detected:', currentTotal);
+          console.log('🔔 Fallback polling detected cart change:', currentTotal);
           updateDeliveryMessage();
         }
       })
       .catch(() => {
-        // Ignoruj błędy w tle
+        // Ignore errors in background
       });
   }
-  
-  // Nasłuchuj standardowych eventów Shopify
-  const cartEvents = [
-    'cart:updated',
-    'cart:changed',
-    'cartChanged',
-    'ajaxCart:updated'
-  ];
-    cartEvents.forEach(eventName => {
-    document.addEventListener(eventName, function() {
-      console.log('🔔 Cart event:', eventName);
-      updateDeliveryMessage(); // ← USUNIĘTO setTimeout
-    });
-  });
-    // Intercept fetch requests do koszyka
-  const originalFetch = window.fetch;
-  window.fetch = function(...args) {
-    const promise = originalFetch.apply(this, args);
-    
-    // Sprawdź czy to request do koszyka
-    const url = args[0];
-    if (typeof url === 'string' && (
-      url.includes('/cart/add') || 
-      url.includes('/cart/update') || 
-      url.includes('/cart/change') ||
-      url.includes('/cart/clear')
-    )) {      promise.then(() => {
-        console.log('🔔 Cart fetch detected:', url);
-        updateDeliveryMessage(); // ← USUNIĘTO setTimeout 200ms
-      }).catch(() => {});
-    }
-    
-    return promise;
-  };
-    // Polling jako backup - co sekundę
-  setInterval(pollCartChanges, 500); // ← ZMIENIONO z 1000ms na 500ms (2x szybciej)
-  
+
+  // Reduced polling frequency - only as backup every 10 seconds
+  setInterval(fallbackCartCheck, 10000);
+
   // Inicjalizacja
   console.log('🚀 Initializing...');
   
@@ -546,8 +699,8 @@
     }
   }
   
-  // 🔥 NATYCHMIAST uruchom pierwszą aktualizację bez delay
-  updateDeliveryMessage();
+  // Initial update on page load
+  setTimeout(() => updateDeliveryMessage(), 100);
   
 })();
 </script>
