@@ -657,6 +657,17 @@
               </div>
             </div>
           </div>
+
+          <!-- Country Exclusions -->
+          <div class="form-section">
+            <div class="section-title">Geographic Restrictions</div>
+            
+            <div class="form-group">
+              <label for="excludedCountries">Excluded Countries</label>
+              <textarea id="excludedCountries" style="resize: none;" rows="3" placeholder="US, CA, GB"></textarea>
+              <div class="help-text">Countries where the bar should NOT be displayed. Use 2-letter country codes separated by commas (e.g., US, CA, GB). Leave empty to show in all countries.</div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="buttons panel-header">
@@ -1008,6 +1019,7 @@
         shadow_color: document.getElementById('shadowColor').value,        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
+        excluded_countries: document.getElementById('excludedCountries').value,
         
         // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
@@ -1083,6 +1095,7 @@
           document.getElementById('width').value = 100;
           document.getElementById('marginTop').value = 0;
           document.getElementById('barHeight').value = 40;
+          document.getElementById('excludedCountries').value = "";
           
           // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
@@ -1245,6 +1258,7 @@
         document.getElementById('width').value = 100;
         document.getElementById('marginTop').value = 0;
         document.getElementById('barHeight').value = 40;
+        document.getElementById('excludedCountries').value = "";
         
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';

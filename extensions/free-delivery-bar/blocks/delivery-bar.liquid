@@ -246,6 +246,7 @@
      data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
      data-show-timer="{% if settings.show_timer == true %}true{% else %}false{% endif %}"
      data-timer-limit="{{ settings.timer_limit | default: 24 }}"
+     data-excluded-countries="{{ settings.excluded_countries | default: '' }}"
      data-position="{{ settings.position | default: 'above-header' }}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
@@ -316,6 +317,7 @@
   const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
   const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
+  const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
   const position = deliveryBar.getAttribute('data-position') || 'above-header';
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
@@ -326,552 +328,629 @@
   console.log('Bar height:', barHeight);
   console.log('Show timer:', showTimer);
   console.log('Timer limit:', timerLimit, 'hours');
+  console.log('Excluded countries:', excludedCountries);
   
-  // Debug - sprawdź czy header istnieje i ma padding
-  if (position === 'above-header') {
-    const header = document.querySelector('header.header');
-    console.log('Header found:', !!header);
-    if (header) {
-      console.log('Current header padding-top:', getComputedStyle(header).paddingTop);
-      console.log('Header element:', header);
+  // Check if current country is excluded
+  async function checkCountryExclusion() {
+    if (!excludedCountries || excludedCountries.trim() === '') {
+      console.log('✅ No country exclusions configured');
+      return false; // No exclusions, show everywhere
     }
-  }
-  
-  // USTAW SZEROKOŚĆ, MARGIN-TOP I WYSOKOŚĆ DYNAMICZNIE
-  deliveryBar.style.setProperty('width', width + '%', 'important');
-  deliveryBar.style.setProperty('margin-top', marginTop + 'px', 'important');
-  deliveryBar.style.setProperty('height', barHeight + 'px', 'important');
-  // Check if bar was previously closed
-  if (localStorage.getItem('deliveryBarClosed') === 'true') {
-    deliveryBar.classList.add('hidden');
-    // Usuń padding z header jeśli pasek był zamknięty
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      if (header) {
-        header.classList.add('delivery-bar-hidden');
-        header.style.setProperty('padding-top', '0px', 'important');
-      }
-    }
-    return;
-  }
-  
-  // 🔥 SPRAWDŹ CZY PASEK POWINIEN BYĆ SCHOWANY NA POCZĄTKU
-  if (position === 'above-header') {
-    const header = document.querySelector('header.header');
-    if (header) {
-      // Jeśli pasek jest ukryty ale header ma padding - napraw to
-      if (deliveryBar.classList.contains('hidden')) {
-        header.classList.add('delivery-bar-hidden');
-        header.style.setProperty('padding-top', '0px', 'important');
-        console.log('🔧 Fixed header padding on page load - bar was hidden');
+    
+    try {
+      // Check localStorage first to avoid repeated API calls
+      const cachedCountry = localStorage.getItem('userCountryCode');
+      const cacheTime = localStorage.getItem('userCountryCacheTime');
+      const currentTime = new Date().getTime();
+      const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
+      
+      let userCountry = null;
+      
+      if (cachedCountry && cacheTime && (currentTime - parseInt(cacheTime)) < cacheExpiry) {
+        userCountry = cachedCountry;
+        console.log('🔄 Using cached country:', userCountry);
       } else {
-        // Jeśli pasek jest widoczny ale header nie ma padding - napraw to
-        header.classList.remove('delivery-bar-hidden');
-        header.style.removeProperty('padding-top');
-        console.log('🔧 Fixed header padding on page load - bar was visible');
+        // Fetch country from API
+        console.log('🌍 Fetching country from API...');
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        userCountry = data.country;
+        
+        // Cache the result
+        localStorage.setItem('userCountryCode', userCountry);
+        localStorage.setItem('userCountryCacheTime', currentTime.toString());
+        
+        console.log('🌍 Detected country from API:', userCountry);
+        console.log('💱 Currency:', data.currency);
       }
+      
+      if (!userCountry) {
+        console.log('⚠️ Could not detect user country, showing bar by default');
+        return false; // If we can't detect country, show the bar
+      }
+      
+      // Parse excluded countries (comma-separated, case-insensitive)
+      const excludedList = excludedCountries
+        .split(',')
+        .map(country => country.trim().toUpperCase())
+        .filter(country => country.length > 0);
+      
+      const isExcluded = excludedList.includes(userCountry.toUpperCase());
+      
+      if (isExcluded) {
+        console.log('🚫 Country', userCountry, 'is in excluded list:', excludedList);
+      } else {
+        console.log('✅ Country', userCountry, 'is not excluded. Excluded list:', excludedList);
+      }
+      
+      return isExcluded;
+      
+    } catch (error) {
+      console.error('❌ Error checking country:', error);
+      return false; // On error, show the bar by default
     }
   }
   
-  let isBarVisible = !deliveryBar.classList.contains('hidden');
-
-  // Timer functionality
-  let timerInterval = null;
-  let timerEndTime = null;
-
-  function initTimer() {
-    if (!showTimer) return;
+  // Initialize the bar with country check
+  async function initializeBar() {
+    const isCountryExcluded = await checkCountryExclusion();
     
-    // Check if timer end time is stored in localStorage
-    const storedEndTime = localStorage.getItem('deliveryTimerEndTime');
-    const now = new Date().getTime();
-    
-    if (storedEndTime && parseInt(storedEndTime) > now) {
-      // Use existing timer
-      timerEndTime = parseInt(storedEndTime);
-      console.log('📱 Restored timer from localStorage');
-    } else {
-      // Create new timer
-      timerEndTime = now + (timerLimit * 60 * 60 * 1000); // Convert hours to milliseconds
-      localStorage.setItem('deliveryTimerEndTime', timerEndTime);
-      console.log('⏰ Created new timer for', timerLimit, 'hours');
-    }
-    
-    startTimer();
-  }
-
-  function startTimer() {
-    if (!showTimer || !timerEndTime) return;
-    
-    // Clear existing interval
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
-    
-    timerInterval = setInterval(updateTimerDisplay, 1000);
-    updateTimerDisplay(); // Initial update
-  }
-
-  function updateTimerDisplay() {
-    if (!showTimer || !timerEndTime) return;
-    
-    const now = new Date().getTime();
-    const timeLeft = timerEndTime - now;
-    
-    if (timeLeft <= 0) {
-      // Timer expired
-      clearInterval(timerInterval);
-      localStorage.removeItem('deliveryTimerEndTime');
-      console.log('⏰ Timer expired');
+    if (isCountryExcluded) {
+      console.log('🌍 Bar hidden due to country exclusion');
+      deliveryBar.style.display = 'none';
       
-      // Reset timer for next session
-      setTimeout(() => {
-        initTimer();
-      }, 1000);
-      
-      return '00:00:00';
-    }
-    
-    // Calculate hours, minutes, seconds
-    const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-    const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-    
-    // Format as HH:MM:SS
-    const formattedTime = [hours, minutes, seconds]
-      .map(unit => unit.toString().padStart(2, '0'))
-      .join(':');
-    
-    return formattedTime;
-  }
-
-  function replaceTimerInMessage(message) {
-    if (!showTimer) return message;
-    
-    const timerString = updateTimerDisplay();
-    return message.replace(/{timer}/g, timerString);
-  }
-
-  // Update delivery message based on cart value
-  function updateDeliveryMessage() {
-    fetch('/cart.js')
-      .then(response => response.json())
-      .then(cart => {
-        const cartTotal = cart.total_price / 100;
-        console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
-        
-        let finalMessage = generalMessage;
-          if (cartTotal >= threshold) {
-          // THRESHOLD REACHED
-          if (showSuccess) {
-            // Pokaż success message
-            if (!isBarVisible) {
-              fadeInBar();
-            }
-            isBarVisible = true;
-            localStorage.setItem('deliveryBarState', 'visible');
-              
-            if (successMessage && successMessage.trim() !== '') {
-              finalMessage = successMessage;
-            } else {
-              finalMessage = '🎉 You have free delivery!';
-            }
-            
-            finalMessage = replaceTimerInMessage(finalMessage);
-            messageElement.textContent = finalMessage;
-              
-            if (!transparentBg) {
-              deliveryBar.style.backgroundColor = bgColor;
-            }
-            
-            console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
-            // Ukryj pasek całkowicie
-            console.log('🚫 Hide bar after threshold is enabled - hiding bar');
-            if (isBarVisible) {
-              fadeOutBar(() => {
-                localStorage.setItem('deliveryBarState', 'hidden');
-              });
-            }
-            isBarVisible = false;
-            return;
-          } else {
-            // Pokaż general message  
-            if (!isBarVisible) {
-              fadeInBar();
-            }
-            isBarVisible = true;
-            localStorage.setItem('deliveryBarState', 'visible');
-            
-            finalMessage = generalMessage;
-            finalMessage = replaceTimerInMessage(finalMessage);
-            messageElement.textContent = finalMessage;
-            
-            if (!transparentBg) {
-              deliveryBar.style.backgroundColor = bgColor;
-            }
-            
-            console.log('📋 Showing general message after threshold');
-          }        } else {
-          // PRÓG NIE OSIĄGNIĘTY
-          // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
-          if (!isBarVisible) {
-            fadeInBar();
-          }
-          isBarVisible = true;
-          localStorage.setItem('deliveryBarState', 'visible');
-            if (cartTotal === 0) {
-            // Koszyk pusty - pokaż ogólną wiadomość
-            finalMessage = generalMessage;
-          } else if (showProgress) {
-            // Koszyk niepusty i progress włączony - pokaż progress message
-            const remaining = threshold - cartTotal;
-            const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
-              
-            finalMessage = progressMessage
-              .replace('[remaining]', formattedRemaining)
-              .replace('{remaining}', formattedRemaining)
-              .replace('{amount}', threshold);
-          } else {
-            // Koszyk niepusty ale progress wyłączony - pokaż general message
-            finalMessage = generalMessage;
-          }
-          
-          finalMessage = replaceTimerInMessage(finalMessage);
-          messageElement.textContent = finalMessage;
-          
-          // Przywróć oryginalny kolor
-          if (!transparentBg) {
-            deliveryBar.style.backgroundColor = bgColor;
-          }
-          
-          console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : (showProgress ? 'progress' : 'general'));
-        }
-        
-        // 🔥 ZAPISZ W LOCALSTORAGE
-        localStorage.setItem('deliveryBarMessage', finalMessage);
-      })
-      .catch((error) => {
-        console.error('❌ Cart fetch error:', error);
-        // Fallback
-        deliveryBar.classList.remove('hidden');
-        let message = generalMessage || 'Free delivery available!';
-        messageElement.textContent = message;
-      });
-  }
-
-  // Funkcje animacji
-  function fadeOutBar(callback) {
-    console.log('🎬 fadeOutBar called, position:', position);
-    
-    // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      console.log('🔍 Looking for header.header:', !!header);
-      if (header) {
-        console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
-        
-        // Dodaj klasę animowanego chowania
-        header.classList.remove('delivery-bar-hidden');
-        header.classList.add('delivery-bar-hiding');
-        
-        // Ustaw też inline style jako backup
-        header.style.setProperty('padding-top', '0px', 'important');
-        
-        console.log('🔧 Added .delivery-bar-hiding class for animated removal');
-        console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
-      }
-    }
-    
-    deliveryBar.classList.add('fade-out');
-    
-    setTimeout(() => {
-      deliveryBar.classList.add('hidden');
-      deliveryBar.classList.remove('fade-out');
-      
-      // Po zakończeniu animacji zastąp klasę hiding na hidden
-      if (position === 'above-header') {
-        const header = document.querySelector('header.header');
-        if (header) {
-          header.classList.remove('delivery-bar-hiding');
-          header.classList.add('delivery-bar-hidden');
-        }
-      }
-      
-      if (callback) callback();
-    }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
-  }
-
-  function fadeInBar() {
-    // 🔥 NAJPIERW USTAW OPACITY NA 0
-    deliveryBar.classList.add('fade-out');
-    deliveryBar.classList.remove('hidden');
-    
-    // Jeśli pozycja to above-header, przywróć padding do header
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      if (header) {
-        // Usuń klasę CSS i inline style
-        header.classList.remove('delivery-bar-hidden');
-        header.style.removeProperty('padding-top');
-        
-        console.log('🔧 Removed .delivery-bar-hidden class and inline style');
-        console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
-      }
-    }
-    
-    // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
-    deliveryBar.offsetHeight; // Force reflow
-    
-    setTimeout(() => {
-      deliveryBar.classList.remove('fade-out');
-    }, 10); // Krótkie opóźnienie
-  }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
-  if (closeButton) {
-    closeButton.addEventListener('click', function() {
-      // Jeśli pozycja to above-header, usuń padding z header
+      // Also remove header padding if position is above-header
       if (position === 'above-header') {
         const header = document.querySelector('header.header');
         if (header) {
           header.classList.add('delivery-bar-hidden');
           header.style.setProperty('padding-top', '0px', 'important');
-          console.log('🔧 Removing padding from main header on close:', header.className);
+          console.log('🔧 Removed header padding due to country exclusion');
         }
       }
       
+      return; // Exit early, don't initialize the bar
+    }
+    
+    // Continue with normal initialization...
+    console.log('🚀 Country check passed, initializing bar...');
+    
+    // Check if bar was previously closed
+    if (localStorage.getItem('deliveryBarClosed') === 'true') {
       deliveryBar.classList.add('hidden');
-      localStorage.setItem('deliveryBarClosed', 'true');
-      console.log('Bar closed by user');
+      // Usuń padding z header jeśli pasek był zamknięty
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        if (header) {
+          header.classList.add('delivery-bar-hidden');
+          header.style.setProperty('padding-top', '0px', 'important');
+        }
+      }
+      return;
+    }
+    
+    // 🔥 SPRAWDŹ CZY PASEK POWINIEN BYĆ SCHOWANY NA POCZĄTKU
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      if (header) {
+        // Jeśli pasek jest ukryty ale header ma padding - napraw to
+        if (deliveryBar.classList.contains('hidden')) {
+          header.classList.add('delivery-bar-hidden');
+          header.style.setProperty('padding-top', '0px', 'important');
+          console.log('🔧 Fixed header padding on page load - bar was hidden');
+        } else {
+          // Jeśli pasek jest widoczny ale header nie ma padding - napraw to
+          header.classList.remove('delivery-bar-hidden');
+          header.style.removeProperty('padding-top');
+          console.log('🔧 Fixed header padding on page load - bar was visible');
+        }
+      }
+    }
+    
+    let isBarVisible = !deliveryBar.classList.contains('hidden');
+
+    // Timer functionality
+    let timerInterval = null;
+    let timerEndTime = null;
+
+    function initTimer() {
+      if (!showTimer) return;
+      
+      // Check if timer end time is stored in localStorage
+      const storedEndTime = localStorage.getItem('deliveryTimerEndTime');
+      const now = new Date().getTime();
+      
+      if (storedEndTime && parseInt(storedEndTime) > now) {
+        // Use existing timer
+        timerEndTime = parseInt(storedEndTime);
+        console.log('📱 Restored timer from localStorage');
+      } else {
+        // Create new timer
+        timerEndTime = now + (timerLimit * 60 * 60 * 1000); // Convert hours to milliseconds
+        localStorage.setItem('deliveryTimerEndTime', timerEndTime);
+        console.log('⏰ Created new timer for', timerLimit, 'hours');
+      }
+      
+      startTimer();
+    }
+
+    function startTimer() {
+      if (!showTimer || !timerEndTime) return;
+      
+      // Clear existing interval
+      if (timerInterval) {
+        clearInterval(timerInterval);
+      }
+      
+      timerInterval = setInterval(updateTimerDisplay, 1000);
+      updateTimerDisplay(); // Initial update
+    }
+
+    function updateTimerDisplay() {
+      if (!showTimer || !timerEndTime) return;
+      
+      const now = new Date().getTime();
+      const timeLeft = timerEndTime - now;
+      
+      if (timeLeft <= 0) {
+        // Timer expired
+        clearInterval(timerInterval);
+        localStorage.removeItem('deliveryTimerEndTime');
+        console.log('⏰ Timer expired');
+        
+        // Reset timer for next session
+        setTimeout(() => {
+          initTimer();
+        }, 1000);
+        
+        return '00:00:00';
+      }
+      
+      // Calculate hours, minutes, seconds
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      
+      // Format as HH:MM:SS
+      const formattedTime = [hours, minutes, seconds]
+        .map(unit => unit.toString().padStart(2, '0'))
+        .join(':');
+      
+      return formattedTime;
+    }
+
+    function replaceTimerInMessage(message) {
+      if (!showTimer) return message;
+      
+      const timerString = updateTimerDisplay();
+      return message.replace(/{timer}/g, timerString);
+    }
+
+    // Update delivery message based on cart value
+    function updateDeliveryMessage() {
+      fetch('/cart.js')
+        .then(response => response.json())
+        .then(cart => {
+          const cartTotal = cart.total_price / 100;
+          console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
+          
+          let finalMessage = generalMessage;
+            if (cartTotal >= threshold) {
+            // THRESHOLD REACHED
+            if (showSuccess) {
+              // Pokaż success message
+              if (!isBarVisible) {
+                fadeInBar();
+              }
+              isBarVisible = true;
+              localStorage.setItem('deliveryBarState', 'visible');
+                
+              if (successMessage && successMessage.trim() !== '') {
+                finalMessage = successMessage;
+              } else {
+                finalMessage = '🎉 You have free delivery!';
+              }
+              
+              finalMessage = replaceTimerInMessage(finalMessage);
+              messageElement.textContent = finalMessage;
+                
+              if (!transparentBg) {
+                deliveryBar.style.backgroundColor = bgColor;
+              }
+              
+              console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
+              // Ukryj pasek całkowicie
+              console.log('🚫 Hide bar after threshold is enabled - hiding bar');
+              if (isBarVisible) {
+                fadeOutBar(() => {
+                  localStorage.setItem('deliveryBarState', 'hidden');
+                });
+              }
+              isBarVisible = false;
+              return;
+            } else {
+              // Pokaż general message  
+              if (!isBarVisible) {
+                fadeInBar();
+              }
+              isBarVisible = true;
+              localStorage.setItem('deliveryBarState', 'visible');
+              
+              finalMessage = generalMessage;
+              finalMessage = replaceTimerInMessage(finalMessage);
+              messageElement.textContent = finalMessage;
+              
+              if (!transparentBg) {
+                deliveryBar.style.backgroundColor = bgColor;
+              }
+              
+              console.log('📋 Showing general message after threshold');
+            }        } else {
+            // PRÓG NIE OSIĄGNIĘTY
+            // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
+            if (!isBarVisible) {
+              fadeInBar();
+            }
+            isBarVisible = true;
+            localStorage.setItem('deliveryBarState', 'visible');
+              if (cartTotal === 0) {
+              // Koszyk pusty - pokaż ogólną wiadomość
+              finalMessage = generalMessage;
+            } else if (showProgress) {
+              // Koszyk niepusty i progress włączony - pokaż progress message
+              const remaining = threshold - cartTotal;
+              const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
+                
+              finalMessage = progressMessage
+                .replace('[remaining]', formattedRemaining)
+                .replace('{remaining}', formattedRemaining)
+                .replace('{amount}', threshold);
+            } else {
+              // Koszyk niepusty ale progress wyłączony - pokaż general message
+              finalMessage = generalMessage;
+            }
+            
+            finalMessage = replaceTimerInMessage(finalMessage);
+            messageElement.textContent = finalMessage;
+            
+            // Przywróć oryginalny kolor
+            if (!transparentBg) {
+              deliveryBar.style.backgroundColor = bgColor;
+            }
+            
+            console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : (showProgress ? 'progress' : 'general'));
+          }
+          
+          // 🔥 ZAPISZ W LOCALSTORAGE
+          localStorage.setItem('deliveryBarMessage', finalMessage);
+        })
+        .catch((error) => {
+          console.error('❌ Cart fetch error:', error);
+          // Fallback
+          deliveryBar.classList.remove('hidden');
+          let message = generalMessage || 'Free delivery available!';
+          messageElement.textContent = message;
+        });
+    }
+
+    // Funkcje animacji
+    function fadeOutBar(callback) {
+      console.log('🎬 fadeOutBar called, position:', position);
+      
+      // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        console.log('🔍 Looking for header.header:', !!header);
+        if (header) {
+          console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
+          
+          // Dodaj klasę animowanego chowania
+          header.classList.remove('delivery-bar-hidden');
+          header.classList.add('delivery-bar-hiding');
+          
+          // Ustaw też inline style jako backup
+          header.style.setProperty('padding-top', '0px', 'important');
+          
+          console.log('🔧 Added .delivery-bar-hiding class for animated removal');
+          console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
+        }
+      }
+      
+      deliveryBar.classList.add('fade-out');
+      
+      setTimeout(() => {
+        deliveryBar.classList.add('hidden');
+        deliveryBar.classList.remove('fade-out');
+        
+        // Po zakończeniu animacji zastąp klasę hiding na hidden
+        if (position === 'above-header') {
+          const header = document.querySelector('header.header');
+          if (header) {
+            header.classList.remove('delivery-bar-hiding');
+            header.classList.add('delivery-bar-hidden');
+          }
+        }
+        
+        if (callback) callback();
+      }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
+    }
+
+    function fadeInBar() {
+      // 🔥 NAJPIERW USTAW OPACITY NA 0
+      deliveryBar.classList.add('fade-out');
+      deliveryBar.classList.remove('hidden');
+      
+      // Jeśli pozycja to above-header, przywróć padding do header
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        if (header) {
+          // Usuń klasę CSS i inline style
+          header.classList.remove('delivery-bar-hidden');
+          header.style.removeProperty('padding-top');
+          
+          console.log('🔧 Removed .delivery-bar-hidden class and inline style');
+          console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
+        }
+      }
+      
+      // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
+      deliveryBar.offsetHeight; // Force reflow
+      
+      setTimeout(() => {
+        deliveryBar.classList.remove('fade-out');
+      }, 10); // Krótkie opóźnienie
+    }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
+    if (closeButton) {
+      closeButton.addEventListener('click', function() {
+        // Jeśli pozycja to above-header, usuń padding z header
+        if (position === 'above-header') {
+          const header = document.querySelector('header.header');
+          if (header) {
+            header.classList.add('delivery-bar-hidden');
+            header.style.setProperty('padding-top', '0px', 'important');
+            console.log('🔧 Removing padding from main header on close:', header.className);
+          }
+        }
+        
+        deliveryBar.classList.add('hidden');
+        localStorage.setItem('deliveryBarClosed', 'true');
+        console.log('Bar closed by user');
+      });
+    } else {
+      console.log('Close button not found - closeable setting is disabled');
+    }
+
+    // === CART EVENT LISTENERS ===
+    
+    // Standard Shopify cart events
+    const cartEvents = [
+      'cart:updated',
+      'cart:changed', 
+      'cart:refresh',
+      'cartChanged',
+      'ajaxCart:updated',
+      'cart:build',
+      'cart:requestComplete',
+      'product:added-to-cart',
+      'cart:item-added',
+      'cart:item-removed',
+      'cart:item-updated',
+      'cart:cleared'
+    ];
+
+    cartEvents.forEach(eventName => {
+      document.addEventListener(eventName, function(event) {
+        console.log('🔔 Cart event detected:', eventName, event.detail);
+        setTimeout(() => updateDeliveryMessage(), 100); // Small delay to ensure cart is updated
+      });
     });
-  } else {
-    console.log('Close button not found - closeable setting is disabled');
-  }
 
-  // === CART EVENT LISTENERS ===
-  
-  // Standard Shopify cart events
-  const cartEvents = [
-    'cart:updated',
-    'cart:changed', 
-    'cart:refresh',
-    'cartChanged',
-    'ajaxCart:updated',
-    'cart:build',
-    'cart:requestComplete',
-    'product:added-to-cart',
-    'cart:item-added',
-    'cart:item-removed',
-    'cart:item-updated',
-    'cart:cleared'
-  ];
-
-  cartEvents.forEach(eventName => {
-    document.addEventListener(eventName, function(event) {
-      console.log('🔔 Cart event detected:', eventName, event.detail);
-      setTimeout(() => updateDeliveryMessage(), 100); // Small delay to ensure cart is updated
-    });
-  });
-
-  // Window-level cart events
-  window.addEventListener('cart:updated', function(event) {
-    console.log('🔔 Window cart event:', event);
-    setTimeout(() => updateDeliveryMessage(), 100);
-  });
-
-  // Theme-specific events (Dawn, Impulse, Brooklyn, etc.)
-  const themeEvents = [
-    'theme:cart:change',
-    'theme:cart:updated', 
-    'cart-drawer:open',
-    'cart-drawer:close',
-    'mini-cart:open',
-    'mini-cart:close',
-    'variant:add',
-    'variant:remove'
-  ];
-
-  themeEvents.forEach(eventName => {
-    document.addEventListener(eventName, function(event) {
-      console.log('🔔 Theme cart event:', eventName);
+    // Window-level cart events
+    window.addEventListener('cart:updated', function(event) {
+      console.log('🔔 Window cart event:', event);
       setTimeout(() => updateDeliveryMessage(), 100);
     });
-  });
 
-  // Custom event for manual triggering
-  window.addEventListener('freeDeliveryBar:update', function() {
-    console.log('🔔 Manual update triggered');
-    updateDeliveryMessage();
-  });
+    // Theme-specific events (Dawn, Impulse, Brooklyn, etc.)
+    const themeEvents = [
+      'theme:cart:change',
+      'theme:cart:updated', 
+      'cart-drawer:open',
+      'cart-drawer:close',
+      'mini-cart:open',
+      'mini-cart:close',
+      'variant:add',
+      'variant:remove'
+    ];
 
-  // Enhanced fetch interception for cart endpoints
-  const originalFetch = window.fetch;
-  window.fetch = function(...args) {
-    const promise = originalFetch.apply(this, args);
-    
-    const url = args[0];
-    const isCartRequest = typeof url === 'string' && (
-      url.includes('/cart/add') || 
-      url.includes('/cart/update') || 
-      url.includes('/cart/change') ||
-      url.includes('/cart/clear') ||
-      url.includes('/cart.js') ||
-      url.includes('/cart/') ||
-      url.endsWith('/cart')
-    );
-    
-    if (isCartRequest) {
-      promise.then((response) => {
-        if (response.ok) {
-          console.log('🔔 Cart fetch intercepted:', url);
-          setTimeout(() => updateDeliveryMessage(), 150);
-        }
-      }).catch(() => {
-        console.error('Cart error:', error);
+    themeEvents.forEach(eventName => {
+      document.addEventListener(eventName, function(event) {
+        console.log('🔔 Theme cart event:', eventName);
+        setTimeout(() => updateDeliveryMessage(), 100);
       });
-    }
-    
-    return promise;
-  };
+    });
 
-  // Intercept XMLHttpRequest for older implementations
-  const originalXHROpen = XMLHttpRequest.prototype.open;
-  const originalXHRSend = XMLHttpRequest.prototype.send;
+    // Custom event for manual triggering
+    window.addEventListener('freeDeliveryBar:update', function() {
+      console.log('🔔 Manual update triggered');
+      updateDeliveryMessage();
+    });
 
-  XMLHttpRequest.prototype.open = function(method, url, ...args) {
-    this._url = url;
-    return originalXHROpen.call(this, method, url, ...args);
-  };
+    // Enhanced fetch interception for cart endpoints
+    const originalFetch = window.fetch;
+    window.fetch = function(...args) {
+      const promise = originalFetch.apply(this, args);
+      
+      const url = args[0];
+      const isCartRequest = typeof url === 'string' && (
+        url.includes('/cart/add') || 
+        url.includes('/cart/update') || 
+        url.includes('/cart/change') ||
+        url.includes('/cart/clear') ||
+        url.includes('/cart.js') ||
+        url.includes('/cart/') ||
+        url.endsWith('/cart')
+      );
+      
+      if (isCartRequest) {
+        promise.then((response) => {
+          if (response.ok) {
+            console.log('🔔 Cart fetch intercepted:', url);
+            setTimeout(() => updateDeliveryMessage(), 150);
+          }
+        }).catch(() => {
+          console.error('Cart error:', error);
+        });
+      }
+      
+      return promise;
+    };
 
-  XMLHttpRequest.prototype.send = function(...args) {
-    const xhr = this;
-    
-    const isCartRequest = this._url && (
-      this._url.includes('/cart/add') ||
-      this._url.includes('/cart/update') ||
-      this._url.includes('/cart/change') ||
-      this._url.includes('/cart/clear') ||
-      this._url.includes('/cart.js') ||
-      this._url.includes('/cart/')
-    );
+    // Intercept XMLHttpRequest for older implementations
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    const originalXHRSend = XMLHttpRequest.prototype.send;
 
-    if (isCartRequest) {
-      xhr.addEventListener('readystatechange', function() {
-        if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
-          console.log('🔔 XHR cart request intercepted:', xhr._url);
-          setTimeout(() => updateDeliveryMessage(), 150);
-        }
-      });
-    }
+    XMLHttpRequest.prototype.open = function(method, url, ...args) {
+      this._url = url;
+      return originalXHROpen.call(this, method, url, ...args);
+    };
 
-    return originalXHRSend.call(this, ...args);
-  };
+    XMLHttpRequest.prototype.send = function(...args) {
+      const xhr = this;
+      
+      const isCartRequest = this._url && (
+        this._url.includes('/cart/add') ||
+        this._url.includes('/cart/update') ||
+        this._url.includes('/cart/change') ||
+        this._url.includes('/cart/clear') ||
+        this._url.includes('/cart.js') ||
+        this._url.includes('/cart/')
+      );
 
-  // Listen for form submissions to cart
-  document.addEventListener('submit', function(event) {
-    const form = event.target;
-    if (form && form.action && (
-      form.action.includes('/cart/add') ||
-      form.action.includes('/cart/update') ||
-      form.action.includes('/cart') ||
-      form.querySelector('input[name="id"]') // Product form
-    )) {
-      console.log('🔔 Cart form submission detected');
-      setTimeout(() => updateDeliveryMessage(), 200);
-    }
-  });
-
-  // Listen for clicks on cart buttons (add to cart, quantity changes)
-  document.addEventListener('click', function(event) {
-    const target = event.target;
-    const button = target.closest('button');
-    
-    if (button && (
-      button.type === 'submit' ||
-      button.classList.contains('btn-cart') ||
-      button.classList.contains('add-to-cart') ||
-      button.classList.contains('cart-item__remove') ||
-      button.classList.contains('quantity__button') ||
-      button.name === 'add' ||
-      button.name === 'update' ||
-      button.getAttribute('data-action') === 'add-to-cart'
-    )) {
-      console.log('🔔 Cart button clicked');
-      setTimeout(() => updateDeliveryMessage(), 300);
-    }
-  });
-
-  // MutationObserver for cart drawer/popup changes
-  const observer = new MutationObserver(function(mutations) {
-    mutations.forEach(function(mutation) {
-      if (mutation.type === 'childList') {
-        const cartSelectors = [
-          '.cart-drawer',
-          '.cart-popup',
-          '.mini-cart',
-          '.cart-items',
-          '.cart-item',
-          '[id*="cart"]',
-          '[class*="cart"]'
-        ];
-        
-        cartSelectors.forEach(selector => {
-          if (mutation.target.matches && mutation.target.matches(selector)) {
-            console.log('🔔 Cart DOM change detected');
-            setTimeout(() => updateDeliveryMessage(), 100);
+      if (isCartRequest) {
+        xhr.addEventListener('readystatechange', function() {
+          if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
+            console.log('🔔 XHR cart request intercepted:', xhr._url);
+            setTimeout(() => updateDeliveryMessage(), 150);
           }
         });
       }
+
+      return originalXHRSend.call(this, ...args);
+    };
+
+    // Listen for form submissions to cart
+    document.addEventListener('submit', function(event) {
+      const form = event.target;
+      if (form && form.action && (
+        form.action.includes('/cart/add') ||
+        form.action.includes('/cart/update') ||
+        form.action.includes('/cart') ||
+        form.querySelector('input[name="id"]') // Product form
+      )) {
+        console.log('🔔 Cart form submission detected');
+        setTimeout(() => updateDeliveryMessage(), 200);
+      }
     });
-  });
 
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-    attributes: false
-  });
+    // Listen for clicks on cart buttons (add to cart, quantity changes)
+    document.addEventListener('click', function(event) {
+      const target = event.target;
+      const button = target.closest('button');
+      
+      if (button && (
+        button.type === 'submit' ||
+        button.classList.contains('btn-cart') ||
+        button.classList.contains('add-to-cart') ||
+        button.classList.contains('cart-item__remove') ||
+        button.classList.contains('quantity__button') ||
+        button.name === 'add' ||
+        button.name === 'update' ||
+        button.getAttribute('data-action') === 'add-to-cart'
+      )) {
+        console.log('🔔 Cart button clicked');
+        setTimeout(() => updateDeliveryMessage(), 300);
+      }
+    });
 
-  // Fallback polling only as last resort - much less frequent
-  let lastCartTotal = null;
-  function fallbackCartCheck() {
-    fetch('/cart.js')
-      .then(response => response.json())
-      .then(cart => {
-        const currentTotal = cart.total_price / 100;
-        
-        // Only update if value changed
-        if (currentTotal !== lastCartTotal) {
-          lastCartTotal = currentTotal;
-          console.log('🔔 Fallback polling detected cart change:', currentTotal);
-          updateDeliveryMessage();
+    // MutationObserver for cart drawer/popup changes
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+          const cartSelectors = [
+            '.cart-drawer',
+            '.cart-popup',
+            '.mini-cart',
+            '.cart-items',
+            '.cart-item',
+            '[id*="cart"]',
+            '[class*="cart"]'
+          ];
+          
+          cartSelectors.forEach(selector => {
+            if (mutation.target.matches && mutation.target.matches(selector)) {
+              console.log('🔔 Cart DOM change detected');
+              setTimeout(() => updateDeliveryMessage(), 100);
+            }
+          });
         }
-      })
-      .catch(() => {
-        // Ignore errors in background
       });
-  }
+    });
 
-  // Reduced polling frequency - only as backup every 10 seconds
-  setInterval(fallbackCartCheck, 10000);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: false
+    });
 
-  // Inicjalizacja
-  console.log('🚀 Initializing...');
-  
-  // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
-  if (savedBarState === 'hidden' && position === 'above-header') {
-    const header = document.querySelector('header.header');
-    if (header) {
-      header.classList.add('delivery-bar-hidden');
-      header.style.setProperty('padding-top', '0px', 'important');
-      console.log('🔧 Hiding header padding on init - bar state was hidden');
+    // Fallback polling only as last resort - much less frequent
+    let lastCartTotal = null;
+    function fallbackCartCheck() {
+      fetch('/cart.js')
+        .then(response => response.json())
+        .then(cart => {
+          const currentTotal = cart.total_price / 100;
+          
+          // Only update if value changed
+          if (currentTotal !== lastCartTotal) {
+            lastCartTotal = currentTotal;
+            console.log('🔔 Fallback polling detected cart change:', currentTotal);
+            updateDeliveryMessage();
+          }
+        })
+        .catch(() => {
+          // Ignore errors in background
+        });
     }
+
+    // Reduced polling frequency - only as backup every 10 seconds
+    setInterval(fallbackCartCheck, 10000);
+
+    // Inicjalizacja
+    console.log('🚀 Initializing...');
+    
+    // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
+    if (savedBarState === 'hidden' && position === 'above-header') {
+      const header = document.querySelector('header.header');
+      if (header) {
+        header.classList.add('delivery-bar-hidden');
+        header.style.setProperty('padding-top', '0px', 'important');
+        console.log('🔧 Hiding header padding on init - bar state was hidden');
+      }
+    }
+    
+    // Initialize timer if enabled
+    if (showTimer) {
+      initTimer();
+    }
+    
+    // Initial update on page load - ONLY after country check
+    setTimeout(() => updateDeliveryMessage(), 100);
   }
   
-  // Initialize timer if enabled
-  if (showTimer) {
-    initTimer();
-  }
-  
-  // Initial update on page load
-  setTimeout(() => updateDeliveryMessage(), 100);
+  // Start initialization with country check
+  initializeBar();
   
 })();
 </script>
