@@ -246,6 +246,7 @@
      data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
      data-show-timer="{% if settings.show_timer == true %}true{% else %}false{% endif %}"
      data-timer-limit="{{ settings.timer_limit | default: 24 }}"
+     data-timer-start="{{ settings.timer_start_time | default: '' }}"
      data-excluded-countries="{{ settings.excluded_countries | default: '' }}"
      data-position="{{ settings.position | default: 'above-header' }}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
@@ -278,6 +279,9 @@
 </div>
 
 <script>
+// Przenieś deklarację lastTimerMessage na samą górę, przed (function() { ... })
+let lastTimerMessage = null;
+
 (function() {
   // Zabezpieczenie przed wielokrotnym uruchomieniem
   if (window.freeDeliveryBarInitialized) {
@@ -322,6 +326,7 @@
   const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
   const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
+  const timerStart = deliveryBar.getAttribute('data-timer-start'); // NEW
   const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
   const position = deliveryBar.getAttribute('data-position') || 'above-header';
   const bgColor = deliveryBar.getAttribute('data-bg-color');
@@ -399,6 +404,9 @@
   
   // Initialize the bar with country check
   async function initializeBar() {
+    // Dodaj na początku initializeBar:
+    // Usuń let lastTimerMessage = null; z wnętrza initializeBar (jeśli tam jest)
+
     const isCountryExcluded = await checkCountryExclusion();
     
     if (isCountryExcluded) {
@@ -462,67 +470,45 @@
 
     function initTimer() {
       if (!showTimer) return;
-      
-      // Check if timer end time is stored in localStorage
-      const storedEndTime = localStorage.getItem('deliveryTimerEndTime');
-      const now = new Date().getTime();
-      
-      if (storedEndTime && parseInt(storedEndTime) > now) {
-        // Use existing timer
-        timerEndTime = parseInt(storedEndTime);
-        console.log('📱 Restored timer from localStorage');
+
+      // Użyj globalnego czasu startu z Liquid/metafieldów
+      let startTime = null;
+      if (timerStart && !isNaN(Date.parse(timerStart))) {
+        startTime = Date.parse(timerStart);
+      } else if (timerStart && !isNaN(Number(timerStart))) {
+        startTime = Number(timerStart);
       } else {
-        // Create new timer
-        timerEndTime = now + (timerLimit * 60 * 60 * 1000); // Convert hours to milliseconds
-        localStorage.setItem('deliveryTimerEndTime', timerEndTime);
-        console.log('⏰ Created new timer for', timerLimit, 'hours');
+        // fallback: aktualny czas (niezalecane, tylko awaryjnie)
+        startTime = new Date().getTime();
       }
-      
+      timerEndTime = startTime + (timerLimit * 60 * 60 * 1000); // ms
+
       startTimer();
     }
 
     function startTimer() {
       if (!showTimer || !timerEndTime) return;
-      
-      // Clear existing interval
-      if (timerInterval) {
-        clearInterval(timerInterval);
-      }
-      
+      if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(updateTimerDisplay, 1000);
-      updateTimerDisplay(); // Initial update
+      updateTimerDisplay();
     }
 
     function updateTimerDisplay() {
       if (!showTimer || !timerEndTime) return;
-      
       const now = new Date().getTime();
       const timeLeft = timerEndTime - now;
-      
+
       if (timeLeft <= 0) {
-        // Timer expired
         clearInterval(timerInterval);
-        localStorage.removeItem('deliveryTimerEndTime');
-        console.log('⏰ Timer expired');
-        
-        // Reset timer for next session
-        setTimeout(() => {
-          initTimer();
-        }, 1000);
-        
+        // Nie resetuj timera, po prostu wyświetl 00:00:00
         return '00:00:00';
       }
-      
-      // Calculate hours, minutes, seconds
       const hours = Math.floor(timeLeft / (1000 * 60 * 60));
       const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-      
-      // Format as HH:MM:SS
       const formattedTime = [hours, minutes, seconds]
         .map(unit => unit.toString().padStart(2, '0'))
         .join(':');
-      
       return formattedTime;
     }
 
@@ -580,8 +566,8 @@
 
               // Podmień {remaining} i {amount} także w success message
               finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
-              finalMessage = replaceTimerInMessage(finalMessage);
-              messageElement.textContent = finalMessage;
+              lastTimerMessage = finalMessage;
+              messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
                 
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -607,9 +593,9 @@
               localStorage.setItem('deliveryBarState', 'visible');
               
               // Podmień {remaining} i {amount} także w general message
-              finalMessage = replaceAmountPlaceholders(generalMessage, 0, threshold);
-              finalMessage = replaceTimerInMessage(finalMessage);
-              messageElement.textContent = finalMessage;
+              finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
+              lastTimerMessage = finalMessage;
+              messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
               
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -636,14 +622,16 @@
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             }
             
-            finalMessage = replaceTimerInMessage(finalMessage);
-            messageElement.textContent = finalMessage;
+
+            lastTimerMessage = finalMessage; // <- zapisz oryginalny tekst z {timer}
+            messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
             
             // Przywróć oryginalny kolor
             if (!transparentBg) {
               deliveryBar.style.backgroundColor = bgColor;
             }
             
+
 
             console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : (showProgress ? 'progress' : 'general'));
           }
@@ -657,6 +645,7 @@
           deliveryBar.classList.remove('hidden');
           let message = generalMessage || 'Free delivery available!';
           messageElement.textContent = message;
+          lastTimerMessage = message;
         })
         .finally(() => {
           // 🔥 ZWOLNIJ FLAGĘ
@@ -664,73 +653,73 @@
         });
     }
 
-  // Funkcje animacji
-  function fadeOutBar(callback) {
-    console.log('🎬 fadeOutBar called, position:', position);
-    
-    // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      console.log('🔍 Looking for header.header:', !!header);
-      if (header) {
-        console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
-        
-        // Dodaj klasę animowanego chowania
-        header.classList.remove('delivery-bar-hidden');
-        header.classList.add('delivery-bar-hiding');
-        
-        // Ustaw też inline style jako backup
-        header.style.setProperty('padding-top', '0px', 'important');
-        
-        console.log('🔧 Added .delivery-bar-hiding class for animated removal');
-        console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
-      }
-    }
-    
-    deliveryBar.classList.add('fade-out');
-    
-    setTimeout(() => {
-      deliveryBar.classList.add('hidden');
-      deliveryBar.classList.remove('fade-out');
+    // Funkcje animacji
+    function fadeOutBar(callback) {
+      console.log('🎬 fadeOutBar called, position:', position);
       
-      // Po zakończeniu animacji zastąp klasę hiding na hidden
+      // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
       if (position === 'above-header') {
         const header = document.querySelector('header.header');
+        console.log('🔍 Looking for header.header:', !!header);
         if (header) {
-          header.classList.remove('delivery-bar-hiding');
-          header.classList.add('delivery-bar-hidden');
+          console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
+          
+          // Dodaj klasę animowanego chowania
+          header.classList.remove('delivery-bar-hidden');
+          header.classList.add('delivery-bar-hiding');
+          
+          // Ustaw też inline style jako backup
+          header.style.setProperty('padding-top', '0px', 'important');
+          
+          console.log('🔧 Added .delivery-bar-hiding class for animated removal');
+          console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
         }
       }
       
-      if (callback) callback();
-    }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
-  }
-
-  function fadeInBar() {
-    // 🔥 NAJPIERW USTAW OPACITY NA 0
-    deliveryBar.classList.add('fade-out');
-    deliveryBar.classList.remove('hidden');
-    
-    // Jeśli pozycja to above-header, przywróć padding do header
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      if (header) {
-        // Usuń klasę CSS i inline style
-        header.classList.remove('delivery-bar-hidden');
-        header.style.removeProperty('padding-top');
+      deliveryBar.classList.add('fade-out');
+      
+      setTimeout(() => {
+        deliveryBar.classList.add('hidden');
+        deliveryBar.classList.remove('fade-out');
         
-        console.log('🔧 Removed .delivery-bar-hidden class and inline style');
-        console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
-      }
+        // Po zakończeniu animacji zastąp klasę hiding na hidden
+        if (position === 'above-header') {
+          const header = document.querySelector('header.header');
+          if (header) {
+            header.classList.remove('delivery-bar-hiding');
+            header.classList.add('delivery-bar-hidden');
+          }
+        }
+        
+        if (callback) callback();
+      }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
     }
-    
-    // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
-    deliveryBar.offsetHeight; // Force reflow
-    
-    setTimeout(() => {
-      deliveryBar.classList.remove('fade-out');
-    }, 10); // Krótkie opóźnienie
-  }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
+
+    function fadeInBar() {
+      // 🔥 NAJPIERW USTAW OPACITY NA 0
+      deliveryBar.classList.add('fade-out');
+      deliveryBar.classList.remove('hidden');
+      
+      // Jeśli pozycja to above-header, przywróć padding do header
+      if (position === 'above-header') {
+        const header = document.querySelector('header.header');
+        if (header) {
+          // Usuń klasę CSS i inline style
+          header.classList.remove('delivery-bar-hidden');
+          header.style.removeProperty('padding-top');
+          
+          console.log('🔧 Removed .delivery-bar-hidden class and inline style');
+          console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
+        }
+      }
+      
+      // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
+      deliveryBar.offsetHeight; // Force reflow
+      
+      setTimeout(() => {
+        deliveryBar.classList.remove('fade-out');
+      }, 10); // Krótkie opóźnienie
+    }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
     if (closeButton) {
       closeButton.addEventListener('click', function() {
         // Jeśli pozycja to above-header, usuń padding z header
@@ -978,30 +967,78 @@
     }
     
     // Initial update on page load - ONLY after country check
-    setTimeout(() => updateDeliveryMessage(), 100);
+    setTimeout(() => {
+      updateDeliveryMessage();
+    }, 100);
+
+    // --- DODAJ PONIŻEJ ---
+    // Wymuś natychmiastowe odświeżenie timera po załadowaniu strony, jeśli {timer} występuje w wiadomości
+    if (showTimer) {
+      setInterval(() => {
+        if (lastTimerMessage && lastTimerMessage.includes('{timer}')) {
+          messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+        }
+      }, 1000);
+    }
+    // --- KONIEC DODATKU ---
   }
   
   // Start initialization with country check
   initializeBar();
   
+  // Mapowanie najważniejszych walut na locale z symbolem
+  const currencyLocaleMap = {
+    USD: 'en-US',
+    EUR: 'de-DE',
+    PLN: 'pl-PL',
+    GBP: 'en-GB',
+    JPY: 'ja-JP',
+    AUD: 'en-AU',
+    CAD: 'en-CA',
+    CHF: 'de-CH',
+    SEK: 'sv-SE',
+    NOK: 'nb-NO',
+    DKK: 'da-DK',
+    CZK: 'cs-CZ',
+    HUF: 'hu-HU',
+    CNY: 'zh-CN',
+    HKD: 'zh-HK',
+    SGD: 'en-SG',
+    NZD: 'en-NZ',
+    ZAR: 'en-ZA',
+    MXN: 'es-MX',
+    BRL: 'pt-BR',
+    RUB: 'ru-RU',
+    TRY: 'tr-TR',
+    INR: 'en-IN',
+    KRW: 'ko-KR',
+    THB: 'th-TH',
+    MYR: 'ms-MY',
+    IDR: 'id-ID',
+    PHP: 'en-PH',
+    TWD: 'zh-TW',
+    SAR: 'ar-SA',
+    AED: 'ar-AE',
+    ILS: 'he-IL'
+    // ...najważniejsze waluty, reszta fallbackuje do 'en'
+  };
+
   // Pobierz walutę sklepu i tryb waluty
   const shopCurrency = deliveryBar.getAttribute('data-shop-currency') || (window.Shopify && Shopify.currency && Shopify.currency.active) || 'USD';
   const currencyMode = deliveryBar.getAttribute('data-currency-mode') || 'shop';
 
-  // Pobierz locale użytkownika
-  const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
-
-  // Funkcja formatowania kwoty (przeniesiona na górę, dostępna globalnie w tym IIFE)
+  // Funkcja formatowania kwoty (z mapowaniem locale)
   function formatCurrency(amount) {
     let currency = shopCurrency;
+    const mappedLocale = currencyLocaleMap[currency] || 'en';
     try {
-      return new Intl.NumberFormat(userLocale, {
+      return new Intl.NumberFormat(mappedLocale, {
         style: 'currency',
         currency: currency,
         maximumFractionDigits: 2
       }).format(amount);
     } catch (e) {
-      return '$' + amount;
+      return currency + ' ' + amount;
     }
   }
   
