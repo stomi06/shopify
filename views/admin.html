@@ -409,9 +409,9 @@
             </div>
 
             <div class="form-group">
-              <label for="minAmount">Minimum Amount</label>
+              <label for="minAmount" id="minAmountLabel">Minimum Amount</label>
               <input type="number" id="minAmount" min="0" step="1" value="100" />
-              <div class="help-text" id="minAmountHelp">Minimum order value required for free delivery <span id="currencySpan"></span></div>
+              <div class="help-text" id="minAmountHelp">Minimum order value required for free delivery</div>
             </div>
 
             <!-- TIMER SECTION -->
@@ -464,22 +464,20 @@
             </div>
           </div>
 
-          <!-- Currency Display Option -->
-          <div class="form-section">
-            <div class="form-group">
-              <label>Currency Display</label>
-              <div>
-                <label style="margin-right: 20px;">
-                  <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
-                  Use shop currency (e.g. "$100")
-                </label>
-                <label>
-                  <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
-                  Use customer currency (coming soon)
-                </label>
-              </div>
-              <div class="help-text">Choose how the amounts are displayed to customers</div>
+          <!-- Currency Display Option - PRZENIESIONA TUTAJ -->
+          <div class="form-group" id="currencyDisplayGroup">
+            <label>Currency Display</label>
+            <div>
+              <label style="margin-right: 20px;">
+                <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
+                Use shop currency (e.g. "$100")
+              </label>
+              <label>
+                <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
+                Use customer currency (coming soon)
+              </label>
             </div>
+            <div class="help-text">Choose how the amounts are displayed to customers</div>
           </div>
         </div>
 
@@ -1275,79 +1273,78 @@
       }
     }    // Funkcja resetowania ustawień
     function resetSettings() {     
-        document.getElementById('generalMessage').value = "Free shipping from $100";
-        document.getElementById('showProgressMessage').checked = true;
-        document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
-        document.getElementById('minAmount').value = 100;
-        document.getElementById('showTimer').checked = false;
-        document.getElementById('timerLimit').value = 24;
-        
-        // Ukryj pole timer limit przy resecie
-        document.getElementById('timerLimitGroup').style.display = 'none';
-        
-        document.getElementById('closeable').checked = true;
-        document.getElementById('showSuccessMessage').checked = true;
-        document.getElementById('successMessage').value = "Enjoy free shipping!";
-        document.getElementById('backgroundColor').value = "#000000";
-        document.getElementById('textColor').value = "#bbbbbb";
-        document.getElementById('transparentBg').checked = false;
-        document.getElementById('position').value = "above-header";
-        document.getElementById('opacity').value = 100;
-        document.getElementById('fontFamily').value = "system";
-        document.getElementById('fontSize').value = 14;
-        document.getElementById('fontWeight').value = 800;
-        document.getElementById('borderWidth').value = 0;
-        document.getElementById('borderColor').value = "#cccccc";
-        document.getElementById('borderRadius').value = 0;
-        document.getElementById('shadowColor').value = "#000000";
-        document.getElementById('shadowOpacity').value = 0;
-        document.getElementById('shadowBlur').value = 0;
-        document.getElementById('shadowDistance').value = 0;
-        document.getElementById('width').value = 100;
-        document.getElementById('marginTop').value = 0;
-        document.getElementById('barHeight').value = 40;
-        document.getElementById('excludedCountries').value = "";
-        
-        // Zaktualizuj wyświetlane wartości
-        document.getElementById('opacityValue').textContent = '100%';
-        document.getElementById('borderWidthValue').textContent = '0px';
-        document.getElementById('borderRadiusValue').textContent = '0px';
-        document.getElementById('shadowOpacityValue').textContent = '0%';
-        document.getElementById('shadowBlurValue').textContent = '0px';
-        document.getElementById('shadowDistanceValue').textContent = '0px';
-        document.getElementById('widthValue').textContent = '100%';
-        document.getElementById('marginTopValue').textContent = '0px';
-        document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
-        document.getElementById('showIcon').checked = true;
-        document.getElementById('useDefaultIcon').checked = true;
-        document.getElementById('useCustomIcon').checked = false;
-        document.getElementById('iconSize').value = 30;
-        document.getElementById('iconGap').value = 10;
-        
-        // Wyczyść podgląd
-        const preview = document.getElementById('imagePreview');
-        preview.removeAttribute('data-image');
-        preview.style.backgroundImage = '';
-        preview.style.display = 'none';
-        preview.classList.remove('has-image');        preview.innerHTML = '';
-        
-        // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
-        document.getElementById('iconOptionsGroup').style.display = 'block';
-        document.getElementById('iconSizeGroup').style.display = 'block';
-        document.getElementById('iconGapGroup').style.display = 'block';
-        document.getElementById('customIconUpload').style.display = 'none';
-        
-        // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';
-        document.getElementById('iconGapValue').textContent = '10px';
+    document.getElementById('generalMessage').value = "Free shipping from {amount}";
+    document.getElementById('progressMessage').value = "Add {remaining} more for free shipping!";
+    document.getElementById('minAmount').value = 100;
+    document.getElementById('showTimer').checked = false;
+    document.getElementById('timerLimit').value = 24;
+    
+    // Ukryj pole timer limit przy resecie
+    document.getElementById('timerLimitGroup').style.display = 'none';
+    
+    document.getElementById('closeable').checked = true;
+    document.getElementById('showSuccessMessage').checked = true;
+    document.getElementById('successMessage').value = "Enjoy free shipping!";
+    document.getElementById('backgroundColor').value = "#000000";
+    document.getElementById('textColor').value = "#bbbbbb";
+    document.getElementById('transparentBg').checked = false;
+    document.getElementById('position').value = "above-header";
+    document.getElementById('opacity').value = 100;
+    document.getElementById('fontFamily').value = "system";
+    document.getElementById('fontSize').value = 14;
+    document.getElementById('fontWeight').value = 800;
+    document.getElementById('borderWidth').value = 0;
+    document.getElementById('borderColor').value = "#cccccc";
+    document.getElementById('borderRadius').value = 0;
+    document.getElementById('shadowColor').value = "#000000";
+    document.getElementById('shadowOpacity').value = 0;
+    document.getElementById('shadowBlur').value = 0;
+    document.getElementById('shadowDistance').value = 0;
+    document.getElementById('width').value = 100;
+    document.getElementById('marginTop').value = 0;
+    document.getElementById('barHeight').value = 40;
+    document.getElementById('excludedCountries').value = "";
+    
+    // Zaktualizuj wyświetlane wartości
+    document.getElementById('opacityValue').textContent = '100%';
+    document.getElementById('borderWidthValue').textContent = '0px';
+    document.getElementById('borderRadiusValue').textContent = '0px';
+    document.getElementById('shadowOpacityValue').textContent = '0%';
+    document.getElementById('shadowBlurValue').textContent = '0px';
+    document.getElementById('shadowDistanceValue').textContent = '0px';
+    document.getElementById('widthValue').textContent = '100%';
+    document.getElementById('marginTopValue').textContent = '0px';
+    document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+    document.getElementById('showIcon').checked = true;
+    document.getElementById('useDefaultIcon').checked = true;
+    document.getElementById('useCustomIcon').checked = false;
+    document.getElementById('iconSize').value = 30;
+    document.getElementById('iconGap').value = 10;
+    
+    // Wyczyść podgląd
+    const preview = document.getElementById('imagePreview');
+    preview.removeAttribute('data-image');
+    preview.style.backgroundImage = '';
+    preview.style.display = 'none';
+    preview.classList.remove('has-image');        preview.innerHTML = '';
+    
+    // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
+    document.getElementById('iconOptionsGroup').style.display = 'block';
+    document.getElementById('iconSizeGroup').style.display = 'block';
+    document.getElementById('iconGapGroup').style.display = 'block';
+    document.getElementById('customIconUpload').style.display = 'none';
+    
+    // Zaktualizuj wyświetlane wartości
+    document.getElementById('iconSizeValue').textContent = '30px';
+    document.getElementById('iconGapValue').textContent = '10px';
 
-        // Domyślnie shop currency
-        document.getElementById('currencyModeShop').checked = true;
-        document.getElementById('currencyModeCustomer').checked = false;
+    // Domyślnie shop currency
+    document.getElementById('currencyModeShop').checked = true;
+    document.getElementById('currencyModeCustomer').checked = false;
 
-        toggleSuccessMessageField();
-        toggleProgressMessageField();
-        updatePreview();
+    toggleSuccessMessageField();
+    toggleProgressMessageField();
+    updatePreview();
     }// NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
     function toggleSuccessMessageField() {
       const checkbox = document.getElementById('showSuccessMessage');
@@ -1444,7 +1441,10 @@
         if (response.ok) {
           const data = await response.json();
           if (data.currency) {
-            document.getElementById('currencySpan').textContent = `(Currency: ${data.currency})`;
+            // Przenieś walutę do labela
+            document.getElementById('minAmountLabel').textContent = `Minimum Amount (Currency: ${data.currency})`;
+            // Usuń z help-text jeśli był
+            document.getElementById('minAmountHelp').textContent = 'Minimum order value required for free delivery';
           }
         }
       } catch (e) {
@@ -1492,11 +1492,14 @@
     // Funkcja formatowania kwoty (z fallbackiem na 'en')
     function formatCurrency(amount, currency = 'USD') {
       const mappedLocale = currencyLocaleMap[currency] || 'en';
+      // Sprawdź czy amount jest liczbą całkowitą
+      const isInt = Number.isInteger(amount) || (typeof amount === 'number' && Math.floor(amount) === amount);
       try {
         return new Intl.NumberFormat(mappedLocale, {
           style: 'currency',
           currency: currency,
-          maximumFractionDigits: 2
+          minimumFractionDigits: isInt ? 0 : 2,
+          maximumFractionDigits: isInt ? 0 : 2
         }).format(amount);
       } catch (e) {
         return currency + ' ' + amount;

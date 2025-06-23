@@ -89,31 +89,21 @@
     transition: opacity 0.4s ease;
     left: 50%;
     transform: translateX(-50%);
-    
-    /* Font loading optimization */
     font-display: swap;
-    
-    /* TŁO - przezroczyste lub kolorowe */
     {% if settings.transparent_bg == true %}
       background-color: transparent;
     {% else %}
       background-color: {{ settings.background_color | default: '#000000' }};
     {% endif %}
-    
-    /* Pozostałe style */
     color: {{ settings.text_color | default: '#bbbbbb' }};
     font-size: {{ settings.font_size | default: 14 }}px;
     font-weight: {{ settings.font_weight | default: 600 }};
     border-radius: {{ settings.border_radius | default: 0 }}px;
-    
-    /* Ramka */
     {% if settings.border_width and settings.border_width > 0 %}
       border: {{ settings.border_width }}px solid {{ settings.border_color | default: '#cccccc' }};
     {% else %}
       border: none;
     {% endif %}
-    
-    /* Cień */
     {% if settings.shadow_blur and settings.shadow_blur > 0 %}
       {% assign shadow_opacity = settings.shadow_opacity | default: 20 | divided_by: 100.0 %}
       {% assign shadow_distance = settings.shadow_distance | default: 2 %}
@@ -121,7 +111,8 @@
       box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }});
     {% else %}
       box-shadow: none;
-    {% endif %}    {% if settings.position == 'above-header' %}
+    {% endif %}
+    {% if settings.position == 'above-header' %}
       position: fixed;
       width: 100% !important;
       z-index: 3;
@@ -129,16 +120,22 @@
       margin-top: 0;
     {% elsif settings.position == 'fixed' %}
       position: fixed;
-      width: 100% !important;
       z-index: 3;
-      margin-top: 0;
+      margin-top: {{ settings.margin_top }}px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: {% if settings.width and settings.width < 100 %}{{ settings.width }}vw{% else %}100vw{% endif %};
+      max-width: 100vw;
     {% else %}
       position: absolute;
       z-index: 2;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
-    {% endif %}  }  /* Remove body padding for above-header position */
+      width: {% if settings.width and settings.width < 100 %}{{ settings.width }}vw{% else %}100vw{% endif %};
+      max-width: 100vw;
+    {% endif %}
+  }  /* Remove body padding for above-header position */
   {% if settings.position == 'above-header' %}
   header.header {
     padding-top: {{ settings.bar_height | default: 40 }}px !important;
@@ -1032,11 +1029,14 @@ let lastTimerMessage = null;
   function formatCurrency(amount) {
     let currency = shopCurrency;
     const mappedLocale = currencyLocaleMap[currency] || 'en';
+    // Sprawdź czy amount jest liczbą całkowitą
+    const isInt = Number.isInteger(amount) || (typeof amount === 'number' && Math.floor(amount) === amount);
     try {
       return new Intl.NumberFormat(mappedLocale, {
         style: 'currency',
         currency: currency,
-        maximumFractionDigits: 2
+        minimumFractionDigits: isInt ? 0 : 2,
+        maximumFractionDigits: isInt ? 0 : 2
       }).format(amount);
     } catch (e) {
       return currency + ' ' + amount;
