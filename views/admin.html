@@ -414,13 +414,22 @@
               <div class="help-text" id="minAmountHelp">Minimum order value required for free delivery</div>
             </div>
 
-            <!-- TIMER SECTION -->
-            <div class="form-group">
-              <label>
-                <input type="checkbox" id="showTimer" style="margin-right: 8px;">
-                Show delivery countdown timer
-              </label>
-              <div class="help-text">When enabled, displays a countdown timer for delivery deadline. Use {timer} in your messages to show the timer.</div>
+            <!-- Currency Display Option -->
+            <div class="form-section">
+              <div class="form-group" id="currencyDisplaySection">
+                <label>Currency Display</label>
+                <div>
+                  <label>
+                    <input style="margin-right: 5px;" type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
+                    Use shop currency (e.g. $100)
+                  </label>
+                  <label>
+                    <input style="margin-right: 5px;" type="radio" name="currencyMode" id="currencyModeCustomer" value="customer">
+                    Use customer currency (Auto Convert)
+                  </label>
+                </div>
+                <div class="help-text">Choose how the amounts are displayed to customers</div>
+              </div>
             </div>
 
             <div class="form-group" id="timerLimitGroup" style="display: none;">
@@ -462,23 +471,14 @@
               </label>
               <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
             </div>
-          </div>
 
-          <!-- Currency Display Option -->
-          <div class="form-section">
-            <div class="form-group" id="currencyDisplaySection">
-              <label>Currency Display</label>
-              <div>
-                <label style="margin-right: 20px;">
-                  <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
-                  Use shop currency (e.g. "$100")
-                </label>
-                <label>
-                  <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
-                  Use customer currency (coming soon)
-                </label>
-              </div>
-              <div class="help-text">Choose how the amounts are displayed to customers</div>
+            <!-- TIMER SECTION -->
+            <div class="form-group">
+              <label>
+                <input type="checkbox" id="showTimer" style="margin-right: 8px;">
+                Show delivery countdown timer
+              </label>
+              <div class="help-text">When enabled, displays a countdown timer for delivery deadline. Use {timer} in your messages to show the timer.</div>
             </div>
           </div>
         </div>
