@@ -410,6 +410,16 @@
               <input type="number" id="minAmount" min="0" step="1" value="100" />
             </div>
 
+            <!-- CURRENCY DISPLAY SECTION -->
+            <div class="form-group">
+              <label for="currencyDisplay">Currency Display</label>
+              <select id="currencyDisplay">
+                <option value="shop">Shop Currency (default)</option>
+                <option value="user">User Currency (auto-convert)</option>
+              </select>
+              <div class="help-text">Choose whether to display amounts in shop currency or automatically convert to user's local currency</div>
+            </div>
+
             <!-- TIMER SECTION -->
             <div class="form-group">
               <label>
@@ -1020,6 +1030,7 @@
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         excluded_countries: document.getElementById('excludedCountries').value,
+        currency_display: document.getElementById('currencyDisplay').value,
         
         // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
@@ -1096,6 +1107,7 @@
           document.getElementById('marginTop').value = 0;
           document.getElementById('barHeight').value = 40;
           document.getElementById('excludedCountries').value = "";
+          document.getElementById('currencyDisplay').value = "shop";
           
           // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
@@ -1259,6 +1271,7 @@
         document.getElementById('marginTop').value = 0;
         document.getElementById('barHeight').value = 40;
         document.getElementById('excludedCountries').value = "";
+        document.getElementById('currencyDisplay').value = "shop";
         
         // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';

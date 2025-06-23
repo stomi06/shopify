@@ -247,6 +247,7 @@
      data-show-timer="{% if settings.show_timer == true %}true{% else %}false{% endif %}"
      data-timer-limit="{{ settings.timer_limit | default: 24 }}"
      data-excluded-countries="{{ settings.excluded_countries | default: '' }}"
+     data-currency-display="{{ settings.currency_display | default: 'shop' }}"
      data-position="{{ settings.position | default: 'above-header' }}"
      data-bg-color="{{ settings.background_color | default: '#4CAF50' }}"
      data-width="{{ settings.width | default: 90 }}"
@@ -318,6 +319,7 @@
   const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
   const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
+  const currencyDisplay = deliveryBar.getAttribute('data-currency-display') || 'shop';
   const position = deliveryBar.getAttribute('data-position') || 'above-header';
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
@@ -329,6 +331,151 @@
   console.log('Show timer:', showTimer);
   console.log('Timer limit:', timerLimit, 'hours');
   console.log('Excluded countries:', excludedCountries);
+  console.log('Currency display:', currencyDisplay);
+  
+  // Currency conversion and formatting
+  let userCurrency = 'USD';
+  let userLocale = 'en-US';
+  let shopCurrency = 'USD';
+  
+  // Initialize currency settings
+  async function initializeCurrency() {
+    try {
+      // Get shop currency from Shopify
+      if (window.Shopify && window.Shopify.currency && window.Shopify.currency.active) {
+        shopCurrency = window.Shopify.currency.active;
+      }
+      
+      // Get user currency from API (if currency display is set to user)
+      if (currencyDisplay === 'user') {
+        const cachedCurrency = localStorage.getItem('userCurrencyCode');
+        const cachedLocale = localStorage.getItem('userLocaleCode');
+        const cacheTime = localStorage.getItem('userCurrencyCacheTime');
+        const currentTime = new Date().getTime();
+        const cacheExpiry = 24 * 60 * 60 * 1000; // 24 hours
+        
+        if (cachedCurrency && cachedLocale && cacheTime && (currentTime - parseInt(cacheTime)) < cacheExpiry) {
+          userCurrency = cachedCurrency;
+          userLocale = cachedLocale;
+          console.log('💱 Using cached currency:', userCurrency, 'locale:', userLocale);
+        } else {
+          // Fetch from API
+          const response = await fetch('https://ipapi.co/json/');
+          const data = await response.json();
+          
+          userCurrency = data.currency || 'USD';
+          userLocale = navigator.language || 'en-US';
+          
+          // Cache the results
+          localStorage.setItem('userCurrencyCode', userCurrency);
+          localStorage.setItem('userLocaleCode', userLocale);
+          localStorage.setItem('userCurrencyCacheTime', currentTime.toString());
+          
+          console.log('💱 Detected currency from API:', userCurrency, 'locale:', userLocale);
+        }
+      } else {
+        // Use shop currency
+        userCurrency = shopCurrency;
+        userLocale = 'en-US';
+      }
+      
+    } catch (error) {
+      console.error('❌ Error initializing currency:', error);
+      userCurrency = shopCurrency || 'USD';
+      userLocale = 'en-US';
+    }
+    
+    console.log('💱 Final currency setup - Shop:', shopCurrency, 'User:', userCurrency, 'Locale:', userLocale);
+  }
+  
+  // Convert currency using your API
+  async function convertCurrency(amount, fromCurrency, toCurrency) {
+    if (fromCurrency === toCurrency) {
+      return amount;
+    }
+    
+    const cacheKey = `${fromCurrency}_${toCurrency}`;
+    const cachedRate = localStorage.getItem(`exchangeRate_${cacheKey}`);
+    const cacheTime = localStorage.getItem(`exchangeRateTime_${cacheKey}`);
+    const currentTime = new Date().getTime();
+    const cacheExpiry = 60 * 60 * 1000; // 1 hour
+    
+    let exchangeRate = null;
+    
+    if (cachedRate && cacheTime && (currentTime - parseInt(cacheTime)) < cacheExpiry) {
+      exchangeRate = parseFloat(cachedRate);
+      console.log('💱 Using cached exchange rate:', fromCurrency, 'to', toCurrency, '=', exchangeRate);
+    } else {
+      try {
+        const url = `https://api.exchangerate.host/convert?from=${fromCurrency}&to=${toCurrency}&amount=${amount}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success && data.result) {
+          const convertedAmount = data.result;
+          exchangeRate = convertedAmount / amount;
+          
+          localStorage.setItem(`exchangeRate_${cacheKey}`, exchangeRate.toString());
+          localStorage.setItem(`exchangeRateTime_${cacheKey}`, currentTime.toString());
+          
+          console.log('💱 Fetched exchange rate:', fromCurrency, 'to', toCurrency, '=', exchangeRate);
+          return convertedAmount;
+        } else {
+          throw new Error('Invalid API response');
+        }
+      } catch (error) {
+        console.error('❌ Error converting currency:', error);
+        return amount;
+      }
+    }
+    
+    return amount * exchangeRate;
+  }
+  
+  // Format currency amount using your example
+  function formatCurrency(amount, currency, locale) {
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency,
+      }).format(amount);
+    } catch (error) {
+      console.error('❌ Error formatting currency:', error);
+      return `${currency} ${amount.toFixed(2)}`;
+    }
+  }
+  
+  // Convert and format amount for display
+  async function formatAmountForDisplay(amount) {
+    if (currencyDisplay === 'shop') {
+      return formatCurrency(amount, shopCurrency, 'en-US');
+    } else {
+      const convertedAmount = await convertCurrency(amount, shopCurrency, userCurrency);
+      return formatCurrency(convertedAmount, userCurrency, userLocale);
+    }
+  }
+  
+  // Replace amount placeholders in messages
+  async function replaceAmountPlaceholders(message, remainingAmount = null, thresholdAmount = null) {
+    let updatedMessage = message;
+    
+    if (remainingAmount !== null) {
+      const formattedRemaining = await formatAmountForDisplay(remainingAmount);
+      updatedMessage = updatedMessage
+        .replace(/\{remaining\}/g, formattedRemaining)
+        .replace(/\$\{remaining\}/g, formattedRemaining)
+        .replace(/\[remaining\]/g, formattedRemaining);
+    }
+    
+    if (thresholdAmount !== null) {
+      const formattedThreshold = await formatAmountForDisplay(thresholdAmount);
+      updatedMessage = updatedMessage
+        .replace(/\{amount\}/g, formattedThreshold)
+        .replace(/\$\{amount\}/g, formattedThreshold);
+    }
+    
+    return updatedMessage;
+  }
   
   // Check if current country is excluded
   async function checkCountryExclusion() {
@@ -528,10 +675,10 @@
     }
 
     // Update delivery message based on cart value
-    function updateDeliveryMessage() {
+    async function updateDeliveryMessage() {
       fetch('/cart.js')
         .then(response => response.json())
-        .then(cart => {
+        .then(async cart => {
           const cartTotal = cart.total_price / 100;
           console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
           
@@ -552,6 +699,7 @@
                 finalMessage = '🎉 You have free delivery!';
               }
               
+              finalMessage = await replaceAmountPlaceholders(finalMessage, null, threshold);
               finalMessage = replaceTimerInMessage(finalMessage);
               messageElement.textContent = finalMessage;
                 
@@ -578,6 +726,7 @@
               localStorage.setItem('deliveryBarState', 'visible');
               
               finalMessage = generalMessage;
+              finalMessage = await replaceAmountPlaceholders(finalMessage, null, threshold);
               finalMessage = replaceTimerInMessage(finalMessage);
               messageElement.textContent = finalMessage;
               
@@ -588,7 +737,6 @@
               console.log('📋 Showing general message after threshold');
             }        } else {
             // PRÓG NIE OSIĄGNIĘTY
-            // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
             if (!isBarVisible) {
               fadeInBar();
             }
@@ -597,18 +745,16 @@
               if (cartTotal === 0) {
               // Koszyk pusty - pokaż ogólną wiadomość
               finalMessage = generalMessage;
+              finalMessage = await replaceAmountPlaceholders(finalMessage, null, threshold);
             } else if (showProgress) {
               // Koszyk niepusty i progress włączony - pokaż progress message
               const remaining = threshold - cartTotal;
-              const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
-                
-              finalMessage = progressMessage
-                .replace('[remaining]', formattedRemaining)
-                .replace('{remaining}', formattedRemaining)
-                .replace('{amount}', threshold);
+              finalMessage = progressMessage;
+              finalMessage = await replaceAmountPlaceholders(finalMessage, remaining, threshold);
             } else {
               // Koszyk niepusty ale progress wyłączony - pokaż general message
               finalMessage = generalMessage;
+              finalMessage = await replaceAmountPlaceholders(finalMessage, null, threshold);
             }
             
             finalMessage = replaceTimerInMessage(finalMessage);
@@ -939,6 +1085,9 @@
         console.log('🔧 Hiding header padding on init - bar state was hidden');
       }
     }
+    
+    // Initialize currency settings before other initialization
+    await initializeCurrency();
     
     // Initialize timer if enabled
     if (showTimer) {
