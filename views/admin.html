@@ -387,7 +387,7 @@
             <div class="form-section">
               <div class="form-group">
                 <label for="generalMessage">General Info Message</label>
-                <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
+                <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from {amount}"></textarea>
               <div class="help-text">
                 General message shown when cart is empty or below threshold. 
                 You can use <b>{remaining}</b> for the remaining amount, <b>{amount}</b> for the threshold, and <b>{timer}</b> for countdown timer.
@@ -404,7 +404,7 @@
 
             <div class="form-group" id="progressMessageGroup">
               <label for="progressMessage">Progress Message</label>
-              <textarea id="progressMessage" style="resize: none;" rows="1" placeholder="Add ${remaining} more for free shipping!"></textarea>
+              <textarea id="progressMessage" style="resize: none;" rows="1" placeholder="Add {remaining} more for free shipping!"></textarea>
               <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount and {timer} for countdown.</div>
             </div>
 
@@ -464,20 +464,22 @@
             </div>
           </div>
 
-          <!-- Currency Display Option - PRZENIESIONA TUTAJ -->
-          <div class="form-group" id="currencyDisplayGroup">
-            <label>Currency Display</label>
-            <div>
-              <label style="margin-right: 20px;">
-                <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
-                Use shop currency (e.g. "$100")
-              </label>
-              <label>
-                <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
-                Use customer currency (coming soon)
-              </label>
+          <!-- Currency Display Option -->
+          <div class="form-section">
+            <div class="form-group" id="currencyDisplaySection">
+              <label>Currency Display</label>
+              <div>
+                <label style="margin-right: 20px;">
+                  <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
+                  Use shop currency (e.g. "$100")
+                </label>
+                <label>
+                  <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
+                  Use customer currency (coming soon)
+                </label>
+              </div>
+              <div class="help-text">Choose how the amounts are displayed to customers</div>
             </div>
-            <div class="help-text">Choose how the amounts are displayed to customers</div>
           </div>
         </div>
 
@@ -823,7 +825,7 @@
         // Pobierz wszystkie wartości
       const generalMessage = document.getElementById('generalMessage').value || 'Free shipping from $100';
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
-      const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free shipping!';
+      const progressMessage = document.getElementById('progressMessage').value || 'Add {remaining} more for free shipping!';
       const minAmount = parseFloat(document.getElementById('minAmount').value) || 100;
       const showTimer = document.getElementById('showTimer').checked;
       const timerLimit = document.getElementById('timerLimit').value || 24;
@@ -1108,9 +1110,9 @@
         const shop = getShopFromUrl();
         const response = await fetch(`/api/settings/${shop}`);
           if (!response.ok) {
-          document.getElementById('generalMessage').value = "Free shipping from $100";
+          document.getElementById('generalMessage').value = "Free shipping from {amount}";
           document.getElementById('showProgressMessage').checked = true;
-          document.getElementById('progressMessage').value = "Add ${remaining} more for free shipping!";
+          document.getElementById('progressMessage').value = "Add {remaining} more for free shipping!";
           document.getElementById('minAmount').value = 100;
           document.getElementById('showTimer').checked = false;
           document.getElementById('timerLimit').value = 24;
@@ -1192,9 +1194,9 @@
         if (!DEFAULT_DELIVERY_ICON) {
           DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
         }        // Załaduj podstawowe ustawienia
-        document.getElementById('generalMessage').value = settings.general_message || "Free shipping from $100";
+        document.getElementById('generalMessage').value = settings.general_message || "Free shipping from {amount}";
         document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
-        document.getElementById('progressMessage').value = settings.progress_message || "Add ${remaining} more for free shipping!";
+        document.getElementById('progressMessage').value = settings.progress_message || "Add {remaining} more for free shipping!";
         document.getElementById('minAmount').value = settings.min_amount || 100;
         document.getElementById('showTimer').checked = settings.show_timer || false;
         document.getElementById('timerLimit').value = settings.timer_limit || 24;
@@ -1273,78 +1275,79 @@
       }
     }    // Funkcja resetowania ustawień
     function resetSettings() {     
-    document.getElementById('generalMessage').value = "Free shipping from {amount}";
-    document.getElementById('progressMessage').value = "Add {remaining} more for free shipping!";
-    document.getElementById('minAmount').value = 100;
-    document.getElementById('showTimer').checked = false;
-    document.getElementById('timerLimit').value = 24;
-    
-    // Ukryj pole timer limit przy resecie
-    document.getElementById('timerLimitGroup').style.display = 'none';
-    
-    document.getElementById('closeable').checked = true;
-    document.getElementById('showSuccessMessage').checked = true;
-    document.getElementById('successMessage').value = "Enjoy free shipping!";
-    document.getElementById('backgroundColor').value = "#000000";
-    document.getElementById('textColor').value = "#bbbbbb";
-    document.getElementById('transparentBg').checked = false;
-    document.getElementById('position').value = "above-header";
-    document.getElementById('opacity').value = 100;
-    document.getElementById('fontFamily').value = "system";
-    document.getElementById('fontSize').value = 14;
-    document.getElementById('fontWeight').value = 800;
-    document.getElementById('borderWidth').value = 0;
-    document.getElementById('borderColor').value = "#cccccc";
-    document.getElementById('borderRadius').value = 0;
-    document.getElementById('shadowColor').value = "#000000";
-    document.getElementById('shadowOpacity').value = 0;
-    document.getElementById('shadowBlur').value = 0;
-    document.getElementById('shadowDistance').value = 0;
-    document.getElementById('width').value = 100;
-    document.getElementById('marginTop').value = 0;
-    document.getElementById('barHeight').value = 40;
-    document.getElementById('excludedCountries').value = "";
-    
-    // Zaktualizuj wyświetlane wartości
-    document.getElementById('opacityValue').textContent = '100%';
-    document.getElementById('borderWidthValue').textContent = '0px';
-    document.getElementById('borderRadiusValue').textContent = '0px';
-    document.getElementById('shadowOpacityValue').textContent = '0%';
-    document.getElementById('shadowBlurValue').textContent = '0px';
-    document.getElementById('shadowDistanceValue').textContent = '0px';
-    document.getElementById('widthValue').textContent = '100%';
-    document.getElementById('marginTopValue').textContent = '0px';
-    document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
-    document.getElementById('showIcon').checked = true;
-    document.getElementById('useDefaultIcon').checked = true;
-    document.getElementById('useCustomIcon').checked = false;
-    document.getElementById('iconSize').value = 30;
-    document.getElementById('iconGap').value = 10;
-    
-    // Wyczyść podgląd
-    const preview = document.getElementById('imagePreview');
-    preview.removeAttribute('data-image');
-    preview.style.backgroundImage = '';
-    preview.style.display = 'none';
-    preview.classList.remove('has-image');        preview.innerHTML = '';
-    
-    // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
-    document.getElementById('iconOptionsGroup').style.display = 'block';
-    document.getElementById('iconSizeGroup').style.display = 'block';
-    document.getElementById('iconGapGroup').style.display = 'block';
-    document.getElementById('customIconUpload').style.display = 'none';
-    
-    // Zaktualizuj wyświetlane wartości
-    document.getElementById('iconSizeValue').textContent = '30px';
-    document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('generalMessage').value = "Free shipping from {amount}";
+        document.getElementById('showProgressMessage').checked = true;
+        document.getElementById('progressMessage').value = "Add {remaining} more for free shipping!";
+        document.getElementById('minAmount').value = 100;
+        document.getElementById('showTimer').checked = false;
+        document.getElementById('timerLimit').value = 24;
+        
+        // Ukryj pole timer limit przy resecie
+        document.getElementById('timerLimitGroup').style.display = 'none';
+        
+        document.getElementById('closeable').checked = true;
+        document.getElementById('showSuccessMessage').checked = true;
+        document.getElementById('successMessage').value = "Enjoy free shipping!";
+        document.getElementById('backgroundColor').value = "#000000";
+        document.getElementById('textColor').value = "#bbbbbb";
+        document.getElementById('transparentBg').checked = false;
+        document.getElementById('position').value = "above-header";
+        document.getElementById('opacity').value = 100;
+        document.getElementById('fontFamily').value = "system";
+        document.getElementById('fontSize').value = 14;
+        document.getElementById('fontWeight').value = 800;
+        document.getElementById('borderWidth').value = 0;
+        document.getElementById('borderColor').value = "#cccccc";
+        document.getElementById('borderRadius').value = 0;
+        document.getElementById('shadowColor').value = "#000000";
+        document.getElementById('shadowOpacity').value = 0;
+        document.getElementById('shadowBlur').value = 0;
+        document.getElementById('shadowDistance').value = 0;
+        document.getElementById('width').value = 100;
+        document.getElementById('marginTop').value = 0;
+        document.getElementById('barHeight').value = 40;
+        document.getElementById('excludedCountries').value = "";
+        
+        // Zaktualizuj wyświetlane wartości
+        document.getElementById('opacityValue').textContent = '100%';
+        document.getElementById('borderWidthValue').textContent = '0px';
+        document.getElementById('borderRadiusValue').textContent = '0px';
+        document.getElementById('shadowOpacityValue').textContent = '0%';
+        document.getElementById('shadowBlurValue').textContent = '0px';
+        document.getElementById('shadowDistanceValue').textContent = '0px';
+        document.getElementById('widthValue').textContent = '100%';
+        document.getElementById('marginTopValue').textContent = '0px';
+        document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+        document.getElementById('showIcon').checked = true;
+        document.getElementById('useDefaultIcon').checked = true;
+        document.getElementById('useCustomIcon').checked = false;
+        document.getElementById('iconSize').value = 30;
+        document.getElementById('iconGap').value = 10;
+        
+        // Wyczyść podgląd
+        const preview = document.getElementById('imagePreview');
+        preview.removeAttribute('data-image');
+        preview.style.backgroundImage = '';
+        preview.style.display = 'none';
+        preview.classList.remove('has-image');        preview.innerHTML = '';
+        
+        // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
+        document.getElementById('iconOptionsGroup').style.display = 'block';
+        document.getElementById('iconSizeGroup').style.display = 'block';
+        document.getElementById('iconGapGroup').style.display = 'block';
+        document.getElementById('customIconUpload').style.display = 'none';
+        
+        // Zaktualizuj wyświetlane wartości
+        document.getElementById('iconSizeValue').textContent = '30px';
+        document.getElementById('iconGapValue').textContent = '10px';
 
-    // Domyślnie shop currency
-    document.getElementById('currencyModeShop').checked = true;
-    document.getElementById('currencyModeCustomer').checked = false;
+        // Domyślnie shop currency
+        document.getElementById('currencyModeShop').checked = true;
+        document.getElementById('currencyModeCustomer').checked = false;
 
-    toggleSuccessMessageField();
-    toggleProgressMessageField();
-    updatePreview();
+        toggleSuccessMessageField();
+        toggleProgressMessageField();
+        updatePreview();
     }// NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
     function toggleSuccessMessageField() {
       const checkbox = document.getElementById('showSuccessMessage');
@@ -1442,9 +1445,13 @@
           const data = await response.json();
           if (data.currency) {
             // Przenieś walutę do labela
-            document.getElementById('minAmountLabel').textContent = `Minimum Amount (Currency: ${data.currency})`;
-            // Usuń z help-text jeśli był
-            document.getElementById('minAmountHelp').textContent = 'Minimum order value required for free delivery';
+            const label = document.getElementById('minAmountLabel');
+            if (label) {
+              label.textContent = `Minimum Amount (Currency: ${data.currency})`;
+            }
+            // Usuń z help-text jeśli istnieje
+            const span = document.getElementById('currencySpan');
+            if (span) span.textContent = '';
           }
         }
       } catch (e) {
@@ -1489,7 +1496,7 @@
       // ...najważniejsze waluty, reszta fallbackuje do 'en'
     };
 
-    // Funkcja formatowania kwoty (z fallbackiem na 'en')
+    // Funkcja formatowania kwoty (z fallbackiem na 'en') - poprawiona logika zer
     function formatCurrency(amount, currency = 'USD') {
       const mappedLocale = currencyLocaleMap[currency] || 'en';
       // Sprawdź czy amount jest liczbą całkowitą
