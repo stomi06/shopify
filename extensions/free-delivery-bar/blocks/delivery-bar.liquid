@@ -449,6 +449,7 @@
     }
     
     let isBarVisible = !deliveryBar.classList.contains('hidden');
+    let isUpdatingDeliveryMessage = false; // 🔥 DODAJ FLAGĘ
 
     // Timer functionality
     let timerInterval = null;
@@ -529,6 +530,14 @@
 
     // Update delivery message based on cart value
     function updateDeliveryMessage() {
+      // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
+      if (isUpdatingDeliveryMessage) {
+        console.log('⚠️ updateDeliveryMessage already running, skipping...');
+        return;
+      }
+      
+      isUpdatingDeliveryMessage = true;
+      
       fetch('/cart.js')
         .then(response => response.json())
         .then(cart => {
@@ -552,6 +561,7 @@
                 finalMessage = '🎉 You have free delivery!';
               }
               
+
               finalMessage = replaceTimerInMessage(finalMessage);
               messageElement.textContent = finalMessage;
                 
@@ -559,6 +569,7 @@
                 deliveryBar.style.backgroundColor = bgColor;
               }
               
+
               console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
               // Ukryj pasek całkowicie
               console.log('🚫 Hide bar after threshold is enabled - hiding bar');
@@ -585,6 +596,7 @@
                 deliveryBar.style.backgroundColor = bgColor;
               }
               
+
               console.log('📋 Showing general message after threshold');
             }        } else {
             // PRÓG NIE OSIĄGNIĘTY
@@ -619,6 +631,7 @@
               deliveryBar.style.backgroundColor = bgColor;
             }
             
+
             console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : (showProgress ? 'progress' : 'general'));
           }
           
@@ -631,6 +644,10 @@
           deliveryBar.classList.remove('hidden');
           let message = generalMessage || 'Free delivery available!';
           messageElement.textContent = message;
+        })
+        .finally(() => {
+          // 🔥 ZWOLNIJ FLAGĘ
+          isUpdatingDeliveryMessage = false;
         });
     }
 
@@ -788,12 +805,14 @@
         url.includes('/cart/update') || 
         url.includes('/cart/change') ||
         url.includes('/cart/clear') ||
-        url.includes('/cart.js') ||
         url.includes('/cart/') ||
         url.endsWith('/cart')
       );
       
-      if (isCartRequest) {
+      // 🔥 WYKLUCZ /cart.js Z INTERCEPTORA
+      const isCartJsRequest = typeof url === 'string' && url.includes('/cart.js');
+      
+      if (isCartRequest && !isCartJsRequest) {
         promise.then((response) => {
           if (response.ok) {
             console.log('🔔 Cart fetch intercepted:', url);

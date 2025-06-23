@@ -406,7 +406,7 @@
             </div>
 
             <div class="form-group">
-              <label for="minAmount">Minimum Amount</label>
+              <label for="minAmount" id="minAmountLabel">Minimum Amount</label>
               <input type="number" id="minAmount" min="0" step="1" value="100" />
             </div>
 
@@ -1356,6 +1356,7 @@
     document.addEventListener('DOMContentLoaded', function() {
       loadSettings();
       updatePreview();
+      fetchAndSetCurrency(); // Dodaj wywołanie pobierania waluty
     });
 
     // Dodaj nasłuchiwacz dla checkbox'a:
@@ -1381,6 +1382,26 @@
         document.querySelector('button[onclick="switchTab(\'advanced\')"]').classList.add('active');
       }
     }
+
+    // --- WALUTA SKLEPU ---
+  async function fetchAndSetCurrency() {
+    try {
+      const shop = getShopFromUrl();
+      // Pobierz walutę sklepu z backendu (endpoint musi ją zwracać)
+      const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
+      if (!response.ok) return;
+      const data = await response.json();
+      if (data.currency) {
+        // Dodaj walutę do labelki
+        const label = document.getElementById('minAmountLabel');
+        if (label && !label.textContent.includes('(')) {
+          label.textContent += ` (${data.currency})`;
+        }
+      }
+    } catch (e) {
+      // Brak waluty = brak zmiany labela
+    }
+  }
   </script>
 </body>
 </html>
