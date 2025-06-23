@@ -1452,11 +1452,30 @@
       }
     }
 
-    // Funkcja formatowania kwoty (taka sama jak w pasku)
+    // Mapowanie waluty na domyślny locale z symbolem
+    const currencyLocaleMap = {
+      USD: 'en-US',
+      EUR: 'de-DE',
+      PLN: 'pl-PL',
+      GBP: 'en-GB',
+      JPY: 'ja-JP',
+      AUD: 'en-AU',
+      CAD: 'en-CA',
+      CHF: 'de-CH',
+      SEK: 'sv-SE',
+      NOK: 'nb-NO',
+      DKK: 'da-DK',
+      CZK: 'cs-CZ',
+      HUF: 'hu-HU'
+      // Dodaj inne jeśli potrzebujesz
+    };
+
+    // Funkcja formatowania kwoty (z mapowaniem locale)
     function formatCurrency(amount, currency = 'USD') {
-      const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+      // Użyj mapowania, jeśli znane, w przeciwnym razie userLocale
+      const mappedLocale = currencyLocaleMap[currency] || navigator.language || 'en-US';
       try {
-        return new Intl.NumberFormat(userLocale, {
+        return new Intl.NumberFormat(mappedLocale, {
           style: 'currency',
           currency: currency,
           maximumFractionDigits: 2
