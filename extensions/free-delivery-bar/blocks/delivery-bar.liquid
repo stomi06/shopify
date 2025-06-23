@@ -4,9 +4,6 @@
 {% endcomment %}
 
 {% assign settings = shop.metafields.free_delivery_app.settings.value %}
-{% assign shop_currency = shop.currency %}
-{% assign currency_display = settings.currency_display | default: 'shop' %}
-{% assign shop_locale = shop.primary_locale | default: 'en-US' %}
 
 <!-- Google Fonts Loading with preload for better performance -->
 {% assign google_fonts = 'roboto,open-sans,lato,montserrat,poppins,source-sans,nunito,raleway' | split: ',' %}
@@ -615,10 +612,8 @@
             } else if (showProgress) {
               // Koszyk niepusty i progress włączony - pokaż progress message
               const remaining = threshold - cartTotal;
-              let formattedRemaining = remaining % 1 === 0 ? remaining : remaining.toFixed(2);
-              if (currencyDisplay === 'shop') {
-                formattedRemaining = formatCurrency(remaining);
-              }
+              const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
+                
               finalMessage = progressMessage
                 .replace('[remaining]', formattedRemaining)
                 .replace('{remaining}', formattedRemaining)

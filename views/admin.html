@@ -408,19 +408,7 @@
             <div class="form-group">
               <label for="minAmount">Minimum Amount</label>
               <input type="number" id="minAmount" min="0" step="1" value="100" />
-              <div class="help-text" id="minAmountHelp">
-                Minimum order value required for free delivery <span id="currencySpan"></span>
-              </div>
-            </div>
-
-            <!-- NEW: Currency display option -->
-            <div class="form-group">
-              <label for="currencyDisplay">Currency display</label>
-              <select id="currencyDisplay">
-                <option value="shop" selected>Use shop currency (e.g. $100)</option>
-                <option value="customer">Use customer currency (coming soon)</option>
-              </select>
-              <div class="help-text">How to display amounts to the customer</div>
+              <div class="help-text" id="minAmountHelp">Minimum order value required for free delivery <span id="currencySpan"></span></div>
             </div>
 
             <!-- TIMER SECTION -->
@@ -971,17 +959,12 @@
         const messageWithTimer = replaceTimerPlaceholder(generalMessage);
         previewGeneralMessage.innerHTML = iconHtml + messageWithTimer;
       }
-      if (previewProgressMessage) {
-        let sampleRemaining = 25;
-        let formattedRemaining = sampleRemaining;
-        if (currencyDisplay === 'shop') {
-          formattedRemaining = formatCurrency(sampleRemaining);
-        }
-        let sampleProgress = progressMessage.replace('${remaining}', formattedRemaining).replace('{remaining}', formattedRemaining);
+        if (previewProgressMessage) {
+        const sampleProgress = progressMessage.replace('${remaining}', '$25');
         const messageWithTimer = replaceTimerPlaceholder(sampleProgress);
         previewProgressMessage.innerHTML = iconHtml + messageWithTimer;
       }
-      if (previewSuccessMessage) {
+        if (previewSuccessMessage) {
         const messageWithTimer = replaceTimerPlaceholder(successMessage);
         previewSuccessMessage.innerHTML = iconHtml + messageWithTimer;
       }
@@ -1044,10 +1027,7 @@
         icon_type: iconChoice,
         icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
-        icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
-        
-        // Nowa opcja wyświetlania waluty
-        currency_display: document.getElementById('currencyDisplay').value
+        icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
       };      console.log('💾 Saving complete settings object:', settings);
       console.log('📏 Bar height being saved:', settings.bar_height);
       console.log('🔒 Closeable being saved:', settings.closeable);
@@ -1404,41 +1384,21 @@
       }
     }
 
-    let SHOP_CURRENCY = 'USD'; // fallback
-let SHOP_LOCALE = 'en-US'; // fallback
-
-// Pobierz walutę sklepu i ustaw w opisie
-async function setCurrencyInMinAmountHelp() {
-  try {
-    const shop = getShopFromUrl();
-    const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
-    if (response.ok) {
-      const data = await response.json();
-      if (data.currency) {
-        SHOP_CURRENCY = data.currency;
-        document.getElementById('currencySpan').textContent = `(Currency: ${data.currency})`;
+    // Pobierz walutę sklepu i ustaw w opisie
+    async function setCurrencyInMinAmountHelp() {
+      try {
+        const shop = getShopFromUrl();
+        const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.currency) {
+            document.getElementById('currencySpan').textContent = `(Currency: ${data.currency})`;
+          }
+        }
+      } catch (e) {
+        // fallback: nie ustawiaj waluty
       }
     }
-  } catch (e) {
-    // fallback: nie ustawiaj waluty
-  }
-  // Ustaw locale użytkownika (do formatowania)
-  SHOP_LOCALE = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
-}
-
-// Funkcja formatowania kwoty
-function formatCurrency(amount) {
-  try {
-    return new Intl.NumberFormat(SHOP_LOCALE, {
-      style: 'currency',
-      currency: SHOP_CURRENCY,
-      maximumFractionDigits: 2
-    }).format(amount);
-  } catch (e) {
-    // fallback
-    return `${amount} ${SHOP_CURRENCY}`;
-  }
-}
   </script>
 </body>
 </html>
