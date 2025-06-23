@@ -254,8 +254,9 @@
      data-bar-height="{{ settings.bar_height | default: 40 }}"
      data-icon-size="{{ settings.icon_size | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"
-     data-currency="{{ settings.shop_currency | default: 'USD' }}"
-     data-currency-display="{{ settings.currency_display | default: 'shop' }}">  <div class="delivery-bar-content">
+     data-currency="{{ shop.currency }}"
+     data-currency-mode="{{ settings.currency_mode | default: 'shop' }}"
+  <div class="delivery-bar-content">
     {% if settings.show_icon %}
       <img class="delivery-icon" 
            src="{{ settings.icon_image }}" 
@@ -324,16 +325,13 @@
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  const currency = deliveryBar.getAttribute('data-currency') || 'USD';
-  const currencyDisplay = deliveryBar.getAttribute('data-currency-display') || 'shop';
-  console.log('=== FREE DELIVERY BAR INIT ===');
-  console.log('Threshold:', threshold);
-  console.log('Position:', position);
-  console.log('Bar height:', barHeight);
-  console.log('Show timer:', showTimer);
-  console.log('Timer limit:', timerLimit, 'hours');
-  console.log('Excluded countries:', excludedCountries);
-  
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
+  // --- NEW: currency and currency mode ---
+  const shopCurrency = deliveryBar.getAttribute('data-currency') || 'USD';
+  const currencyMode = deliveryBar.getAttribute('data-currency-mode') || 'shop';
+  // --- NEW: get user locale ---
+  const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+
   // Check if current country is excluded
   async function checkCountryExclusion() {
     if (!excludedCountries || excludedCountries.trim() === '') {
@@ -532,6 +530,25 @@
       return message.replace(/{timer}/g, timerString);
     }
 
+    // --- NEW: format amount as currency ---
+    function formatCurrency(amount) {
+      let currency = shopCurrency;
+      let locale = userLocale;
+      // In the future: if currencyMode === 'customer', use customer currency
+      // For now, always use shop currency
+      try {
+        return new Intl.NumberFormat(locale, {
+          style: 'currency',
+          currency: currency,
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2
+        }).format(amount);
+      } catch (e) {
+        // fallback
+        return '$' + amount;
+      }
+    }
+
     // Update delivery message based on cart value
     function updateDeliveryMessage() {
       // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
@@ -549,7 +566,7 @@
           console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
           
           let finalMessage = generalMessage;
-            if (cartTotal >= threshold) {
+          if (cartTotal >= threshold) {
             // THRESHOLD REACHED
             if (showSuccess) {
               // Pokaż success message
@@ -616,8 +633,8 @@
             } else if (showProgress) {
               // Koszyk niepusty i progress włączony - pokaż progress message
               const remaining = threshold - cartTotal;
-              // Format remaining as currency
               const formattedRemaining = formatCurrency(remaining);
+              // --- ZAMIANA: wstaw sformatowaną kwotę ---
               finalMessage = progressMessage
                 .replace('[remaining]', formattedRemaining)
                 .replace('{remaining}', formattedRemaining)
