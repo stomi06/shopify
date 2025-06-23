@@ -388,7 +388,10 @@
               <div class="form-group">
                 <label for="generalMessage">General Info Message</label>
                 <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from $100"></textarea>
-              <div class="help-text">General message shown when cart is empty or below threshold. Use {timer} to show countdown timer.</div>
+              <div class="help-text">
+                General message shown when cart is empty or below threshold. 
+                You can use <b>{remaining}</b> for the remaining amount, <b>{amount}</b> for the threshold, and <b>{timer}</b> for countdown timer.
+              </div>
             </div>
 
             <div class="form-group">
@@ -438,7 +441,10 @@
             <div class="form-group" id="successMessageGroup">
               <label for="successMessage">Success Message</label>
               <textarea id="successMessage" style="resize: none;" rows="1" placeholder="Enjoy free shipping!"></textarea>
-              <div class="help-text">Message displayed when customer reaches the free delivery threshold. Use {timer} to show countdown.</div>
+              <div class="help-text">
+                Message displayed when customer reaches the free delivery threshold.
+                You can use <b>{remaining}</b> (will be 0), <b>{amount}</b> for the threshold, and <b>{timer}</b> for countdown.
+              </div>
             </div>
 
             <div class="form-group" id="hideBarGroup" style="display: none;">

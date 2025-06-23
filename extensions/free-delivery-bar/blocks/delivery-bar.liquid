@@ -533,6 +533,16 @@
       return message.replace(/{timer}/g, timerString);
     }
 
+    // Funkcja do podmiany {remaining} i {amount} w dowolnej wiadomości
+    function replaceAmountPlaceholders(message, remaining, threshold) {
+      const formattedRemaining = formatCurrency(remaining);
+      const formattedThreshold = formatCurrency(threshold);
+      return message
+        .replace(/\[remaining\]/g, formattedRemaining)
+        .replace(/{remaining}/g, formattedRemaining)
+        .replace(/{amount}/g, formattedThreshold);
+    }
+
     // Update delivery message based on cart value
     function updateDeliveryMessage() {
       // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
@@ -547,6 +557,7 @@
         .then(response => response.json())
         .then(cart => {
           const cartTotal = cart.total_price / 100;
+          const remaining = threshold - cartTotal;
           console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
           
           let finalMessage = generalMessage;
@@ -567,6 +578,8 @@
               }
               
 
+              // Podmień {remaining} i {amount} także w success message
+              finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
               finalMessage = replaceTimerInMessage(finalMessage);
               messageElement.textContent = finalMessage;
                 
@@ -593,7 +606,8 @@
               isBarVisible = true;
               localStorage.setItem('deliveryBarState', 'visible');
               
-              finalMessage = generalMessage;
+              // Podmień {remaining} i {amount} także w general message
+              finalMessage = replaceAmountPlaceholders(generalMessage, 0, threshold);
               finalMessage = replaceTimerInMessage(finalMessage);
               messageElement.textContent = finalMessage;
               
@@ -612,20 +626,14 @@
             isBarVisible = true;
             localStorage.setItem('deliveryBarState', 'visible');
               if (cartTotal === 0) {
-              // Koszyk pusty - pokaż ogólną wiadomość
-              finalMessage = generalMessage;
+              // Koszyk pusty - pokaż ogólną wiadomość z podmianą {remaining}
+              finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             } else if (showProgress) {
               // Koszyk niepusty i progress włączony - pokaż progress message
-              const remaining = threshold - cartTotal;
-              const formattedRemaining = formatCurrency(remaining);
-              // Zamień [remaining], {remaining}, {amount} na sformatowaną kwotę
-              finalMessage = progressMessage
-                .replace('[remaining]', formattedRemaining)
-                .replace('{remaining}', formattedRemaining)
-                .replace('{amount}', formatCurrency(threshold));
+              finalMessage = replaceAmountPlaceholders(progressMessage, remaining, threshold);
             } else {
-              // Koszyk niepusty ale progress wyłączony - pokaż general message
-              finalMessage = generalMessage;
+              // Koszyk niepusty ale progress wyłączony - pokaż general message z podmianą {remaining}
+              finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             }
             
             finalMessage = replaceTimerInMessage(finalMessage);
@@ -975,6 +983,27 @@
   
   // Start initialization with country check
   initializeBar();
+  
+  // Pobierz walutę sklepu i tryb waluty
+  const shopCurrency = deliveryBar.getAttribute('data-shop-currency') || (window.Shopify && Shopify.currency && Shopify.currency.active) || 'USD';
+  const currencyMode = deliveryBar.getAttribute('data-currency-mode') || 'shop';
+
+  // Pobierz locale użytkownika
+  const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+
+  // Funkcja formatowania kwoty (przeniesiona na górę, dostępna globalnie w tym IIFE)
+  function formatCurrency(amount) {
+    let currency = shopCurrency;
+    try {
+      return new Intl.NumberFormat(userLocale, {
+        style: 'currency',
+        currency: currency,
+        maximumFractionDigits: 2
+      }).format(amount);
+    } catch (e) {
+      return '$' + amount;
+    }
+  }
   
 })();
 </script>
