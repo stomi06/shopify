@@ -797,6 +797,23 @@
       }
     });    // Funkcja aktualizacji podglądu
     function updatePreview() {
+      // --- currency for preview ---
+      let currency = 'USD';
+      let locale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+      // --- currency formatting function ---
+      function formatCurrency(amount) {
+        try {
+          return new Intl.NumberFormat(locale, {
+            style: 'currency',
+            currency: currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2
+          }).format(amount);
+        } catch (e) {
+          return '$' + amount;
+        }
+      }
+      
       const previewGeneralMessage = document.getElementById('previewGeneralMessage');
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
