@@ -1291,7 +1291,8 @@
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('iconSizeValue').textContent = '30px';
+        document.getElementById('iconGapValue').textContent = '10px';
 
         toggleSuccessMessageField();
         toggleProgressMessageField();
@@ -1388,15 +1389,27 @@
     async function setCurrencyInMinAmountHelp() {
       try {
         const shop = getShopFromUrl();
+        if (!shop) {
+          document.getElementById('currencySpan').textContent = '';
+          console.warn('Brak parametru shop w URL!');
+          return;
+        }
         const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
         if (response.ok) {
           const data = await response.json();
           if (data.currency) {
             document.getElementById('currencySpan').textContent = `(waluta: ${data.currency})`;
+          } else {
+            document.getElementById('currencySpan').textContent = '(waluta: ?)';
+            console.warn('Brak waluty w odpowiedzi API:', data);
           }
+        } else {
+          document.getElementById('currencySpan').textContent = '(waluta: ?)';
+          console.warn('Błąd odpowiedzi API:', response.status);
         }
       } catch (e) {
-        // fallback: nie ustawiaj waluty
+        document.getElementById('currencySpan').textContent = '(waluta: ?)';
+        console.error('Błąd pobierania waluty:', e);
       }
     }
   </script>
