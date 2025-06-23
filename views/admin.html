@@ -818,7 +818,7 @@
       const generalMessage = document.getElementById('generalMessage').value || 'Free shipping from $100';
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
       const progressMessage = document.getElementById('progressMessage').value || 'Add ${remaining} more for free shipping!';
-      const minAmount = document.getElementById('minAmount').value || 100;
+      const minAmount = parseFloat(document.getElementById('minAmount').value) || 100;
       const showTimer = document.getElementById('showTimer').checked;
       const timerLimit = document.getElementById('timerLimit').value || 24;
       const showSuccessMessage = document.getElementById('showSuccessMessage').checked;
@@ -978,19 +978,24 @@
         successBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
       }
       
-      // Aktualizuj treści wiadomości z timerem
+      // Aktualizuj treści wiadomości z podmianą {remaining}, {amount}, {timer}
       if (previewGeneralMessage) {
-        const messageWithTimer = replaceTimerPlaceholder(generalMessage);
-        previewGeneralMessage.innerHTML = iconHtml + messageWithTimer;
+        // Pusty koszyk: remaining = minAmount
+        let msg = replaceAmountPlaceholders(generalMessage, minAmount, minAmount, currency);
+        msg = replaceTimerPlaceholder(msg);
+        previewGeneralMessage.innerHTML = iconHtml + msg;
       }
-        if (previewProgressMessage) {
-        const sampleProgress = progressMessage.replace('${remaining}', '$25');
-        const messageWithTimer = replaceTimerPlaceholder(sampleProgress);
-        previewProgressMessage.innerHTML = iconHtml + messageWithTimer;
+      if (previewProgressMessage) {
+        // Progress: remaining = 25, threshold = minAmount
+        let msg = replaceAmountPlaceholders(progressMessage, 25, minAmount, currency);
+        msg = replaceTimerPlaceholder(msg);
+        previewProgressMessage.innerHTML = iconHtml + msg;
       }
-        if (previewSuccessMessage) {
-        const messageWithTimer = replaceTimerPlaceholder(successMessage);
-        previewSuccessMessage.innerHTML = iconHtml + messageWithTimer;
+      if (previewSuccessMessage) {
+        // Success: remaining = 0, threshold = minAmount
+        let msg = replaceAmountPlaceholders(successMessage, 0, minAmount, currency);
+        msg = replaceTimerPlaceholder(msg);
+        previewSuccessMessage.innerHTML = iconHtml + msg;
       }
     }
 
@@ -1128,6 +1133,9 @@
           document.getElementById('marginTop').value = 0;
           document.getElementById('barHeight').value = 40;
           document.getElementById('excludedCountries').value = "";
+          
+          // Zresetuj walutę w help text
+          document.getElementById('currencySpan').textContent = '';
           
           // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
@@ -1434,6 +1442,30 @@
       } catch (e) {
         // fallback: nie ustawiaj waluty
       }
+    }
+
+    // Funkcja formatowania kwoty (taka sama jak w pasku)
+    function formatCurrency(amount, currency = 'USD') {
+      const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+      try {
+        return new Intl.NumberFormat(userLocale, {
+          style: 'currency',
+          currency: currency,
+          maximumFractionDigits: 2
+        }).format(amount);
+      } catch (e) {
+        return '$' + amount;
+      }
+    }
+
+    // Funkcja do podmiany {remaining} i {amount}
+    function replaceAmountPlaceholders(message, remaining, threshold, currency) {
+      const formattedRemaining = formatCurrency(remaining, currency);
+      const formattedThreshold = formatCurrency(threshold, currency);
+      return message
+        .replace(/\[remaining\]/g, formattedRemaining)
+        .replace(/{remaining}/g, formattedRemaining)
+        .replace(/{amount}/g, formattedThreshold);
     }
   </script>
 </body>
