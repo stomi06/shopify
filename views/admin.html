@@ -811,6 +811,14 @@
       }
     });    // Funkcja aktualizacji podglądu
     function updatePreview() {
+      // Pobierz walutę sklepu do podglądu (jeśli jest dostępna w span)
+      let currency = 'USD';
+      const currencySpan = document.getElementById('currencySpan');
+      if (currencySpan && currencySpan.textContent) {
+        const match = currencySpan.textContent.match(/\((Currency: ([A-Z]+))\)/);
+        if (match && match[2]) currency = match[2];
+      }
+      
       const previewGeneralMessage = document.getElementById('previewGeneralMessage');
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
