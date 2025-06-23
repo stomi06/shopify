@@ -489,4 +489,44 @@ app.get('/default-icon', (req, res) => {
   res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
 });
 
+// Endpoint do pobierania waluty sklepu
+app.get('/api/shop-currency', async (req, res) => {
+  try {
+    const shop = req.query.shop;
+    if (!shop) {
+      return res.status(400).json({ error: 'Missing shop parameter' });
+    }
+
+    // Pobierz access token dla tego sklepu
+    const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
+    if (sessionResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Brak autoryzacji dla tego sklepu' });
+    }
+    const accessToken = sessionResult.rows[0].access_token;
+
+    // Pobierz dane sklepu z Shopify API
+    const response = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
+      headers: {
+        'X-Shopify-Access-Token': accessToken,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      return res.status(500).json({ error: 'Błąd pobierania danych sklepu z Shopify' });
+    }
+
+    const data = await response.json();
+    const currency = data && data.shop && data.shop.currency ? data.shop.currency : null;
+    if (!currency) {
+      return res.status(404).json({ error: 'Nie znaleziono waluty sklepu' });
+    }
+
+    res.json({ currency });
+  } catch (err) {
+    console.error('❌ Błąd pobierania waluty sklepu:', err.message);
+    res.status(500).json({ error: 'Błąd serwera: ' + err.message });
+  }
+});
+
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));
