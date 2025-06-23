@@ -458,14 +458,22 @@
             </div>
           </div>
 
-          <!-- Currency Display Setting -->
-          <div class="form-group">
-            <label for="currencyMode">Currency Display</label>
-            <select id="currencyMode">
-              <option value="shop">Use shop currency (e.g. $100)</option>
-              <option value="customer">Use customer currency (coming soon)</option>
-            </select>
-            <div class="help-text">Choose how to display currency in the bar. "Use shop currency" will show prices in your store's currency. "Use customer currency" will use the visitor's currency (coming soon).</div>
+          <!-- Currency Display Option -->
+          <div class="form-section">
+            <div class="form-group">
+              <label>Currency Display</label>
+              <div>
+                <label style="margin-right: 20px;">
+                  <input type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
+                  Use shop currency (e.g. "$100")
+                </label>
+                <label>
+                  <input type="radio" name="currencyMode" id="currencyModeCustomer" value="customer" disabled>
+                  Use customer currency (coming soon)
+                </label>
+              </div>
+              <div class="help-text">Choose how the amounts are displayed to customers</div>
+            </div>
           </div>
         </div>
 
@@ -797,23 +805,6 @@
       }
     });    // Funkcja aktualizacji podglądu
     function updatePreview() {
-      // --- currency for preview ---
-      let currency = 'USD';
-      let locale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
-      // --- currency formatting function ---
-      function formatCurrency(amount) {
-        try {
-          return new Intl.NumberFormat(locale, {
-            style: 'currency',
-            currency: currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
-          }).format(amount);
-        } catch (e) {
-          return '$' + amount;
-        }
-      }
-      
       const previewGeneralMessage = document.getElementById('previewGeneralMessage');
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
@@ -987,9 +978,7 @@
         previewGeneralMessage.innerHTML = iconHtml + messageWithTimer;
       }
         if (previewProgressMessage) {
-        // --- ZAMIANA: wstaw sformatowaną kwotę ---
-        const sampleRemaining = formatCurrency(25);
-        const sampleProgress = progressMessage.replace('${remaining}', sampleRemaining).replace('{remaining}', sampleRemaining).replace('{amount}', formatCurrency(100));
+        const sampleProgress = progressMessage.replace('${remaining}', '$25');
         const messageWithTimer = replaceTimerPlaceholder(sampleProgress);
         previewProgressMessage.innerHTML = iconHtml + messageWithTimer;
       }
@@ -1021,7 +1010,10 @@
         if (preview) {
           iconImage = preview.getAttribute('data-image');
         }
-      }      const settings = {
+      }      // Pobierz tryb waluty
+      const currencyMode = document.querySelector('input[name="currencyMode"]:checked')?.value || 'shop';
+      
+      const settings = {
         general_message: document.getElementById('generalMessage').value,
         show_progress_message: document.getElementById('showProgressMessage').checked,
         progress_message: document.getElementById('progressMessage').value,
@@ -1046,7 +1038,8 @@
         border_width: parseInt(document.getElementById('borderWidth').value),
         border_color: document.getElementById('borderColor').value,
         border_radius: parseInt(document.getElementById('borderRadius').value),
-        shadow_color: document.getElementById('shadowColor').value,        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
+        shadow_color: document.getElementById('shadowColor').value,        
+        shadow_opacity: parseInt(document.getElementById('shadowOpacity').value),
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         excluded_countries: document.getElementById('excludedCountries').value,
@@ -1058,8 +1051,8 @@
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
         
-        // Waluta
-        currency_mode: document.getElementById('currencyMode').value,
+        // Ustawienia waluty
+        currency_mode: currencyMode
       };      console.log('💾 Saving complete settings object:', settings);
       console.log('📏 Bar height being saved:', settings.bar_height);
       console.log('🔒 Closeable being saved:', settings.closeable);
@@ -1323,7 +1316,12 @@
         document.getElementById('customIconUpload').style.display = 'none';
         
         // Zaktualizuj wyświetlane wartości
-        document.getElementById('iconSizeValue').textContent = '30px';document.getElementById('iconGapValue').textContent = '10px';
+        document.getElementById('iconSizeValue').textContent = '30px';
+        document.getElementById('iconGapValue').textContent = '10px';
+
+        // Domyślnie shop currency
+        document.getElementById('currencyModeShop').checked = true;
+        document.getElementById('currencyModeCustomer').checked = false;
 
         toggleSuccessMessageField();
         toggleProgressMessageField();

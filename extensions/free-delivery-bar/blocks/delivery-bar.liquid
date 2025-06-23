@@ -254,8 +254,9 @@
      data-bar-height="{{ settings.bar_height | default: 40 }}"
      data-icon-size="{{ settings.icon_size | default: 20 }}"
      data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"
-     data-currency="{{ shop.currency }}"
      data-currency-mode="{{ settings.currency_mode | default: 'shop' }}"
+     data-shop-currency="{{ shop.currency | default: 'USD' }}"
+>
   <div class="delivery-bar-content">
     {% if settings.show_icon %}
       <img class="delivery-icon" 
@@ -267,7 +268,8 @@
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
       {{ message }}
     </span>
-  </div>  {% if settings.closeable != false %}
+  </div>
+  {% if settings.closeable != false %}
     <button id="close-delivery-bar">×</button>
   {% endif %}
   
@@ -325,13 +327,14 @@
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';
-  // --- NEW: currency and currency mode ---
-  const shopCurrency = deliveryBar.getAttribute('data-currency') || 'USD';
-  const currencyMode = deliveryBar.getAttribute('data-currency-mode') || 'shop';
-  // --- NEW: get user locale ---
-  const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
-
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  console.log('=== FREE DELIVERY BAR INIT ===');
+  console.log('Threshold:', threshold);
+  console.log('Position:', position);
+  console.log('Bar height:', barHeight);
+  console.log('Show timer:', showTimer);
+  console.log('Timer limit:', timerLimit, 'hours');
+  console.log('Excluded countries:', excludedCountries);
+  
   // Check if current country is excluded
   async function checkCountryExclusion() {
     if (!excludedCountries || excludedCountries.trim() === '') {
@@ -530,25 +533,6 @@
       return message.replace(/{timer}/g, timerString);
     }
 
-    // --- NEW: format amount as currency ---
-    function formatCurrency(amount) {
-      let currency = shopCurrency;
-      let locale = userLocale;
-      // In the future: if currencyMode === 'customer', use customer currency
-      // For now, always use shop currency
-      try {
-        return new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: currency,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 2
-        }).format(amount);
-      } catch (e) {
-        // fallback
-        return '$' + amount;
-      }
-    }
-
     // Update delivery message based on cart value
     function updateDeliveryMessage() {
       // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
@@ -634,7 +618,7 @@
               // Koszyk niepusty i progress włączony - pokaż progress message
               const remaining = threshold - cartTotal;
               const formattedRemaining = formatCurrency(remaining);
-              // --- ZAMIANA: wstaw sformatowaną kwotę ---
+              // Zamień [remaining], {remaining}, {amount} na sformatowaną kwotę
               finalMessage = progressMessage
                 .replace('[remaining]', formattedRemaining)
                 .replace('{remaining}', formattedRemaining)
@@ -672,73 +656,73 @@
         });
     }
 
-    // Funkcje animacji
-    function fadeOutBar(callback) {
-      console.log('🎬 fadeOutBar called, position:', position);
-      
-      // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
-      if (position === 'above-header') {
-        const header = document.querySelector('header.header');
-        console.log('🔍 Looking for header.header:', !!header);
-        if (header) {
-          console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
-          
-          // Dodaj klasę animowanego chowania
-          header.classList.remove('delivery-bar-hidden');
-          header.classList.add('delivery-bar-hiding');
-          
-          // Ustaw też inline style jako backup
-          header.style.setProperty('padding-top', '0px', 'important');
-          
-          console.log('🔧 Added .delivery-bar-hiding class for animated removal');
-          console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
-        }
+  // Funkcje animacji
+  function fadeOutBar(callback) {
+    console.log('🎬 fadeOutBar called, position:', position);
+    
+    // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      console.log('🔍 Looking for header.header:', !!header);
+      if (header) {
+        console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
+        
+        // Dodaj klasę animowanego chowania
+        header.classList.remove('delivery-bar-hidden');
+        header.classList.add('delivery-bar-hiding');
+        
+        // Ustaw też inline style jako backup
+        header.style.setProperty('padding-top', '0px', 'important');
+        
+        console.log('🔧 Added .delivery-bar-hiding class for animated removal');
+        console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
       }
-      
-      deliveryBar.classList.add('fade-out');
-      
-      setTimeout(() => {
-        deliveryBar.classList.add('hidden');
-        deliveryBar.classList.remove('fade-out');
-        
-        // Po zakończeniu animacji zastąp klasę hiding na hidden
-        if (position === 'above-header') {
-          const header = document.querySelector('header.header');
-          if (header) {
-            header.classList.remove('delivery-bar-hiding');
-            header.classList.add('delivery-bar-hidden');
-          }
-        }
-        
-        if (callback) callback();
-      }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
     }
-
-    function fadeInBar() {
-      // 🔥 NAJPIERW USTAW OPACITY NA 0
-      deliveryBar.classList.add('fade-out');
-      deliveryBar.classList.remove('hidden');
+    
+    deliveryBar.classList.add('fade-out');
+    
+    setTimeout(() => {
+      deliveryBar.classList.add('hidden');
+      deliveryBar.classList.remove('fade-out');
       
-      // Jeśli pozycja to above-header, przywróć padding do header
+      // Po zakończeniu animacji zastąp klasę hiding na hidden
       if (position === 'above-header') {
         const header = document.querySelector('header.header');
         if (header) {
-          // Usuń klasę CSS i inline style
-          header.classList.remove('delivery-bar-hidden');
-          header.style.removeProperty('padding-top');
-          
-          console.log('🔧 Removed .delivery-bar-hidden class and inline style');
-          console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
+          header.classList.remove('delivery-bar-hiding');
+          header.classList.add('delivery-bar-hidden');
         }
       }
       
-      // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
-      deliveryBar.offsetHeight; // Force reflow
-      
-      setTimeout(() => {
-        deliveryBar.classList.remove('fade-out');
-      }, 10); // Krótkie opóźnienie
-    }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
+      if (callback) callback();
+    }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
+  }
+
+  function fadeInBar() {
+    // 🔥 NAJPIERW USTAW OPACITY NA 0
+    deliveryBar.classList.add('fade-out');
+    deliveryBar.classList.remove('hidden');
+    
+    // Jeśli pozycja to above-header, przywróć padding do header
+    if (position === 'above-header') {
+      const header = document.querySelector('header.header');
+      if (header) {
+        // Usuń klasę CSS i inline style
+        header.classList.remove('delivery-bar-hidden');
+        header.style.removeProperty('padding-top');
+        
+        console.log('🔧 Removed .delivery-bar-hidden class and inline style');
+        console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
+      }
+    }
+    
+    // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
+    deliveryBar.offsetHeight; // Force reflow
+    
+    setTimeout(() => {
+      deliveryBar.classList.remove('fade-out');
+    }, 10); // Krótkie opóźnienie
+  }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
     if (closeButton) {
       closeButton.addEventListener('click', function() {
         // Jeśli pozycja to above-header, usuń padding z header
