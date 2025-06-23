@@ -1383,25 +1383,24 @@
       }
     }
 
-    // --- WALUTA SKLEPU ---
-  async function fetchAndSetCurrency() {
-    try {
-      const shop = getShopFromUrl();
-      // Pobierz walutę sklepu z backendu (endpoint musi ją zwracać)
-      const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
-      if (!response.ok) return;
-      const data = await response.json();
-      if (data.currency) {
-        // Dodaj walutę do labelki
-        const label = document.getElementById('minAmountLabel');
-        if (label && !label.textContent.includes('(')) {
-          label.textContent += ` (${data.currency})`;
+    // Dodaj funkcję pobierającą walutę sklepu i ustawiającą ją w labelce
+    async function fetchAndSetCurrency() {
+      try {
+        const shop = getShopFromUrl();
+        const response = await fetch(`/api/shop-currency?shop=${encodeURIComponent(shop)}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.currency) {
+          const label = document.getElementById('minAmountLabel');
+          if (label) {
+            // Zmień tekst na "Minimum Amount (PLN)"
+            label.textContent = `Minimum Amount (${data.currency})`;
+          }
         }
+      } catch (e) {
+        // Brak zmiany labela w przypadku błędu
       }
-    } catch (e) {
-      // Brak waluty = brak zmiany labela
     }
-  }
   </script>
 </body>
 </html>
