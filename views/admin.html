@@ -1273,8 +1273,7 @@
       } catch (err) {
         console.error('Error loading settings:', err);
       }
-    }    
-    // Funkcja resetowania ustawień
+    }    // Funkcja resetowania ustawień
     function resetSettings() {     
         document.getElementById('generalMessage').value = "Free shipping from $100";
         document.getElementById('showProgressMessage').checked = true;
@@ -1453,7 +1452,7 @@
       }
     }
 
-    // Mapowanie waluty na domyślny locale z symbolem
+    // Mapowanie najważniejszych walut na locale z symbolem
     const currencyLocaleMap = {
       USD: 'en-US',
       EUR: 'de-DE',
@@ -1467,14 +1466,32 @@
       NOK: 'nb-NO',
       DKK: 'da-DK',
       CZK: 'cs-CZ',
-      HUF: 'hu-HU'
-      // Dodaj inne jeśli potrzebuj
+      HUF: 'hu-HU',
+      CNY: 'zh-CN',
+      HKD: 'zh-HK',
+      SGD: 'en-SG',
+      NZD: 'en-NZ',
+      ZAR: 'en-ZA',
+      MXN: 'es-MX',
+      BRL: 'pt-BR',
+      RUB: 'ru-RU',
+      TRY: 'tr-TR',
+      INR: 'en-IN',
+      KRW: 'ko-KR',
+      THB: 'th-TH',
+      MYR: 'ms-MY',
+      IDR: 'id-ID',
+      PHP: 'en-PH',
+      TWD: 'zh-TW',
+      SAR: 'ar-SA',
+      AED: 'ar-AE',
+      ILS: 'he-IL'
+      // ...najważniejsze waluty, reszta fallbackuje do 'en'
     };
 
-    // Funkcja formatowania kwoty (z mapowaniem locale)
+    // Funkcja formatowania kwoty (z fallbackiem na 'en')
     function formatCurrency(amount, currency = 'USD') {
-      // Użyj mapowania, jeśli znane, w przeciwnym razie userLocale
-      const mappedLocale = currencyLocaleMap[currency] || navigator.language || 'en-US';
+      const mappedLocale = currencyLocaleMap[currency] || 'en';
       try {
         return new Intl.NumberFormat(mappedLocale, {
           style: 'currency',
@@ -1482,7 +1499,7 @@
           maximumFractionDigits: 2
         }).format(amount);
       } catch (e) {
-        return '$' + amount;
+        return currency + ' ' + amount;
       }
     }
 
