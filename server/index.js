@@ -395,9 +395,40 @@ app.post('/api/settings', async (req, res) => {
     
     const accessToken = sessionResult.rows[0].access_token;
     
-    // Zapisz ustawienia do Shop Metafields 
+    // Pobierz istniejące ustawienia (jeśli są)
+    let timer_start_time = null;
+    try {
+      const metafieldsResp = await fetch(`https://${shop}/admin/api/2023-10/metafields.json?namespace=free_delivery_app&key=settings`, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (metafieldsResp.ok) {
+        const metafields = await metafieldsResp.json();
+        if (metafields.metafields && metafields.metafields.length > 0) {
+          const prevSettings = JSON.parse(metafields.metafields[0].value);
+          if (prevSettings.timer_start_time) {
+            timer_start_time = prevSettings.timer_start_time;
+          }
+        }
+      }
+    } catch (e) {
+      // ignore, fallback to null
+    }
+
+    // Jeśli timer włączony i nie ma timer_start_time, ustaw na teraz
+    if (settings.show_timer && !timer_start_time) {
+      timer_start_time = new Date().toISOString();
+    }
+    // Jeśli timer wyłączony, usuń timer_start_time
+    if (!settings.show_timer) {
+      timer_start_time = null;
+    }
+
     const settingsData = {
       ...settings,
+      timer_start_time, // zawsze nadpisz pole
       app_url: APP_URL
     };
 

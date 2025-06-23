@@ -478,8 +478,9 @@ let lastTimerMessage = null;
       } else if (timerStart && !isNaN(Number(timerStart))) {
         startTime = Number(timerStart);
       } else {
-        // fallback: aktualny czas (niezalecane, tylko awaryjnie)
-        startTime = new Date().getTime();
+        // BRAK globalnego czasu startu – nie pokazuj timera
+        console.warn('[FreeDeliveryBar] timer_start_time nie ustawiony w metafieldzie!');
+        return;
       }
       timerEndTime = startTime + (timerLimit * 60 * 60 * 1000); // ms
 
