@@ -669,6 +669,23 @@
               <div class="help-text">Countries where the bar should NOT be displayed. Use 2-letter country codes separated by commas (e.g., US, CA, GB). Leave empty to show in all countries.</div>
             </div>
           </div>
+
+          <!-- Currency display -->
+          <div class="form-section">
+            <div class="section-title">Currency display</div>
+            <div class="form-group">
+              <label>How to display currency?</label>
+              <div>
+                <input type="radio" id="currencyShop" name="currencyDisplay" value="shop" checked>
+                <label for="currencyShop" style="display:inline;font-weight:400;">Use shop currency (e.g. $100.00)</label>
+              </div>
+              <div>
+                <input type="radio" id="currencyCustomer" name="currencyDisplay" value="customer">
+                <label for="currencyCustomer" style="display:inline;font-weight:400;">Use customer currency (coming soon)</label>
+              </div>
+              <div class="help-text">All amounts will be formatted according to the selected option.</div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="buttons panel-header">
@@ -959,10 +976,23 @@
         const messageWithTimer = replaceTimerPlaceholder(generalMessage);
         previewGeneralMessage.innerHTML = iconHtml + messageWithTimer;
       }
-        if (previewProgressMessage) {
-        const sampleProgress = progressMessage.replace('${remaining}', '$25');
-        const messageWithTimer = replaceTimerPlaceholder(sampleProgress);
-        previewProgressMessage.innerHTML = iconHtml + messageWithTimer;
+        // Format currency for {remaining}
+  function formatCurrency(amount) {
+    // Use shop currency for now
+    const currency = 'USD'; // TODO: dynamic from shop settings
+    const userLocale = navigator.language || (navigator.languages && navigator.languages[0]) || 'en-US';
+    return new Intl.NumberFormat(userLocale, {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0
+    }).format(amount);
+  }
+      // Replace {remaining} in progress message
+      let formattedProgressMessage = progressMessage.replace(/\$?\{remaining\}/g, formatCurrency(minAmount));
+      
+      // Use formattedProgressMessage in preview
+      if (previewProgressMessage) {
+        previewProgressMessage.innerHTML = iconHtml + formattedProgressMessage;
       }
         if (previewSuccessMessage) {
         const messageWithTimer = replaceTimerPlaceholder(successMessage);
@@ -992,7 +1022,8 @@
         if (preview) {
           iconImage = preview.getAttribute('data-image');
         }
-      }      const settings = {
+      }      const currencyDisplay = document.querySelector('input[name="currencyDisplay"]:checked')?.value || 'shop';
+      const settings = {
         general_message: document.getElementById('generalMessage').value,
         show_progress_message: document.getElementById('showProgressMessage').checked,
         progress_message: document.getElementById('progressMessage').value,
@@ -1027,7 +1058,8 @@
         icon_type: iconChoice,
         icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
-        icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8
+        icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
+        currency_display: currencyDisplay,
       };      console.log('💾 Saving complete settings object:', settings);
       console.log('📏 Bar height being saved:', settings.bar_height);
       console.log('🔒 Closeable being saved:', settings.closeable);

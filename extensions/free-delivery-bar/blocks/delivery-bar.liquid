@@ -253,7 +253,9 @@
      data-margin-top="{{ settings.margin_top | default: 20 }}"
      data-bar-height="{{ settings.bar_height | default: 40 }}"
      data-icon-size="{{ settings.icon_size | default: 20 }}"
-     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}">  <div class="delivery-bar-content">
+     data-transparent-bg="{% if settings.transparent_bg == true %}true{% else %}false{% endif %}"
+     data-currency="{{ settings.shop_currency | default: 'USD' }}"
+     data-currency-display="{{ settings.currency_display | default: 'shop' }}">  <div class="delivery-bar-content">
     {% if settings.show_icon %}
       <img class="delivery-icon" 
            src="{{ settings.icon_image }}" 
@@ -322,7 +324,9 @@
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  console.log('=== FREE DELIVERY BAR INIT ===');
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  const currency = deliveryBar.getAttribute('data-currency') || 'USD';
+  const currencyDisplay = deliveryBar.getAttribute('data-currency-display') || 'shop';
+  console.log('=== FREE DELIVERY BAR INIT ===');
   console.log('Threshold:', threshold);
   console.log('Position:', position);
   console.log('Bar height:', barHeight);
@@ -612,12 +616,12 @@
             } else if (showProgress) {
               // Koszyk niepusty i progress włączony - pokaż progress message
               const remaining = threshold - cartTotal;
-              const formattedRemaining = remaining % 1 === 0 ? remaining.toString() : remaining.toFixed(2);
-                
+              // Format remaining as currency
+              const formattedRemaining = formatCurrency(remaining);
               finalMessage = progressMessage
                 .replace('[remaining]', formattedRemaining)
                 .replace('{remaining}', formattedRemaining)
-                .replace('{amount}', threshold);
+                .replace('{amount}', formatCurrency(threshold));
             } else {
               // Koszyk niepusty ale progress wyłączony - pokaż general message
               finalMessage = generalMessage;
