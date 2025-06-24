@@ -1,6 +1,6 @@
 # Konfiguracja rozszerzenia Free Delivery Bar
 
-name = "free-delivery-bar"
+name = "Free Shipping Bar"
 type = "theme"
 
 [extension_points]

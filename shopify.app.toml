@@ -1,5 +1,5 @@
 # Konfiguracja główna aplikacji Shopify
-name = "free-delivery-app"
+name = "Free Shipping Bar"
 client_id = "7fb3c15b431478143eac521f8700d4f0"
 application_url = "https://shopify-ige3.onrender.com"
 embedded = true
