@@ -812,10 +812,7 @@
   </div>
 
   <script>
-    // Domyślna ikona SVG (ta sama co na backendzie)
-    const FALLBACK_DELIVERY_ICON = 'data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjMDBBOEIwIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCI+PHBhdGggZD0iTTMgM2gxM3Y1LTMuM1YVjhoMi41LTMuM1YVjhoMi41LTMuM1YxLjVsMi41LTMuM1Y4aC0yVjZoLTJ2MmgtM3YtM2gtM3YxM3ptMCAyaDF2M2gzdjNoMnYtM2gzdjNoMS41bC0yLjUgMy4zVjE4SDN6bTExIDBoMnYyaC0yem0tNSAwaDJ2MmgtMnoiLz48Y2lyY2xlIGN4PSI1IiBjeT0iMjAiIHI9IjIiLz48Y2lyY2xlIGN4PSIxNSIgY3k9IjIwIiByPSIyIi8+PC9zdmc+';
-    let DEFAULT_DELIVERY_ICON = FALLBACK_DELIVERY_ICON;
-
+    let DEFAULT_DELIVERY_ICON = null;
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
       const valueSpan = document.getElementById(valueId);
