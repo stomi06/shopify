@@ -372,7 +372,7 @@
     
     @media (max-width: 940px) {
       .main-content {
-        width: 80%;
+        width: 95%;
         flex-direction: column-reverse;
       }
       .preview-panel {
@@ -815,7 +815,6 @@
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
       const valueSpan = document.getElementById(valueId);
-      
       range.addEventListener('input', function() {
         valueSpan.textContent = this.value + suffix;
         updatePreview();
