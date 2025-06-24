@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Free Shipping Bar - Management Panel</title>
+  <title>Free Delivery Bar - Management Panel</title>
   <style>
     * {
       margin: 0;
@@ -19,13 +19,18 @@
       line-height: 1.5;
     }
 
-    .prawy {
-      flex: 1;
+    .app-icon {
+      width: 24px;
+      height: 24px;
+      background: linear-gradient(135deg, #5c6ac4, #4339ca);
+      border-radius: 6px;
       display: flex;
-      flex-direction: column;
-      gap: 24px;
-    }
-   
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 12px;
+      font-weight: bold;
+    }    
     .main-content {
       width: 100%;
       display: flex;
@@ -54,7 +59,7 @@
 
     .preview-item{
       width: 100%;
-      margin-bottom: 10px; 
+      margin-bottom: 16px; 
       display: flex; 
       gap: 5px;
       flex-direction: column;
@@ -72,17 +77,6 @@
       padding: 0 20px;
       height: auto;
     }
-    .tutorial-content {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    }
-    .tutorial-content p {
-      font-size: 16px;
-      font-weight: 400;
-      color: #202223;
-    }
     
     .preview-bar img {
       width: var(--icon-size, 20px);
@@ -94,13 +88,13 @@
       height: 95dvh;
       background: white;
       border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       flex: 1;
     }
 
     .panel-header {
-      background: linear-gradient(135deg, rgba(0,146,213,0.4) 0%, rgba(206,0,255, 0.4) 200%);
+      background: #fafbfb;
       border-bottom: 1px solid #e1e3e5;
       padding: 15px;
     }
@@ -113,7 +107,7 @@
     }
 
     .panel-header p {
-      color: #535658;
+      color: #6d7175;
       font-size: 14px;
     }
 
@@ -132,6 +126,7 @@
     }
     .buttons{
       width: 100%;
+      background: #fafbfb;
       height: 83px;
       align-items: center;
       display: flex;
@@ -229,11 +224,11 @@
       font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     }
 
     .button-primary:hover {
-      filter: brightness(0.9);
+      filter: brightness(0.8);
     }
 
     .button-secondary {
@@ -248,37 +243,22 @@
       font-size: 14px;
       cursor: pointer;
       transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .button-secondary:hover {
       filter: brightness(0.8);
     }    
     .preview-panel {
-      width: 100%;
+      width: 400px;
       background: white;
       border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       height: fit-content;
       position: flex;
       display: flex;
       flex-direction: column;
       top: 24px;
-    }
-    .help-panel {
-      width: 100%;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-      overflow: hidden;
-      height: fit-content;
-      position: flex;
-      display: flex;
-      flex-direction: column;
-    }
-    .help-panel .panel-content{
-      height: 292px;
     }
 
     .alert {
@@ -332,7 +312,6 @@
     }
     
     .tabs {
-      gap: 10px;
       display: flex;
       border-bottom: 2px solid #e1e3e5;
       margin-bottom: 20px;
@@ -357,8 +336,8 @@
     }
     
     .tab.active {
-      color: #0092d5;
-      border-bottom-color: #0092d5;
+      color: #5c6ac4;
+      border-bottom-color: #5c6ac4;
       background: #f6f6f7;
     }
     
@@ -391,33 +370,27 @@
     <div class="settings-panel">
         <div class="panel-header">
           <h2>Bar Configuration</h2>
-          <p>Customize the appearance and behavior of the free shipping bar</p>
+          <p>Customize the appearance and behavior of the free delivery bar</p>
         </div>
           <div class="panel-content">
           <!-- Tabs Navigation -->
           <div class="tabs-container">
             <div class="tabs">
-              <button class="tab active" onclick="switchTab('general')">General</button>
-              <button class="tab" onclick="switchTab('apperance')">Apperance</button>
-              <button class="tab" onclick="switchTab('advanced')">Advanced</button>
+              <button class="tab active" onclick="switchTab('basic')">Basic Settings</button>
+              <button class="tab" onclick="switchTab('advanced')">Advanced Settings</button>
             </div>
           </div>
 
-          <!-- General Settings Tab -->
-          <div id="generalTab" class="tab-content active">
+          <!-- Basic Settings Tab -->
+          <div id="basicTab" class="tab-content active">
             <!-- Content and behavior -->
             <div class="form-section">
               <div class="form-group">
-                <label>Customize your messages using dynamic variables</label>
-                <div class="help-text">
-                  You can use <b>{remaining}</b> to specify the remaining amount, <b>{amount}</b> to specify the threshold, and <b>{timer}</b> to display a countdown timer (you must enable it at the bottom of this tab first).
-                </div>
-              </div>
-            <div class="form-group">
-              <label for="generalMessage">General Info Message</label>
-              <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from {amount}"></textarea>
+                <label for="generalMessage">General Info Message</label>
+                <textarea id="generalMessage" style="resize: none;" rows="1" placeholder="Free shipping from {amount}"></textarea>
               <div class="help-text">
-                General message shown when cart is empty or below threshold.
+                General message shown when cart is empty or below threshold. 
+                You can use <b>{remaining}</b> for the remaining amount, <b>{amount}</b> for the threshold, and <b>{timer}</b> for countdown timer.
               </div>
             </div>
 
@@ -426,19 +399,19 @@
                 <input type="checkbox" id="showProgressMessage" style="margin-right: 8px;" checked>
                 Show progress message when customer has items in cart
               </label>
-              <div class="help-text">When enabled, the bar will show remaining amount needed for free shipping.</div>
+              <div class="help-text">When enabled, the bar will show remaining amount needed for free delivery</div>
             </div>
 
             <div class="form-group" id="progressMessageGroup">
               <label for="progressMessage">Progress Message</label>
               <textarea id="progressMessage" style="resize: none;" rows="1" placeholder="Add {remaining} more for free shipping!"></textarea>
-              <div class="help-text">Message shown when customer has items but hasn't reached threshold.</div>
+              <div class="help-text">Message shown when customer has items but hasn't reached threshold. Use {remaining} for remaining amount and {timer} for countdown.</div>
             </div>
 
             <div class="form-group">
               <label for="minAmount" id="minAmountLabel">Minimum Amount</label>
               <input type="number" id="minAmount" min="0" step="1" value="100" />
-              <div class="help-text" id="minAmountHelp">Minimum order value required for free shipping.</div>
+              <div class="help-text" id="minAmountHelp">Minimum order value required for free delivery</div>
             </div>
 
             <!-- Currency Display Option -->
@@ -455,29 +428,32 @@
                     Use customer currency (Auto Convert)
                   </label>
                 </div>
-                <div class="help-text">Choose how the amounts are displayed to customers.</div>
+                <div class="help-text">Choose how the amounts are displayed to customers</div>
               </div>
             </div>
 
             <div class="form-group" id="timerLimitGroup" style="display: none;">
               <label for="timerLimit">Timer Duration (hours)</label>
               <input type="number" id="timerLimit" min="1" max="72" step="1" value="24" />
-              <div class="help-text">How many hours until deadline (1-72 hours).</div>
+              <div class="help-text">How many hours until delivery deadline (1-72 hours)</div>
             </div>
           
             <!-- SUCCESS MESSAGE SECTION -->
             <div class="form-group">
               <label>
                 <input type="checkbox" id="showSuccessMessage" style="margin-right: 8px;" checked>
-                Show message after reaching free shipping threshold
+                Show message after reaching free delivery threshold
               </label>
-              <div class="help-text">When enabled, the bar will change message after reaching the required amount.</div>
+              <div class="help-text">When enabled, the bar will change message after reaching the required amount</div>
             </div>
 
             <div class="form-group" id="successMessageGroup">
               <label for="successMessage">Success Message</label>
               <textarea id="successMessage" style="resize: none;" rows="1" placeholder="Enjoy free shipping!"></textarea>
-              <div class="help-text">Message displayed when customer reaches the free shipping threshold.</div>
+              <div class="help-text">
+                Message displayed when customer reaches the free delivery threshold.
+                You can use <b>{remaining}</b> (will be 0), <b>{amount}</b> for the threshold, and <b>{timer}</b> for countdown.
+              </div>
             </div>
 
             <div class="form-group" id="hideBarGroup" style="display: none;">
@@ -485,7 +461,7 @@
                 <input type="checkbox" id="hideBarAfterThreshold" style="margin-right: 8px;">
                 Hide bar completely after reaching threshold
               </label>              
-              <div class="help-text">When enabled, the shipping bar will disappear completely once the threshold is reached.</div>
+              <div class="help-text">When enabled, the delivery bar will disappear completely once the threshold is reached</div>
             </div>
 
             <div class="form-group">
@@ -493,58 +469,22 @@
                 <input type="checkbox" id="closeable" style="margin-right: 8px;" checked>
                 Allow users to close the bar
               </label>
-              <div class="help-text">When disabled, users won't be able to close the shipping bar.</div>
+              <div class="help-text">When disabled, users won't be able to close the delivery bar</div>
             </div>
 
             <!-- TIMER SECTION -->
             <div class="form-group">
               <label>
                 <input type="checkbox" id="showTimer" style="margin-right: 8px;">
-                Show countdown timer
+                Show delivery countdown timer
               </label>
-              <div class="help-text">When enabled, displays a countdown timer.</div>
+              <div class="help-text">When enabled, displays a countdown timer for delivery deadline. Use {timer} in your messages to show the timer.</div>
             </div>
           </div>
         </div>
-        <!-- Style Tab -->
-        <div id="apperanceTab" class="tab-content">
 
-          <!-- Position and size -->
-          <div class="form-section">
-            <div class="section-title">Position and Size</div>
-                     
-            <div class="form-group">
-              <label for="position">Bar Position</label>
-              <select id="position">
-                <option value="above-header">Above header (recommended)</option>
-                <option value="fixed">Always visible</option>
-                <option value="absolute">Static</option>
-              </select>
-              <div class="help-text">Controls the position of the shipping bar.</div>
-            </div>              
-            <div class="form-group">
-              <label for="width">
-                Bar Width: 
-                <span class="range-value" id="widthValue">100%</span>
-              </label>
-              <input type="range" id="width" min="10" max="100" step="5" value="100" />
-              <div class="help-text">Controls the width of the shipping bar.</div>
-            </div>
-            <div class="form-group">
-              <label for="barHeight">Bar Height: <span class="range-value" id="barHeightValue">40px</span></label>
-              <input type="range" id="barHeight" min="20" max="80" value="40" step="2" />
-              <div class="help-text">Controls the height of the shipping bar.</div>
-            </div>       
-            <div class="form-group">
-              <label for="marginTop">
-                Distance from Top: 
-                <span class="range-value" id="marginTopValue">0px</span>
-              </label>
-              <input type="range" id="marginTop" min="0" max="50" value="0" step="5" />
-              <div class="help-text">Controls the spacing from the top edge of the page.</div>
-            </div>
-          </div>
-
+        <!-- Advanced Settings Tab -->
+        <div id="advancedTab" class="tab-content">
           <!-- Colors and transparency -->
           <div class="form-section">
             <div class="section-title">Colors and Transparency</div>
@@ -565,13 +505,13 @@
                 <input type="checkbox" id="transparentBg" style="margin-right: 8px;">
                 Transparent background (only text visible)
               </label>
-              <div class="help-text">When enabled, the bar background will be completely transparent.</div>
+              <div class="help-text">When enabled, the bar background will be completely transparent</div>
             </div>
 
             <div class="form-group">
               <label for="opacity">Bar Transparency: <span class="range-value" id="opacityValue">100%</span></label>
               <input type="range" id="opacity" min="0" max="100" value="100"/>
-              <div class="help-text">Controls the transparency of the entire bar (text + background).</div>
+              <div class="help-text">Controls the transparency of the entire bar (text + background)</div>
             </div>
           </div>
 
@@ -598,7 +538,7 @@
                 <option value="nunito">Nunito (Google Font)</option>
                 <option value="raleway">Raleway (Google Font)</option>
               </select>
-              <div class="help-text">Choose from web-safe fonts or Google Fonts for better typography.</div>
+              <div class="help-text">Choose from web-safe fonts or Google Fonts for better typography</div>
             </div>
             
             <div class="form-row">
@@ -614,13 +554,85 @@
               <div class="form-group">
                 <label for="fontWeight">Font Weight</label>
                 <select id="fontWeight">
-                  <option value="300">Light</option>
-                  <option value="400" selected> Normal</option>
+                  <option value="400">Normal</option>
                   <option value="600">Medium</option>
-                  <option value="700">Bold</option>
-                  <option value="900">Extra Bold</option>
+                  <option value="800" selected>Bold</option>
+                  <option value="1000">Extra Bold</option>
                 </select>
               </div>
+            </div>
+          </div>        <!-- Delivery Icon -->
+          <div class="form-section">
+            <div class="section-title">Delivery Icon</div>
+              <div class="form-group">
+              <label>
+                <input type="checkbox" id="showIcon" style="margin-right: 8px;" checked>
+                Show delivery icon
+              </label>
+              <div class="help-text">Display an icon next to the delivery message</div>
+            </div>
+
+            <div class="form-group" id="iconOptionsGroup" style="display: block;">
+              <label>Icon Type:</label>
+              
+              <div style="margin: 10px 0;">
+                <label style="margin-bottom: 8px;">
+                  <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked style="margin-right: 8px;">
+                  Use default delivery icon
+                </label>
+              </div>
+              
+              <div style="margin: 10px 0;">
+                <label style="margin-bottom: 8px;">
+                  <input type="radio" id="useCustomIcon" name="iconChoice" value="custom" style="margin-right: 8px;">
+                  Upload custom icon
+                </label>
+              </div>
+              
+              <div id="customIconUpload" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e1e3e5; border-radius: 6px; background: #f9f9f9;">
+                <input type="file" id="deliveryImage" accept="image/*">
+                <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
+                <div class="help-text">Recommended size: 24x24px, PNG/JPG format</div>
+              </div>
+            </div>            <div class="form-group" id="iconSizeGroup" style="display: block;">
+              <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">30px</span></label>
+              <input type="range" id="iconSize" min="12" max="40" value="30" step="2" />
+              <div class="help-text">Size of the delivery icon</div>
+            </div>
+
+            <div class="form-group" id="iconGapGroup" style="display: block;">
+              <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">10px</span></label>
+              <input type="range" id="iconGap" min="0" max="20" value="10" step="2" />
+              <div class="help-text">Space between icon and text</div>
+            </div>
+          </div>
+
+          <!-- Position and size -->
+          <div class="form-section">
+            <div class="section-title">Position and Size</div>
+            
+            <div class="form-row">            <div class="form-group">
+                <label for="position">Bar Position</label>
+                <select id="position">
+                  <option value="above-header">Above Header (recommended)</option>
+                  <option value="fixed">Fixed (always visible)</option>
+                  <option value="absolute">Absolute (static)</option>
+                </select>
+              </div>              <div class="form-group">
+                <label for="width">Bar Width: <span class="range-value" id="widthValue">100%</span></label>
+                <input type="range" id="width" min="50" max="100" step="5" value="100" />
+                <div class="help-text">Maximum width: 500px</div>
+              </div>
+            </div>          <div class="form-group">
+              <label for="marginTop">Distance from Top: <span class="range-value" id="marginTopValue">0px</span></label>
+              <input type="range" id="marginTop" min="0" max="50" value="0" step="5" />
+              <div class="help-text">Controls the spacing from the top edge of the page</div>
+            </div>
+
+            <div class="form-group">
+              <label for="barHeight">Bar Height: <span class="range-value" id="barHeightValue">40px</span></label>
+              <input type="range" id="barHeight" min="30" max="80" value="40" step="2" />
+              <div class="help-text">Controls the height of the delivery bar</div>
             </div>
           </div>
 
@@ -630,12 +642,12 @@
             
             <div class="form-row">
               <div class="form-group">
-                <label for="borderColor">Border Color</label>
-                <input type="color" id="borderColor" value="#cccccc" />
-              </div>
-              <div class="form-group">
                 <label for="borderWidth">Border Width: <span class="range-value" id="borderWidthValue">0px</span></label>
                 <input type="range" id="borderWidth" min="0" max="10" value="0" step="1" />
+              </div>
+              <div class="form-group">
+                <label for="borderColor">Border Color</label>
+                <input type="color" id="borderColor" value="#cccccc" />
               </div>
             </div>            
             <div class="form-group">
@@ -670,56 +682,6 @@
               </div>
             </div>
           </div>
-        </div>
-
-        <!-- Advanced Settings Tab -->
-        <div id="advancedTab" class="tab-content">
-
-          <!-- Delivery Icon -->
-          <div class="form-section">
-            <div class="section-title">Shipping Icon</div>
-              <div class="form-group">
-              <label>
-                <input type="checkbox" id="showIcon" style="margin-right: 8px;" checked>
-                Show shipping icon
-              </label>
-              <div class="help-text">Display an icon next to the shipping message.</div>
-            </div>
-
-            <div class="form-group" id="iconOptionsGroup" style="display: block;">
-              <label>Icon Type:</label>
-              
-              <div style="margin: 10px 0;">
-                <label style="margin-bottom: 8px;">
-                  <input type="radio" id="useDefaultIcon" name="iconChoice" value="default" checked style="margin-right: 8px;">
-                  Use default icon
-                </label>
-              </div>
-              
-              <div style="margin: 10px 0;">
-                <label style="margin-bottom: 8px;">
-                  <input type="radio" id="useCustomIcon" name="iconChoice" value="custom" style="margin-right: 8px;">
-                  Upload custom icon
-                </label>
-              </div>
-              
-              <div id="customIconUpload" style="display: none; margin-top: 15px; padding: 15px; border: 1px solid #e1e3e5; border-radius: 6px; background: #f9f9f9;">
-                <input type="file" id="deliveryImage" accept="image/*">
-                <div class="image-preview" id="imagePreview" style="margin-top: 10px; padding: 10px; border: 2px dashed #c9cccf; border-radius: 6px; text-align: center; min-height: 60px; display: none; background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
-                <div class="help-text">Recommended: .</div>
-              </div>
-            </div>            <div class="form-group" id="iconSizeGroup" style="display: block;">
-              <label for="iconSize">Icon Size: <span class="range-value" id="iconSizeValue">30px</span></label>
-              <input type="range" id="iconSize" min="12" max="40" value="30" step="2" />
-              <div class="help-text">Size of the shipping icon.</div>
-            </div>
-
-            <div class="form-group" id="iconGapGroup" style="display: block;">
-              <label for="iconGap">Distance from Text: <span class="range-value" id="iconGapValue">10px</span></label>
-              <input type="range" id="iconGap" min="0" max="20" value="10" step="2" />
-              <div class="help-text">Space between icon and text.</div>
-            </div>
-          </div>
 
           <!-- Country Exclusions -->
           <div class="form-section">
@@ -739,71 +701,37 @@
       </div>
     </div>
 
-    <div class="prawy">
     <!-- Preview panel -->
-      <div class="preview-panel">
-          <div class="panel-header">
-            <h2>Live Preview</h2>
-            <p>See how messages will look in different scenarios</p>
-          </div>
-          
-          <div class="preview-content">
-            <!-- Message States Preview -->
-            <div style="margin: 10px 0; width: 100%;">
-              <!-- Empty Cart -->
-              <div class="preview-item">
-                <div style="font-size: 12px; color: #6d7175;">Empty Cart:</div>
-                <div class="preview-bar" id="previewBarEmpty">
-                  <span id="previewGeneralMessage">Free shipping from $100</span>
-                </div>
-              </div>
-              
-              <!-- Progress -->
-              <div class="preview-item">
-                <div style="font-size: 12px; color: #6d7175;">Progress:</div>
-                <div class="preview-bar" id="previewBarProgress">
-                  <span id="previewProgressMessage">Add $25 more for free shipping!</span>
-                </div>
-              </div>
-              
-              <!-- Success -->
-              <div class="preview-item">
-                <div style="font-size: 12px; color: #6d7175;">Threshold Reached:</div>
-                <div class="preview-bar" id="previewBarSuccess">
-                  <span id="previewSuccessMessage">Enjoy free shipping!</span>
-                </div>
-              </div>
-            </div>
-          </div>
+    <div class="preview-panel">
+        <div class="panel-header">
+          <h2>Live Preview</h2>
+          <p>See how messages will look in different scenarios</p>
         </div>
-        <div class="help-panel">
-          <div class="panel-header">
-            <h2>How to set up the Free Shipping Bar:</h2>
-            <p>Follow these steps to set up your free shipping bar</p>
-          </div>
-          <div class="panel-content">
-            <!-- Help Tabs Navigation -->
-            <div class="tabs-container">
-              <div class="tabs">
-                <button class="tab active" onclick="switchHelpTab('gettingStarted')">Getting started</button>
-                <button class="tab" onclick="switchHelpTab('helpSupport')">Help &amp; Support</button>
+        
+        <div class="preview-content">
+          <!-- Message States Preview -->
+          <div style="margin: 10px 0; width: 100%;">
+            <!-- Empty Cart -->
+            <div class="preview-item">
+              <div style="font-size: 12px; color: #6d7175;">Empty Cart:</div>
+              <div class="preview-bar" id="previewBarEmpty">
+                <span id="previewGeneralMessage">Free shipping from $100</span>
               </div>
             </div>
-            <!-- Help Tabs Content -->
-            <div id="gettingStartedTab" class="tab-content active">
-              <div class="tutorial-content">
-                <p><b>1.</b> Configure the Free Shipping Bar appearance in the app settings.</p>
-                <p><b>2.</b> Go to your store’s theme editor.</p>
-                <p><b>3.</b> Click "Add section" in the left panel.</p>
-                <p><b>4.</b> Under "Apps", choose "Free Shipping Bar".</p>
-                <p><b>5.</b> Click "Save" in the top-right corner.</p>
-                <p><b>6.</b> Open your website to see the bar in action.</p>
+            
+            <!-- Progress -->
+            <div class="preview-item">
+              <div style="font-size: 12px; color: #6d7175;">Progress:</div>
+              <div class="preview-bar" id="previewBarProgress">
+                <span id="previewProgressMessage">Add $25 more for free shipping!</span>
               </div>
             </div>
-            <div id="helpSupportTab" class="tab-content">
-              <div class="tutorial-content">
-                <!-- Możesz dodać tu treść pomocy i wsparcia -->
-                <p>For help and support, please contact our support team or visit our documentation.</p>
+            
+            <!-- Success -->
+            <div class="preview-item">
+              <div style="font-size: 12px; color: #6d7175;">Threshold Reached:</div>
+              <div class="preview-bar" id="previewBarSuccess">
+                <span id="previewSuccessMessage">Enjoy free shipping!</span>
               </div>
             </div>
           </div>
@@ -908,7 +836,7 @@
       const transparentBg = document.getElementById('transparentBg').checked;
       const opacity = document.getElementById('opacity').value / 100;
       const width = document.getElementById('width').value;
-      const marginTop = document.getElementById('marginTop').value/2;
+      const marginTop = document.getElementById('marginTop').value;
       const barHeight = document.getElementById('barHeight').value;
       const fontFamily = document.getElementById('fontFamily').value;
       const fontSize = document.getElementById('fontSize').value;
@@ -1201,7 +1129,7 @@
           document.getElementById('position').value = "above-header";
           document.getElementById('opacity').value = 100;
           document.getElementById('fontSize').value = 14;
-          document.getElementById('fontWeight').value = 400;
+          document.getElementById('fontWeight').value = 800;
           document.getElementById('borderWidth').value = 0;
           document.getElementById('borderColor').value = "#cccccc";
           document.getElementById('borderRadius').value = 0;
@@ -1215,8 +1143,7 @@
           document.getElementById('excludedCountries').value = "";
           
           // Zresetuj walutę w help text
-          var currencySpan = document.getElementById('currencySpan');
-          if (currencySpan) currencySpan.textContent = '';
+          document.getElementById('currencySpan').textContent = '';
           
           // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
@@ -1227,7 +1154,7 @@
           document.getElementById('shadowDistanceValue').textContent = '0px';
           document.getElementById('widthValue').textContent = '100%';
           document.getElementById('marginTopValue').textContent = '0px';
-          document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+          document.getElementById('barHeightValue').textContent = '40px';          // Reset ikon - IKONY WŁĄCZONE na początku
           document.getElementById('showIcon').checked = true;
           document.getElementById('useDefaultIcon').checked = true;
           document.getElementById('useCustomIcon').checked = false;
@@ -1291,7 +1218,7 @@
         document.getElementById('opacity').value = settings.opacity || 100;
         document.getElementById('fontFamily').value = settings.font_family || "system";
         document.getElementById('fontSize').value = settings.font_size || 14;
-        document.getElementById('fontWeight').value = settings.font_weight || 400;
+        document.getElementById('fontWeight').value = settings.font_weight || 800;
         document.getElementById('borderWidth').value = settings.border_width || 0;
         document.getElementById('borderColor').value = settings.border_color || "#cccccc";        
         document.getElementById('borderRadius').value = settings.border_radius || 0;
@@ -1368,7 +1295,7 @@
         document.getElementById('opacity').value = 100;
         document.getElementById('fontFamily').value = "system";
         document.getElementById('fontSize').value = 14;
-        document.getElementById('fontWeight').value = 400;
+        document.getElementById('fontWeight').value = 800;
         document.getElementById('borderWidth').value = 0;
         document.getElementById('borderColor').value = "#cccccc";
         document.getElementById('borderRadius').value = 0;
@@ -1491,8 +1418,7 @@
     // Funkcja do przełączania zakładek
     function switchTab(tabName) {
       // Ukryj wszystkie zakładki
-      document.getElementById('generalTab').classList.remove('active');
-      document.getElementById('apperanceTab').classList.remove('active');
+      document.getElementById('basicTab').classList.remove('active');
       document.getElementById('advancedTab').classList.remove('active');
       
       // Usuń aktywną klasę ze wszystkich buttonów
@@ -1501,30 +1427,12 @@
       });
       
       // Pokaż wybraną zakładkę
-      if (tabName === 'general') {
-        document.getElementById('generalTab').classList.add('active');
-        document.querySelector('button[onclick="switchTab(\'general\')"]').classList.add('active');
+      if (tabName === 'basic') {
+        document.getElementById('basicTab').classList.add('active');
+        document.querySelector('button[onclick="switchTab(\'basic\')"]').classList.add('active');
       } else if (tabName === 'advanced') {
         document.getElementById('advancedTab').classList.add('active');
         document.querySelector('button[onclick="switchTab(\'advanced\')"]').classList.add('active');
-      }
-      else if (tabName === 'apperance') {
-        document.getElementById('apperanceTab').classList.add('active');
-        document.querySelector('button[onclick="switchTab(\'apperance\')"]').classList.add('active');
-      }
-    }
-
-    // Dodaj funkcję przełączania zakładek w help-panel
-    function switchHelpTab(tabName) {
-      document.getElementById('gettingStartedTab').classList.remove('active');
-      document.getElementById('helpSupportTab').classList.remove('active');
-      document.querySelectorAll('.help-panel .tab').forEach(tab => tab.classList.remove('active'));
-      if (tabName === 'gettingStarted') {
-        document.getElementById('gettingStartedTab').classList.add('active');
-        document.querySelector('.help-panel .tab[onclick="switchHelpTab(\'gettingStarted\')"]').classList.add('active');
-      } else if (tabName === 'helpSupport') {
-        document.getElementById('helpSupportTab').classList.add('active');
-        document.querySelector('.help-panel .tab[onclick="switchHelpTab(\'helpSupport\')"]').classList.add('active');
       }
     }
 
@@ -1568,7 +1476,7 @@
       HUF: 'hu-HU',
       CNY: 'zh-CN',
       HKD: 'zh-HK',
-           SGD: 'en-SG',
+      SGD: 'en-SG',
       NZD: 'en-NZ',
       ZAR: 'en-ZA',
       MXN: 'es-MX',
