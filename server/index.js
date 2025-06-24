@@ -501,8 +501,13 @@ app.get('/api/settings/:shop', async (req, res) => {
     
     if (metafields.metafields && metafields.metafields.length > 0) {
       const settings = JSON.parse(metafields.metafields[0].value);
+      // ZAWSZE dodaj icon_image do settings jeśli go nie ma
+      if (!settings.icon_image) {
+        settings.icon_image = DEFAULT_DELIVERY_ICON;
+      }
       console.log('✅ Znaleziono ustawienia w metafields:', settings);
-      res.json(settings);    } else {
+      res.json(settings);
+    } else {
       console.log('⚠️ Pusty metafield, zwracam domyślne');
       res.json({
         ...DEFAULT_SETTINGS,
@@ -512,12 +517,14 @@ app.get('/api/settings/:shop', async (req, res) => {
     }
   } catch (err) {
     console.error('❌ Błąd pobierania ustawień:', err.message);
-    res.status(500).json({ error: 'Błąd serwera: ' + err.message });  }
+    res.status(500).json({ error: 'Błąd serwera: ' + err.message });  
+  }
 });
 
-// Endpoint dla domyślnej ikony dostawy
+// Usuń lub popraw endpoint dla domyślnej ikony (niepotrzebny PNG!)
+// Możesz go całkiem usunąć lub poprawić na SVG jeśli chcesz go używać:
 app.get('/default-icon', (req, res) => {
-  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.png'));
+  res.sendFile(path.join(__dirname, 'assets', 'default-delivery-icon.svg'));
 });
 
 // Endpoint do pobierania waluty sklepu
