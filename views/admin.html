@@ -1215,7 +1215,8 @@
           document.getElementById('excludedCountries').value = "";
           
           // Zresetuj walutę w help text
-          document.getElementById('currencySpan').textContent = '';
+          var currencySpan = document.getElementById('currencySpan');
+          if (currencySpan) currencySpan.textContent = '';
           
           // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
@@ -1226,7 +1227,7 @@
           document.getElementById('shadowDistanceValue').textContent = '0px';
           document.getElementById('widthValue').textContent = '100%';
           document.getElementById('marginTopValue').textContent = '0px';
-          document.getElementById('barHeightValue').textContent = '40px';          // Reset ikon - IKONY WŁĄCZONE na początku
+          document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
           document.getElementById('showIcon').checked = true;
           document.getElementById('useDefaultIcon').checked = true;
           document.getElementById('useCustomIcon').checked = false;
@@ -1567,7 +1568,7 @@
       HUF: 'hu-HU',
       CNY: 'zh-CN',
       HKD: 'zh-HK',
-      SGD: 'en-SG',
+           SGD: 'en-SG',
       NZD: 'en-NZ',
       ZAR: 'en-ZA',
       MXN: 'es-MX',
