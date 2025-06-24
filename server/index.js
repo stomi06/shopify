@@ -567,4 +567,70 @@ app.get('/api/shop-currency', async (req, res) => {
   }
 });
 
+app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
+  // Shopify przesyła domenę sklepu w nagłówku
+  const shop = req.headers['x-shopify-shop-domain'];
+  if (!shop) {
+    console.error('Brak nagłówka x-shopify-shop-domain');
+    return res.status(400).send('Missing shop domain');
+  }
+  try {
+    // Usuń sesję sklepu
+    await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop]);
+    console.log(`✅ Usunięto dane sesji dla sklepu: ${shop}`);
+    // (opcjonalnie) Usuń inne dane powiązane z tym sklepem, jeśli trzymasz je w innych tabelach
+    res.status(200).send('OK');
+  } catch (err) {
+    console.error('❌ Błąd usuwania sesji:', err);
+    res.status(500).send('Error');
+  }
+});
+
+// Funkcja do weryfikacji HMAC webhooka Shopify
+function verifyShopifyWebhook(req, res, buf) {
+  const hmacHeader = req.get('X-Shopify-Hmac-Sha256');
+  if (!hmacHeader) return false;
+  const generatedHmac = crypto
+    .createHmac('sha256', process.env.SHOPIFY_API_SECRET)
+    .update(buf)
+    .digest('base64');
+  return crypto.timingSafeEqual(Buffer.from(hmacHeader, 'utf-8'), Buffer.from(generatedHmac, 'utf-8'));
+}
+
+// Middleware do weryfikacji HMAC dla webhooków
+function shopifyWebhookMiddleware(req, res, next) {
+  let data = '';
+  req.on('data', chunk => { data += chunk; });
+  req.on('end', () => {
+    if (!verifyShopifyWebhook(req, res, data)) {
+      return res.status(401).send('Unauthorized');
+    }
+    req.rawBody = data;
+    next();
+  });
+}
+
+// customers/data_request webhook (nie przechowujesz danych klientów)
+app.post('/webhooks/customers/data_request', shopifyWebhookMiddleware, (req, res) => {
+  console.log('🔔 customers/data_request webhook:', req.body);
+  res.status(200).send('OK');
+});
+
+// customers/redact webhook (nie przechowujesz danych klientów)
+app.post('/webhooks/customers/redact', shopifyWebhookMiddleware, (req, res) => {
+  console.log('🔔 customers/redact webhook:', req.body);
+  res.status(200).send('OK');
+});
+
+// shop/redact webhook (usuń dane sklepu z bazy)
+app.post('/webhooks/shop/redact', shopifyWebhookMiddleware, async (req, res) => {
+  const { shop_domain } = req.body;
+  console.log('🔔 shop/redact webhook dla sklepu:', shop_domain);
+  if (shop_domain) {
+    await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop_domain]);
+    // Jeśli masz inne tabele z danymi sklepu, usuń je tutaj
+  }
+  res.status(200).send('OK');
+});
+
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));
