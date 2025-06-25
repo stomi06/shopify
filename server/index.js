@@ -297,7 +297,8 @@ app.get("/auth/callback", async (req, res) => {
       })
     });
 
-    const accessTokenData = await accessTokenResponse.json();    console.log("Access token data:", accessTokenData);
+    const accessTokenData = await accessTokenResponse.json();    
+    console.log("Access token data:", accessTokenData);
 
     // Sprawdź czy otrzymaliśmy prawidłowy token
     if (!accessTokenData.access_token) {
@@ -351,6 +352,26 @@ app.get("/auth/callback", async (req, res) => {
     } catch (err) {
       console.error('❌ Błąd rejestracji webhooka app/uninstalled:', err);
     }
+
+    // --- POBIERZ WALUTĘ SKLEPU I ZAPISZ DO client_currencies ---
+    try {
+      const shopResp = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': accessTokenData.access_token,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (shopResp.ok) {
+        const shopData = await shopResp.json();
+        const currency = shopData && shopData.shop && shopData.shop.currency;
+        if (currency) {
+          await upsertClientCurrency(shop, currency);
+        }
+      }
+    } catch (err) {
+      console.error('❌ Błąd pobierania/zapisu waluty sklepu:', err);
+    }
+    // --- KONIEC BLOKU WALUTY ---
 
     // Przekieruj do strony sukcesu
     console.log("Przekierowuję do strony sukcesu");
@@ -657,5 +678,26 @@ app.post('/webhooks/shop/redact', shopifyWebhookMiddleware, async (req, res) => 
   }
   res.status(200).send('OK');
 });
+
+// Funkcja do wstawiania/aktualizacji waluty sklepu
+async function upsertClientCurrency(shop, currency) {
+  const selectQuery = `SELECT currency FROM client_currencies WHERE shop_id = $1`;
+  const result = await pool.query(selectQuery, [shop]);
+  if (result.rows.length === 0) {
+    await pool.query(
+      `INSERT INTO client_currencies (shop_id, currency, created_at) VALUES ($1, $2, NOW())`,
+      [shop, currency]
+    );
+    console.log(`✅ Dodano walutę ${currency} dla sklepu ${shop} do client_currencies`);
+  } else if (result.rows[0].currency !== currency) {
+    await pool.query(
+      `UPDATE client_currencies SET currency = $2, created_at = NOW() WHERE shop_id = $1`,
+      [shop, currency]
+    );
+    console.log(`✅ Zaktualizowano walutę na ${currency} dla sklepu ${shop} w client_currencies`);
+  } else {
+    console.log(`ℹ️ Waluta sklepu ${shop} już aktualna (${currency})`);
+  }
+}
 
 app.listen(PORT, () => console.log(`✅ Serwer działa na porcie ${PORT}`));
