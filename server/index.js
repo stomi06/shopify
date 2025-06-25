@@ -469,10 +469,43 @@ app.post('/api/settings', async (req, res) => {
       timer_start_time = null;
     }
 
+    // 1. Zaktualizuj use_customer_currency w client_currencies
+    const useCustomerCurrency = settings.currency_mode === 'customer';
+    await pool.query(
+      `UPDATE client_currencies SET use_customer_currency = $1 WHERE shop_id = $2`,
+      [useCustomerCurrency, shop]
+    );
+
+    // 2. Pobierz walutę sklepu z client_currencies
+    let shopCurrency = null;
+    const currencyResult = await pool.query(
+      `SELECT currency FROM client_currencies WHERE shop_id = $1`,
+      [shop]
+    );
+    if (currencyResult.rows.length > 0) {
+      shopCurrency = currencyResult.rows[0].currency;
+    }
+
+    // 3. Jeśli use_customer_currency, pobierz kursy i dodaj do metafields
+    let exchangeRates = null;
+    if (useCustomerCurrency && shopCurrency) {
+      const ratesResult = await pool.query(
+        `SELECT target_currency, rate FROM exchange_rates WHERE base_currency = $1`,
+        [shopCurrency]
+      );
+      exchangeRates = {};
+      for (const row of ratesResult.rows) {
+        exchangeRates[row.target_currency] = row.rate;
+      }
+    }
+
     const settingsData = {
       ...settings,
       timer_start_time, // zawsze nadpisz pole
-      app_url: APP_URL
+      app_url: APP_URL,
+      use_customer_currency: useCustomerCurrency,
+      shop_currency: shopCurrency,
+      exchange_rates: exchangeRates || null // null jeśli nie używamy
     };
 
     const metafieldData = {

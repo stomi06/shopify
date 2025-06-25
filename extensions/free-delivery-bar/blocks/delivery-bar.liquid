@@ -540,8 +540,18 @@ let lastTimerMessage = null;
 
     // Funkcja do podmiany {remaining} i {amount} w dowolnej wiadomości
     function replaceAmountPlaceholders(message, remaining, threshold) {
-      const formattedRemaining = formatCurrency(remaining);
-      const formattedThreshold = formatCurrency(threshold);
+      let targetCurrency = shopCurrency;
+      let remainingConv = remaining;
+      let thresholdConv = threshold;
+      if (useCustomerCurrency && exchangeRates) {
+        targetCurrency = getCustomerCurrency();
+        if (targetCurrency !== shopCurrency && exchangeRates[targetCurrency]) {
+          remainingConv = convertAmount(remaining, targetCurrency);
+          thresholdConv = convertAmount(threshold, targetCurrency);
+        }
+      }
+      const formattedRemaining = formatCurrency(remainingConv, targetCurrency);
+      const formattedThreshold = formatCurrency(thresholdConv, targetCurrency);
       return message
         .replace(/\[remaining\]/g, formattedRemaining)
         .replace(/{remaining}/g, formattedRemaining)
@@ -1061,15 +1071,34 @@ let lastTimerMessage = null;
     // ...najważniejsze waluty, reszta fallbackuje do 'en'
   };
 
-  // Pobierz walutę sklepu i tryb waluty
-  const shopCurrency = deliveryBar.getAttribute('data-shop-currency') || (window.Shopify && Shopify.currency && Shopify.currency.active) || 'USD';
-  const currencyMode = deliveryBar.getAttribute('data-currency-mode') || 'shop';
+  // Pobierz ustawienia walutowe z metafields
+  const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
+  const shopCurrency = '{{ settings.shop_currency | default: shop.currency | escape }}';
+  const exchangeRates = {{ settings.exchange_rates | default: null | json }};
 
-  // Funkcja formatowania kwoty (z mapowaniem locale)
-  function formatCurrency(amount) {
-    let currency = shopCurrency;
+  // Funkcja do pobrania waluty klienta (geolokalizacja lub inny Twój mechanizm)
+  function getCustomerCurrency() {
+    // Jeśli masz już wykrywanie waluty klienta, użyj tego mechanizmu:
+    // Przykład: return localStorage.getItem('userCurrency') || shopCurrency;
+    // Jeśli nie wykryto, fallback na shopCurrency
+    if (window.userCurrency) return window.userCurrency;
+    if (window.detectedCurrency) return window.detectedCurrency;
+    // Możesz dodać własny mechanizm poniżej
+    return shopCurrency;
+  }
+
+  // Przelicz kwotę na walutę klienta jeśli trzeba
+  function convertAmount(amount, targetCurrency) {
+    if (!useCustomerCurrency || !exchangeRates || !targetCurrency || targetCurrency === shopCurrency) return amount;
+    const rate = exchangeRates[targetCurrency];
+    if (!rate) return amount;
+    return amount * rate;
+  }
+
+  // Nadpisz formatCurrency, aby obsługiwać walutę klienta
+  function formatCurrency(amount, currencyOverride) {
+    let currency = currencyOverride || shopCurrency;
     const mappedLocale = currencyLocaleMap[currency] || 'en';
-    // Sprawdź czy amount jest liczbą całkowitą
     const isInt = Number.isInteger(amount) || (typeof amount === 'number' && Math.floor(amount) === amount);
     try {
       return new Intl.NumberFormat(mappedLocale, {
