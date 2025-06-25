@@ -395,7 +395,7 @@ app.get("/auth/callback", async (req, res) => {
         </style>
       </head>
       <body>
-        <div class="success">✅ Aplikacja została zainstalowana pomyślnie!</div>
+        <div class="success">Aplikacja została zainstalowana pomyślnie!</div>
         <div class="info">Sklep: ${shop}</div>
         <div class="info">Możesz teraz zarządzać aplikacją przez panel administracyjny.</div>
         <a href="https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}" class="button">Otwórz aplikację</a>
