@@ -365,7 +365,7 @@ app.get("/auth/callback", async (req, res) => {
         const shopData = await shopResp.json();
         const currency = shopData && shopData.shop && shopData.shop.currency;
         if (currency) {
-          await upsertClientCurrency(shop, currency);
+          await upsertClientCurrency(shop, currency, false); // domyślnie false
         }
       }
     } catch (err) {
@@ -476,17 +476,41 @@ app.post('/api/settings', async (req, res) => {
       [useCustomerCurrency, shop]
     );
 
-    // 2. Pobierz walutę sklepu z client_currencies
+    // 2. Pobierz walutę sklepu z client_currencies (lub zaktualizuj jeśli nie ma)
     let shopCurrency = null;
-    const currencyResult = await pool.query(
+    let currencyResult = await pool.query(
       `SELECT currency FROM client_currencies WHERE shop_id = $1`,
       [shop]
     );
     if (currencyResult.rows.length > 0) {
       shopCurrency = currencyResult.rows[0].currency;
+      // Zaktualizuj use_customer_currency
+      await pool.query(
+        `UPDATE client_currencies SET use_customer_currency = $1 WHERE shop_id = $2`,
+        [useCustomerCurrency, shop]
+      );
+    } else {
+      // Jeśli nie ma rekordu, pobierz walutę z Shopify i wstaw nowy rekord
+      const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
+      if (sessionResult.rows.length > 0) {
+        const accessToken = sessionResult.rows[0].access_token;
+        const shopResp = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
+          headers: {
+            'X-Shopify-Access-Token': accessToken,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (shopResp.ok) {
+          const shopData = await shopResp.json();
+          shopCurrency = shopData && shopData.shop && shopData.shop.currency;
+          if (shopCurrency) {
+            await upsertClientCurrency(shop, shopCurrency, useCustomerCurrency);
+          }
+        }
+      }
     }
 
-    // 3. Jeśli use_customer_currency, pobierz kursy i dodaj do metafields
+    // 2. Jeśli use_customer_currency, pobierz kursy i dodaj do metafields
     let exchangeRates = null;
     if (useCustomerCurrency && shopCurrency) {
       const ratesResult = await pool.query(
@@ -712,24 +736,32 @@ app.post('/webhooks/shop/redact', shopifyWebhookMiddleware, async (req, res) => 
   res.status(200).send('OK');
 });
 
-// Funkcja do wstawiania/aktualizacji waluty sklepu
-async function upsertClientCurrency(shop, currency) {
-  const selectQuery = `SELECT currency FROM client_currencies WHERE shop_id = $1`;
+// Funkcja do wstawiania/aktualizacji waluty sklepu i use_customer_currency
+async function upsertClientCurrency(shop, currency, useCustomerCurrency = false) {
+  // Sprawdź czy rekord istnieje
+  const selectQuery = `SELECT id, currency, use_customer_currency FROM client_currencies WHERE shop_id = $1`;
   const result = await pool.query(selectQuery, [shop]);
   if (result.rows.length === 0) {
+    // Insert nowy rekord
     await pool.query(
-      `INSERT INTO client_currencies (shop_id, currency, created_at) VALUES ($1, $2, NOW())`,
-      [shop, currency]
+      `INSERT INTO client_currencies (shop_id, currency, use_customer_currency, created_at) VALUES ($1, $2, $3, NOW())`,
+      [shop, currency, useCustomerCurrency]
     );
-    console.log(`✅ Dodano walutę ${currency} dla sklepu ${shop} do client_currencies`);
-  } else if (result.rows[0].currency !== currency) {
-    await pool.query(
-      `UPDATE client_currencies SET currency = $2, created_at = NOW() WHERE shop_id = $1`,
-      [shop, currency]
-    );
-    console.log(`✅ Zaktualizowano walutę na ${currency} dla sklepu ${shop} w client_currencies`);
+    console.log(`✅ Dodano walutę ${currency} (use_customer_currency=${useCustomerCurrency}) dla sklepu ${shop} do client_currencies`);
   } else {
-    console.log(`ℹ️ Waluta sklepu ${shop} już aktualna (${currency})`);
+    // Update istniejący rekord jeśli coś się zmieniło
+    if (
+      result.rows[0].currency !== currency ||
+      result.rows[0].use_customer_currency !== useCustomerCurrency
+    ) {
+      await pool.query(
+        `UPDATE client_currencies SET currency = $2, use_customer_currency = $3, created_at = NOW() WHERE shop_id = $1`,
+        [shop, currency, useCustomerCurrency]
+      );
+      console.log(`✅ Zaktualizowano walutę na ${currency} (use_customer_currency=${useCustomerCurrency}) dla sklepu ${shop} w client_currencies`);
+    } else {
+      console.log(`ℹ️ Waluta sklepu ${shop} już aktualna (${currency}, use_customer_currency=${useCustomerCurrency})`);
+    }
   }
 }
 
