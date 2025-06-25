@@ -296,8 +296,47 @@
 </div>
 
 <script>
-// Przenieś deklarację lastTimerMessage na samą górę, przed (function() { ... })
+
 let lastTimerMessage = null;
+const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
+const shopCurrency = '{{ settings.shop_currency | default: shop.currency | escape }}';
+const exchangeRates = {{ settings.exchange_rates | default: null | json }};
+
+function getCustomerCurrency() {
+  // 1. Sprawdź window.userCurrency
+  if (window.userCurrency && typeof window.userCurrency === 'string') return window.userCurrency;
+
+  // 2. Sprawdź window.detectedCurrency
+  if (window.detectedCurrency && typeof window.detectedCurrency === 'string') return window.detectedCurrency;
+
+  // 3. Sprawdź localStorage userCurrency
+  const lsCurrency = localStorage.getItem('userCurrency');
+  if (lsCurrency && typeof lsCurrency === 'string') return lsCurrency;
+
+  // 4. Sprawdź geolokalizację z ipapi.co (jeśli już pobrana)
+  const ipapiCurrency = localStorage.getItem('userCurrencyFromIpapi');
+  if (ipapiCurrency && typeof ipapiCurrency === 'string') return ipapiCurrency;
+
+  // 5. Jeśli nie ma, spróbuj pobrać z ipapi.co i zapisać do localStorage
+  if (!localStorage.getItem('userCurrencyIpapiChecked')) {
+    fetch('https://ipapi.co/json/')
+      .then(resp => resp.json())
+      .then(data => {
+        if (data && data.currency) {
+          localStorage.setItem('userCurrencyFromIpapi', data.currency);
+          localStorage.setItem('userCurrencyIpapiChecked', '1');
+          // Po pobraniu wymuś reload paska (tylko raz)
+          window.location.reload();
+        }
+      })
+      .catch(() => {
+        localStorage.setItem('userCurrencyIpapiChecked', '1');
+      });
+  }
+
+  // 6. Fallback na walutę sklepu
+  return shopCurrency;
+}
 
 (function() {
   // Zabezpieczenie przed wielokrotnym uruchomieniem
@@ -1072,20 +1111,6 @@ let lastTimerMessage = null;
   };
 
   // Pobierz ustawienia walutowe z metafields
-  const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
-  const shopCurrency = '{{ settings.shop_currency | default: shop.currency | escape }}';
-  const exchangeRates = {{ settings.exchange_rates | default: null | json }};
-
-  // Funkcja do pobrania waluty klienta (geolokalizacja lub inny Twój mechanizm)
-  function getCustomerCurrency() {
-    // Jeśli masz już wykrywanie waluty klienta, użyj tego mechanizmu:
-    // Przykład: return localStorage.getItem('userCurrency') || shopCurrency;
-    // Jeśli nie wykryto, fallback na shopCurrency
-    if (window.userCurrency) return window.userCurrency;
-    if (window.detectedCurrency) return window.detectedCurrency;
-    // Możesz dodać własny mechanizm poniżej
-    return shopCurrency;
-  }
 
   // Przelicz kwotę na walutę klienta jeśli trzeba
   function convertAmount(amount, targetCurrency) {
@@ -1099,20 +1124,58 @@ let lastTimerMessage = null;
   function formatCurrency(amount, currencyOverride) {
     let currency = currencyOverride || shopCurrency;
     const mappedLocale = currencyLocaleMap[currency] || 'en';
-    const isInt = Number.isInteger(amount) || (typeof amount === 'number' && Math.floor(amount) === amount);
+    // Zaokrąglij do 2 miejsc po przecinku (niektóre kursy mogą mieć dużo miejsc)
+    let roundedAmount = Math.round((amount + Number.EPSILON) * 100) / 100;
+    const isInt = Number.isInteger(roundedAmount) || (typeof roundedAmount === 'number' && Math.floor(roundedAmount) === roundedAmount);
     try {
       return new Intl.NumberFormat(mappedLocale, {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: isInt ? 0 : 2,
         maximumFractionDigits: isInt ? 0 : 2
-      }).format(amount);
+      }).format(roundedAmount);
     } catch (e) {
-      return currency + ' ' + amount;
+      return currency + ' ' + roundedAmount;
     }
   }
-  
+
+  // Zmień replaceAmountPlaceholders, aby przeliczać kwoty jeśli trzeba
+  function replaceAmountPlaceholders(message, remaining, threshold) {
+    let targetCurrency = shopCurrency;
+    let remainingConv = remaining;
+    let thresholdConv = threshold;
+    if (useCustomerCurrency && exchangeRates) {
+      targetCurrency = getCustomerCurrency();
+      if (targetCurrency !== shopCurrency && exchangeRates[targetCurrency]) {
+        remainingConv = convertAmount(remaining, targetCurrency);
+        thresholdConv = convertAmount(threshold, targetCurrency);
+      }
+    }
+    const formattedRemaining = formatCurrency(remainingConv, targetCurrency);
+    const formattedThreshold = formatCurrency(thresholdConv, targetCurrency);
+    return message
+      .replace(/\[remaining\]/g, formattedRemaining)
+      .replace(/{remaining}/g, formattedRemaining)
+      .replace(/{amount}/g, formattedThreshold);
+  }
+
+  // --- DODAJ PONIŻEJ ---
+  // Wymuś natychmiastowe odświeżenie timera po załadowaniu strony, jeśli {timer} występuje w wiadomości
+  if (showTimer) {
+    setInterval(() => {
+      if (lastTimerMessage && lastTimerMessage.includes('{timer}')) {
+        // Nie animuj co sekundę, tylko podmień bez animacji
+        messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+      }
+    }, 1000);
+  }
+  // --- KONIEC DODATKU ---
 })();
+
+console.log('useCustomerCurrency', useCustomerCurrency);
+console.log('shopCurrency', shopCurrency);
+console.log('exchangeRates', exchangeRates);
+console.log('customerCurrency', getCustomerCurrency());
 </script>
 
 {% schema %}
