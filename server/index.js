@@ -330,6 +330,28 @@ app.get("/auth/callback", async (req, res) => {
       });
     }
 
+    // Zarejestruj webhook app/uninstalled
+    try {
+      const webhookResp = await fetch(`https://${shop}/admin/api/2023-10/webhooks.json`, {
+        method: 'POST',
+        headers: {
+          'X-Shopify-Access-Token': accessTokenData.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          webhook: {
+            topic: 'app/uninstalled',
+            address: `${process.env.HOST}/webhooks/app-uninstalled`,
+            format: 'json'
+          }
+        })
+      });
+      const webhookData = await webhookResp.json();
+      console.log('✅ Zarejestrowano webhook app/uninstalled:', webhookData);
+    } catch (err) {
+      console.error('❌ Błąd rejestracji webhooka app/uninstalled:', err);
+    }
+
     // Przekieruj do strony sukcesu
     console.log("Przekierowuję do strony sukcesu");
     return res.send(`
