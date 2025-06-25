@@ -568,6 +568,9 @@ app.get('/api/shop-currency', async (req, res) => {
 });
 
 app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
+  console.log('🔔 Otrzymano webhook app-uninstalled!');
+  console.log('Nagłówki:', req.headers);
+  console.log('Body:', req.body);
   // Shopify przesyła domenę sklepu w nagłówku
   const shop = req.headers['x-shopify-shop-domain'];
   if (!shop) {
