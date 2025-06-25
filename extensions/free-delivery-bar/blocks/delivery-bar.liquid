@@ -120,7 +120,7 @@
       margin-top: 0;
     {% elsif settings.position == 'fixed' %}
       position: fixed;
-      z-index: 3;
+      z-index: 2;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
@@ -171,16 +171,6 @@
   html header.header {
     z-index: 4 !important;
   }
-  
-  /* Menu drawer z-index */
-  .menu-drawer,
-  .menu-drawer__inner-container,
-  .menu-drawer__navigation-container,
-  .menu-drawer__navigation,
-  .menu-drawer__utility-links,
-  .menu-drawer-container menu-opening{
-    z-index: 4 !important;
-  }
   {% endif %}
   
   /* 🔥 OPACITY - TYLKO RAZ! */
@@ -222,6 +212,9 @@
     justify-content: center;
     gap: {{ settings.icon_gap | default: 10 }}px;
     height: 100%; /* Dodaj tę linię */
+    transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1);
+    opacity: 1;
+    will-change: opacity;
   }  /* Podstawowe style dla ikon */
   .delivery-icon {
     width: {{ settings.icon_size | default: 30 }}px !important;
@@ -229,6 +222,33 @@
     object-fit: contain !important;
     flex-shrink: 0 !important;
     display: block !important;
+  }
+
+  .banner__content {
+    z-index: 1 !important;
+  }
+  .banner:after {
+    z-index: 0 !important;
+  }
+
+  /* Animacja wygaszania i pojawiania się całej zawartości paska */
+  .delivery-bar-content {
+    transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1);
+    opacity: 1;
+    will-change: opacity;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: {{ settings.icon_gap | default: 10 }}px;
+    height: 100%; /* Dodaj tę linię */
+  }
+  .delivery-bar-content-fade-out {
+    opacity: 0;
+    transition: opacity 0.22s cubic-bezier(0.4,0,0.2,1);
+  }
+  .delivery-bar-content-fade-in {
+    opacity: 1;
+    transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1);
   }
 </style>
 
@@ -262,7 +282,7 @@
            alt="Delivery" />
     {% endif %}
     
-    <span id="delivery-message">
+    <span id="delivery-message" class="delivery-message">
       {% assign message = settings.message | default: "Free delivery on orders over $199!" %}
       {{ message }}
     </span>
@@ -289,6 +309,7 @@ let lastTimerMessage = null;
   const deliveryBar = document.getElementById('free-delivery-bar');
   const messageElement = document.getElementById('delivery-message');
   const closeButton = document.getElementById('close-delivery-bar');
+  const deliveryBarContent = document.querySelector('.delivery-bar-content');
   
   if (!deliveryBar) {
     console.error('Nie znaleziono elementu free-delivery-bar');
@@ -565,7 +586,7 @@ let lastTimerMessage = null;
               // Podmień {remaining} i {amount} także w success message
               finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
               lastTimerMessage = finalMessage;
-              messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+              setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
                 
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -593,7 +614,7 @@ let lastTimerMessage = null;
               // Podmień {remaining} i {amount} także w general message
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
               lastTimerMessage = finalMessage;
-              messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+              setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
               
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -622,7 +643,7 @@ let lastTimerMessage = null;
             
 
             lastTimerMessage = finalMessage; // <- zapisz oryginalny tekst z {timer}
-            messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+            setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
             
             // Przywróć oryginalny kolor
             if (!transparentBg) {
@@ -642,13 +663,31 @@ let lastTimerMessage = null;
           // Fallback
           deliveryBar.classList.remove('hidden');
           let message = generalMessage || 'Free delivery available!';
-          messageElement.textContent = message;
+          setMessageWithFade(message);
           lastTimerMessage = message;
         })
         .finally(() => {
           // 🔥 ZWOLNIJ FLAGĘ
           isUpdatingDeliveryMessage = false;
         });
+    }
+
+    // Helper: animowana zmiana zawartości delivery-bar-content (ikona + tekst)
+    function setMessageWithFade(newText) {
+      if (!deliveryBarContent || !messageElement) return;
+      if (messageElement.textContent === newText) return;
+
+      deliveryBarContent.classList.remove('delivery-bar-content-fade-in');
+      deliveryBarContent.classList.add('delivery-bar-content-fade-out');
+
+      setTimeout(() => {
+        messageElement.textContent = newText;
+        deliveryBarContent.classList.remove('delivery-bar-content-fade-out');
+        deliveryBarContent.classList.add('delivery-bar-content-fade-in');
+        setTimeout(() => {
+          deliveryBarContent.classList.remove('delivery-bar-content-fade-in');
+        }, 280);
+      }, 220);
     }
 
     // Funkcje animacji
@@ -974,6 +1013,7 @@ let lastTimerMessage = null;
     if (showTimer) {
       setInterval(() => {
         if (lastTimerMessage && lastTimerMessage.includes('{timer}')) {
+          // Nie animuj co sekundę, tylko podmień bez animacji
           messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
         }
       }, 1000);
