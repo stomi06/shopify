@@ -113,9 +113,9 @@
       box-shadow: none;
     {% endif %}
     {% if settings.position == 'above-header' %}
-      position: fixed;
+      position: fixed !important;
       width: 100% !important;
-      z-index: 3;
+      z-index: 3 !important;
       top: 0;
       margin-top: 0;
     {% elsif settings.position == 'fixed' %}
@@ -137,32 +137,11 @@
     {% endif %}
   }  /* Remove body padding for above-header position */
   {% if settings.position == 'above-header' %}
-  .header,
-  header.header {
-    padding-top: {{ settings.bar_height | default: 40 }}px !important;
+  body {
+    margin-top: {{ settings.bar_height | default: 40 }}px !important;
     transition: padding-top 0.3s ease !important;
   }
 
-  /* Force higher specificity to override theme styles */
-  .shopify-section header.header,
-  #shopify-section-header header.header,
-  body header.header,
-  html header.header {
-    padding-top: {{ settings.bar_height | default: 40 }}px !important;
-    transition: padding-top 0.3s ease !important;
-  }
-  
-  /* Emergency override for when bar is hidden - INSTANT */
-  header.header.delivery-bar-hidden {
-    padding-top: 0px !important;
-    transition: none !important;
-  }
-  
-  /* Animated hiding when bar fades out */
-  header.header.delivery-bar-hiding {
-    padding-top: 0px !important;
-    transition: padding-top 1s ease !important;
-  }
   {% else %}
   /* For fixed and absolute positions - set higher z-index for header and menu */
   header.header,
@@ -297,6 +276,29 @@
 </div>
 
 <script>
+
+document.addEventListener("DOMContentLoaded", function () {
+  var barHeight = {{ settings.bar_height | default: 40 }};
+  var bar = document.querySelector('.free-delivery-bar');
+  if (!bar) return;
+
+  document.body.appendChild(bar);
+
+  var headers = document.querySelectorAll("header");
+  headers.forEach(function(header) {
+    var style = getComputedStyle(header);
+    var pos = style.position;
+
+    if (pos === "fixed" || pos === "sticky") {
+      header.style.top = barHeight + "px";
+      header.style.marginTop = "";
+    } else {
+      header.style.top = "";
+      header.style.marginTop = "0px"; // usuń odstęp jeśli nie fixed
+    }
+  });
+
+});
 
 let lastTimerMessage = null;
 const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
