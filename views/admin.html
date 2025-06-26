@@ -1212,7 +1212,7 @@
       
       try {
         // TEST: Wymuś błąd na potrzeby testu powiadomienia
-        throw new Error('Testowy błąd zapisu (symulacja)');
+        //throw new Error('Testowy błąd zapisu (symulacja)');
         
         const shop = getShopFromUrl();
         const response = await fetch('/api/settings', {
@@ -1222,12 +1222,12 @@
         });
 
         if (response.ok) {
-          showNotification('✅ Settings saved successfully!', 'success');
+          showNotification('Settings saved successfully!', 'success');
         } else {
           throw new Error('Error while saving');
         }
       } catch (err) {
-        showNotification('❌ Error saving settings: ' + err.message, 'error');
+        showNotification('Error saving settings: ' + err.message, 'error');
       }
     }    // Funkcja ładowania ustawień
     async function loadSettings() {
