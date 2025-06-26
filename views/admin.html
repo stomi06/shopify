@@ -424,6 +424,8 @@
   </style>
 </head>
 <body>
+  <!-- Notification container -->
+  <div id="notification-container" style="position:fixed;top:24px;left:50%;transform:translateX(-50%);z-index:9999;display:none;min-width:280px;max-width:90vw;"></div>
   <div class="main-content">
     <div class="settings-panel">
         <div class="panel-header">
@@ -485,7 +487,7 @@
                 <div>
                   <label>
                     <input style="margin-right: 5px;" type="radio" name="currencyMode" id="currencyModeShop" value="shop" checked>
-                    Use shop currency (e.g. $100)
+                    Use shop currency
                   </label>
                   <label>
                     <input style="margin-right: 5px;" type="radio" name="currencyMode" id="currencyModeCustomer" value="customer">
@@ -1216,24 +1218,12 @@
         });
 
         if (response.ok) {
-          // Show success message
-          const alertDiv = document.createElement('div');
-          alertDiv.className = 'alert success';
-          alertDiv.textContent = '✅ Settings saved successfully!';
-          document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
-          
-          setTimeout(() => alertDiv.remove(), 3000);
+          showNotification('✅ Settings saved successfully!', 'success');
         } else {
           throw new Error('Error while saving');
         }
       } catch (err) {
-        // Show error message
-        const alertDiv = document.createElement('div');
-        alertDiv.className = 'alert error';
-        alertDiv.textContent = '❌ Error saving settings: ' + err.message;
-        document.querySelector('.panel-content').insertBefore(alertDiv, document.querySelector('.form-section'));
-        
-        setTimeout(() => alertDiv.remove(), 5000);
+        showNotification('❌ Error saving settings: ' + err.message, 'error');
       }
     }    // Funkcja ładowania ustawień
     async function loadSettings() {
@@ -1678,6 +1668,27 @@
         .replace(/\[remaining\]/g, formattedRemaining)
         .replace(/{remaining}/g, formattedRemaining)
         .replace(/{amount}/g, formattedThreshold);
+    }
+
+    // Notification function
+    function showNotification(message, type = 'success') {
+      const container = document.getElementById('notification-container');
+      container.innerHTML = `<div style="
+        background:${type === 'success' ? '#f0fff4' : '#fed7d7'};
+        border:1px solid ${type === 'success' ? '#68d391' : '#fc8181'};
+        color:${type === 'success' ? '#22543d' : '#742a2a'};
+        padding:14px 22px;
+        border-radius:8px;
+        font-size:15px;
+        font-weight:500;
+        box-shadow:0 2px 8px rgba(0,0,0,0.10);
+        text-align:center;
+        margin:0 auto;
+        ">
+        ${message}
+      </div>`;
+      container.style.display = 'block';
+      setTimeout(() => { container.style.display = 'none'; }, type === 'success' ? 2200 : 4000);
     }
   </script>
 </body>
