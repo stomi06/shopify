@@ -682,6 +682,11 @@ app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
     await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop]);
     console.log(`✅ Usunięto dane sesji dla sklepu: ${shop}`);
     // (opcjonalnie) Usuń inne dane powiązane z tym sklepem, jeśli trzymasz je w innych tabelach
+
+    // Usuń rekord z client_currencies
+    await pool.query('DELETE FROM client_currencies WHERE shop_id = $1', [shop]);
+    console.log(`✅ Usunięto walutę sklepu z client_currencies: ${shop}`);
+
     res.status(200).send('OK');
   } catch (err) {
     console.error('❌ Błąd usuwania sesji:', err);
