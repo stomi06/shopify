@@ -137,6 +137,7 @@
     {% endif %}
   }  /* Remove body padding for above-header position */
   {% if settings.position == 'above-header' %}
+  .header,
   header.header {
     padding-top: {{ settings.bar_height | default: 40 }}px !important;
     transition: padding-top 0.3s ease !important;
