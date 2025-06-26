@@ -693,7 +693,6 @@ app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
     res.status(500).send('Error');
   }
 });
-
 // Funkcja do weryfikacji HMAC webhooka Shopify
 function verifyShopifyWebhook(req, res, buf) {
   const hmacHeader = req.get('X-Shopify-Hmac-Sha256');
