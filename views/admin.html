@@ -1211,6 +1211,9 @@
       console.log('🔒 Closeable being saved:', settings.closeable);
       
       try {
+        // TEST: Wymuś błąd na potrzeby testu powiadomienia
+        throw new Error('Testowy błąd zapisu (symulacja)');
+        
         const shop = getShopFromUrl();
         const response = await fetch('/api/settings', {
           method: 'POST',
