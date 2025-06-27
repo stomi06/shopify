@@ -3,7 +3,10 @@
 name = "Free Shipping Bar"
 type = "theme"
 
-[extension_points]
+[[extension_points]]
+target = "theme.app_embed"
+module = "blocks/delivery-bar.liquid"
 
-[[extension_points.entry]]
-target = "layout.theme"
+[[extension_points]]
+target = "section"
+module = "blocks/delivery-bar.liquid"
