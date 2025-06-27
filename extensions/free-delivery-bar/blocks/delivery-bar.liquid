@@ -115,7 +115,7 @@
     {% if settings.position == 'above-header' %}
       position: fixed !important;
       width: 100% !important;
-      z-index: 1000 !important;
+      z-index: 9999 !important;
       top: 0;
       margin-top: 0;
       display: flex;
@@ -293,7 +293,35 @@ document.addEventListener("DOMContentLoaded", function () {
     if (header) {
       header.style.paddingTop = barHeight + 'px';
     }
-  });
+
+    // Przesuwaj i skracaj tylko drawery/popup/modal (NIE header!)
+    const adjustDrawers = () => {
+      const candidates = document.querySelectorAll('[class*="drawer"], [id*="Drawer"], [class*="popup"], [class*="modal"]');
+      candidates.forEach(el => {
+        const style = getComputedStyle(el);
+        // Tylko dla fixed/absolute
+        if (style.position === 'fixed' || style.position === 'absolute') {
+          // Przesuń w dół o wysokość paska
+          el.style.top = barHeight + 'px';
+          // Ustaw wysokość na 100vh - barHeight (niezależnie od obecnej wartości)
+          el.style.height = `calc(100vh - ${barHeight}px)`;
+          el.style.maxHeight = `calc(100vh - ${barHeight}px)`;
+        }
+      });
+    };
+
+    // Początkowe przesunięcie
+    setTimeout(adjustDrawers, 1);
+
+    // Obserwujemy dodawane elementy i zmiany stylu
+    const observer = new MutationObserver(() => {
+      adjustDrawers();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    // Dodatkowo reaguj na resize okna (np. mobile orientation)
+    window.addEventListener('resize', adjustDrawers);
+});
 
 let lastTimerMessage = null;
 const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
@@ -467,52 +495,43 @@ function getCustomerCurrency() {
     if (isCountryExcluded) {
       console.log('🌍 Bar hidden due to country exclusion');
       deliveryBar.style.display = 'none';
-      
-      // Also remove header padding if position is above-header
       if (position === 'above-header') {
-        const header = document.querySelector('header.header');
+        const header = document.querySelector('header');
         if (header) {
-          header.classList.add('delivery-bar-hidden');
-          header.style.setProperty('padding-top', '0px', 'important');
-          console.log('🔧 Removed header padding due to country exclusion');
-        }
-      }
-      
-      return; // Exit early, don't initialize the bar
-    }
-    
-    // Continue with normal initialization...
-    console.log('🚀 Country check passed, initializing bar...');
-    
-    // Check if bar was previously closed
-    if (localStorage.getItem('deliveryBarClosed') === 'true') {
-      deliveryBar.classList.add('hidden');
-      // Usuń padding z header jeśli pasek był zamknięty
-      if (position === 'above-header') {
-        const header = document.querySelector('header.header');
-        if (header) {
-          header.classList.add('delivery-bar-hidden');
-          header.style.setProperty('padding-top', '0px', 'important');
+          header.style.transition = '';
+          header.style.paddingTop = '0px';
+          console.log('🔧 Removed header padding due to country exclusion (instant)');
         }
       }
       return;
     }
-    
-    // 🔥 SPRAWDŹ CZY PASEK POWINIEN BYĆ SCHOWANY NA POCZĄTKU
-    if (position === 'above-header') {
-      const header = document.querySelector('header.header');
-      if (header) {
-        // Jeśli pasek jest ukryty ale header ma padding - napraw to
-        if (deliveryBar.classList.contains('hidden')) {
-          header.classList.add('delivery-bar-hidden');
-          header.style.setProperty('padding-top', '0px', 'important');
-          console.log('🔧 Fixed header padding on page load - bar was hidden');
-        } else {
-          // Jeśli pasek jest widoczny ale header nie ma padding - napraw to
-          header.classList.remove('delivery-bar-hidden');
-          header.style.removeProperty('padding-top');
-          console.log('🔧 Fixed header padding on page load - bar was visible');
+
+    if (localStorage.getItem('deliveryBarClosed') === 'true') {
+      deliveryBar.classList.add('hidden');
+      if (position === 'above-header') {
+        const header = document.querySelector('header');
+        if (header) {
+          header.style.transition = '';
+          header.style.paddingTop = '0px';
         }
+      }
+      return;
+    }
+
+    // Przy ładowaniu strony: zawsze bez animacji
+    if (position === 'above-header') {
+      const header = document.querySelector('header');
+      if (header) {
+        header.style.transition = '';
+        setTimeout(() => {
+          if (deliveryBar.classList.contains('hidden')) {
+            header.style.paddingTop = '0px';
+            console.log('🔧 Fixed header padding on page load - bar was hidden (instant)');
+          } else {
+            header.style.paddingTop = barHeight + 'px';
+            console.log('🔧 Fixed header padding on page load - bar was visible (instant)');
+          }
+        }, 10);
       }
     }
     
@@ -612,13 +631,22 @@ function getCustomerCurrency() {
           const remaining = threshold - cartTotal;
           console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
           
+          // Determine if we cross the threshold (for animation)
+          const wasBarVisible = isBarVisible;
+          const willBeVisible = cartTotal < threshold || (cartTotal >= threshold && showSuccess);
+
+          let animateHeader = false;
+          // Animuj tylko jeśli zmiana widoczności paska wynika z przekroceniem progu
+          if (wasBarVisible && !willBeVisible) animateHeader = true; // znika przez przekrocenie progu
+          if (!wasBarVisible && willBeVisible) animateHeader = true; // pojawia się przez spadek poniżej progu
+
           let finalMessage = generalMessage;
           if (cartTotal >= threshold) {
             // THRESHOLD REACHED
             if (showSuccess) {
               // Pokaż success message
               if (!isBarVisible) {
-                fadeInBar();
+                fadeInBar(animateHeader);
               }
               isBarVisible = true;
               localStorage.setItem('deliveryBarState', 'visible');
@@ -646,14 +674,14 @@ function getCustomerCurrency() {
               if (isBarVisible) {
                 fadeOutBar(() => {
                   localStorage.setItem('deliveryBarState', 'hidden');
-                });
+                }, animateHeader);
               }
               isBarVisible = false;
               return;
             } else {
               // Pokaż general message  
               if (!isBarVisible) {
-                fadeInBar();
+                fadeInBar(animateHeader);
               }
               isBarVisible = true;
               localStorage.setItem('deliveryBarState', 'visible');
@@ -673,7 +701,7 @@ function getCustomerCurrency() {
             // PRÓG NIE OSIĄGNIĘTY
             // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
             if (!isBarVisible) {
-              fadeInBar();
+              fadeInBar(animateHeader);
             }
             isBarVisible = true;
             localStorage.setItem('deliveryBarState', 'visible');
@@ -688,6 +716,7 @@ function getCustomerCurrency() {
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             }
             
+
 
             lastTimerMessage = finalMessage; // <- zapisz oryginalny tekst z {timer}
             setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
@@ -738,84 +767,67 @@ function getCustomerCurrency() {
     }
 
     // Funkcje animacji
-    function fadeOutBar(callback) {
+    function fadeOutBar(callback, animateHeader = false) {
       console.log('🎬 fadeOutBar called, position:', position);
-      
-      // Jeśli pozycja to above-header, usuń padding z header PRZED animacją
       if (position === 'above-header') {
-        const header = document.querySelector('header.header');
-        console.log('🔍 Looking for header.header:', !!header);
+        const header = document.querySelector('header');
         if (header) {
-          console.log('📏 Current padding before removal:', getComputedStyle(header).paddingTop);
-          
-          // Dodaj klasę animowanego chowania
-          header.classList.remove('delivery-bar-hidden');
-          header.classList.add('delivery-bar-hiding');
-          
-          // Ustaw też inline style jako backup
-          header.style.setProperty('padding-top', '0px', 'important');
-          
-          console.log('🔧 Added .delivery-bar-hiding class for animated removal');
-          console.log('📏 Padding after removal:', getComputedStyle(header).paddingTop);
+          if (animateHeader) {
+            header.style.transition = 'padding-top 0.6s cubic-bezier(0.4,0,0.2,1)';
+            setTimeout(() => {
+              header.style.paddingTop = '0px';
+              console.log('🔧 Removed header padding (fadeOutBar, animated)');
+            }, 10);
+          } else {
+            header.style.transition = '';
+            header.style.paddingTop = '0px';
+            console.log('🔧 Removed header padding (fadeOutBar, instant)');
+          }
         }
       }
-      
       deliveryBar.classList.add('fade-out');
-      
       setTimeout(() => {
         deliveryBar.classList.add('hidden');
         deliveryBar.classList.remove('fade-out');
-        
-        // Po zakończeniu animacji zastąp klasę hiding na hidden
-        if (position === 'above-header') {
-          const header = document.querySelector('header.header');
-          if (header) {
-            header.classList.remove('delivery-bar-hiding');
-            header.classList.add('delivery-bar-hidden');
-          }
-        }
-        
         if (callback) callback();
-      }, 1000); // Zwiększono czas na 1000ms żeby pasować do animacji CSS
+      }, 1000);
     }
 
-    function fadeInBar() {
-      // 🔥 NAJPIERW USTAW OPACITY NA 0
+    function fadeInBar(animateHeader = false) {
       deliveryBar.classList.add('fade-out');
       deliveryBar.classList.remove('hidden');
-      
-      // Jeśli pozycja to above-header, przywróć padding do header
       if (position === 'above-header') {
-        const header = document.querySelector('header.header');
+        const header = document.querySelector('header');
         if (header) {
-          // Usuń klasę CSS i inline style
-          header.classList.remove('delivery-bar-hidden');
-          header.style.removeProperty('padding-top');
-          
-          console.log('🔧 Removed .delivery-bar-hidden class and inline style');
-          console.log('🔧 Restoring padding to main header:', header.className, barHeight + 'px');
-        }
-      }
-      
-      // 🔥 WYMYŚ REFLOW I NASTĘPNIE ANIMUJ
-      deliveryBar.offsetHeight; // Force reflow
-      
-      setTimeout(() => {
-        deliveryBar.classList.remove('fade-out');
-      }, 10); // Krótkie opóźnienie
-    }  // Obsługa zamknięcia paska - tylko jeśli przycisk istnieje
-    if (closeButton) {
-      closeButton.addEventListener('click', function() {
-        // Jeśli pozycja to above-header, usuń padding z header
-        if (position === 'above-header') {
-          const header = document.querySelector('header.header');
-          if (header) {
-            header.classList.add('delivery-bar-hidden');
-            header.style.setProperty('padding-top', '0px', 'important');
-            console.log('🔧 Removing padding from main header on close:', header.className);
+          if (animateHeader) {
+            header.style.transition = 'padding-top 0.2s cubic-bezier(0.4,0,0.2,1)';
+            setTimeout(() => {
+              header.style.paddingTop = barHeight + 'px';
+              console.log('🔧 Restored header padding (fadeInBar, animated):', barHeight + 'px');
+            }, 10);
+          } else {
+            header.style.transition = '';
+            header.style.paddingTop = barHeight + 'px';
+            console.log('🔧 Restored header padding (fadeInBar, instant):', barHeight + 'px');
           }
         }
-        
+      }
+      deliveryBar.offsetHeight;
+      setTimeout(() => {
+        deliveryBar.classList.remove('fade-out');
+      }, 10);
+    }
+
+    if (closeButton) {
+      closeButton.addEventListener('click', function() {
+        if (position === 'above-header') {
+          const header = document.querySelector('header');
+          if (header) {
+            header.style.transition = '';
+            header.style.paddingTop = '0px';
+            console.log('🔧 Removed header padding (closeButton, instant)');
+          }
+        }
         deliveryBar.classList.add('hidden');
         localStorage.setItem('deliveryBarClosed', 'true');
         console.log('Bar closed by user');
@@ -1037,11 +1049,11 @@ function getCustomerCurrency() {
     
     // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
     if (savedBarState === 'hidden' && position === 'above-header') {
-      const header = document.querySelector('header.header');
+      const header = document.querySelector('header');
       if (header) {
-        header.classList.add('delivery-bar-hidden');
-        header.style.setProperty('padding-top', '0px', 'important');
-        console.log('🔧 Hiding header padding on init - bar state was hidden');
+        header.style.transition = '';
+        header.style.paddingTop = '0px';
+        console.log('🔧 Hiding header padding on init - bar state was hidden (instant)');
       }
     }
     
