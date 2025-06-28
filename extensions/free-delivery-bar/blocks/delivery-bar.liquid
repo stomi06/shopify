@@ -125,7 +125,7 @@
       margin-top: 0 !important;
       box-sizing: border-box;
       /* Usuń left: 50% i transform */
-    {% elsif settings.position == 'fixed' %}
+    {% elsif settings.position == 'always_visible' %}
       position: fixed;
       z-index: 2;
       margin-top: {{ settings.margin_top }}px;
