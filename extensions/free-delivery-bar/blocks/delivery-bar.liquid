@@ -1,5 +1,5 @@
 {% comment %}
-  Free Delivery Bar Block
+  Free Shipping Bar Block
   Settings are managed through the app panel and saved in metafields
 {% endcomment %}
 
@@ -87,8 +87,11 @@
     justify-content: center;
     z-index: 3;
     transition: opacity 0.4s ease;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    width: 100vw !important;
+    margin-top: 0 !important;
+    box-sizing: border-box;
     font-display: swap;
     {% if settings.transparent_bg == true %}
       background-color: transparent;
@@ -114,11 +117,14 @@
     {% endif %}
     {% if settings.position == 'above-header' %}
       position: fixed !important;
-      width: 100% !important;
-      z-index: 9999 !important;
       top: 0;
-      margin-top: 0;
-      display: flex;
+      left: 0;
+      right: 0;
+      width: 100vw !important;
+      z-index: 2147483647 !important;
+      margin-top: 0 !important;
+      box-sizing: border-box;
+      /* Usuń left: 50% i transform */
     {% elsif settings.position == 'fixed' %}
       position: fixed;
       z-index: 2;
@@ -138,10 +144,10 @@
     {% endif %}
   }  /* Remove body padding for above-header position */
   {% if settings.position == 'above-header' %}
-  body {
-    
-    transition: padding-top 0.3s ease !important;
+  html, body {
+    transition: padding-top 0.3s cubic-bezier(0.4,0,0.2,1) !important;
   }
+  /* Przesuń wszystkie elementy fixed/top:0 (np. menu, header, popup) */
 
   {% else %}
   /* For fixed and absolute positions - set higher z-index for header and menu */
@@ -277,50 +283,106 @@
 </div>
 
 <script>
-
 document.addEventListener("DOMContentLoaded", function () {
     const barHeight = {{ settings.bar_height | default: 40 }};
     const bar = document.querySelector('.free-delivery-bar');
     if (!bar) return;
 
-    // Wstawiamy pasek na koniec body
     document.body.appendChild(bar);
 
-    // Znajdujemy header
     const header = document.querySelector('header');
 
-    // Ręcznie przesuwamy header, nawet jeśli zmienia pozycję przy scrollu
-    if (header) {
-      header.style.paddingTop = barHeight + 'px';
-    }
+    // --- USTAW STYLOWANIE ELEMENTÓW OD RAZU NA PODSTAWIE STANU PASKA ---
+    const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
+    const deliveryBarClosed = localStorage.getItem('deliveryBarClosed') === 'true';
+    const isBarHidden = bar.classList.contains('hidden') || savedBarState === 'hidden' || deliveryBarClosed;
 
-    // Przesuwaj i skracaj tylko drawery/popup/modal (NIE header!)
-    const adjustDrawers = () => {
-      const candidates = document.querySelectorAll('[class*="drawer"], [id*="Drawer"], [class*="popup"], [class*="modal"]');
-      candidates.forEach(el => {
-        const style = getComputedStyle(el);
-        // Tylko dla fixed/absolute
-        if (style.position === 'fixed' || style.position === 'absolute') {
-          // Przesuń w dół o wysokość paska
+    // Funkcja do przesuwania elementów fixed/top:0
+    function updateShiftedElements() {
+      const bar = document.querySelector('.free-delivery-bar');
+      const barHeight = {{ settings.bar_height | default: 40 }};
+      const isBarVisible = bar && !bar.classList.contains('hidden');
+      document.querySelectorAll('[data-shifted-by-bar="true"]').forEach(function(el) {
+        if (isBarVisible) {
           el.style.top = barHeight + 'px';
-          // Ustaw wysokość na 100vh - barHeight (niezależnie od obecnej wartości)
-          el.style.height = `calc(100vh - ${barHeight}px)`;
-          el.style.maxHeight = `calc(100vh - ${barHeight}px)`;
+          el.style.maxHeight = 'calc(100vh - ' + barHeight + 'px)';
+        } else {
+          el.style.top = '0px';
+          el.style.maxHeight = '100vh';
         }
       });
-    };
+    }
 
-    // Początkowe przesunięcie
-    setTimeout(adjustDrawers, 1);
+    // --- KONIEC DODATKU ---
 
-    // Obserwujemy dodawane elementy i zmiany stylu
-    const observer = new MutationObserver(() => {
-      adjustDrawers();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Usuń manipulację paddingiem headera!
+    // Przesuwaj elementy fixed/top:0 (poza paskiem)
+    if ("{{ settings.position | default: 'above-header' }}" === "above-header") {
+      function shiftFixedElements() {
+        // Dodaj warunek blokujący przesuwanie podczas ukrywania paska
+        if (window.freeDeliveryBarHiding) return;
+        // Przesuwaj tylko elementy, które wyglądają na menu/drawery/header/popup/cart
+        const selector = [
+          '[class*="drawer"]',
+          '[class*="menu"]',
+          '[class*="header"]',
+          '[class*="popup"]',
+          '[class*="cart"]',
+          '[id*="drawer"]',
+          '[id*="menu"]',
+          '[id*="header"]',
+          '[id*="popup"]',
+          '[id*="cart"]'
+        ].join(',');
 
-    // Dodatkowo reaguj na resize okna (np. mobile orientation)
-    window.addEventListener('resize', adjustDrawers);
+        document.querySelectorAll(selector).forEach(function(el) {
+          if (
+            el !== bar &&
+            window.getComputedStyle(el).position === 'fixed' &&
+            parseInt(window.getComputedStyle(el).top) === 0
+          ) {
+            el.setAttribute('data-shifted-by-bar', 'true');
+            // Przesuwaj tylko jeśli pasek jest widoczny
+            if (!bar.classList.contains('hidden')) {
+              el.style.top = barHeight + 'px';
+              el.style.maxHeight = 'calc(100vh - ' + barHeight + 'px)';
+            } else {
+              el.style.top = '0px';
+              el.style.maxHeight = '100vh';
+            }
+          }
+        });
+      }
+      shiftFixedElements();
+
+      // MutationObserver na dodawanie elementów i zmiany atrybutów (class/style)
+      const observer = new MutationObserver(function(mutations) {
+        let needsShift = false;
+        mutations.forEach(function(mutation) {
+          if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.nodeType === 1) needsShift = true;
+            });
+          }
+          if (mutation.type === 'attributes' && (mutation.attributeName === 'class' || mutation.attributeName === 'style')) {
+            needsShift = true;
+          }
+        });
+        // Dodaj warunek blokujący przesuwanie podczas ukrywania paska
+        if (!window.freeDeliveryBarHiding && needsShift) shiftFixedElements();
+      });
+      observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+      // Dodatkowo: shift po każdym kliknięciu (np. otwarcie menu przez JS)
+      document.addEventListener('click', function() {
+        setTimeout(shiftFixedElements, 0);
+      });
+
+      // Shift także po resize (czasem menu pojawia się po zmianie rozmiaru)
+      window.addEventListener('resize', function() {
+        setTimeout(shiftFixedElements, 0);
+      });
+    }
 });
 
 let lastTimerMessage = null;
@@ -491,32 +553,30 @@ function getCustomerCurrency() {
     // Usuń let lastTimerMessage = null; z wnętrza initializeBar (jeśli tam jest)
 
     const isCountryExcluded = await checkCountryExclusion();
-    
     if (isCountryExcluded) {
       console.log('🌍 Bar hidden due to country exclusion');
       deliveryBar.style.display = 'none';
+      // Przywróć padding-top body do 0 jeśli pasek ukryty
       if (position === 'above-header') {
-        const header = document.querySelector('header');
-        if (header) {
-          header.style.transition = '';
-          header.style.paddingTop = '0px';
-          console.log('🔧 Removed header padding due to country exclusion (instant)');
-        }
+        document.body.style.paddingTop = '0px';
+        document.documentElement.style.paddingTop = '0px';
       }
       return;
     }
-
     if (localStorage.getItem('deliveryBarClosed') === 'true') {
       deliveryBar.classList.add('hidden');
+      // --- DODANE: Przywróć style elementów od razu ---
       if (position === 'above-header') {
         const header = document.querySelector('header');
-        if (header) {
-          header.style.transition = '';
-          header.style.paddingTop = '0px';
-        }
+        if (header) header.style.paddingTop = '0px';
+        document.querySelectorAll('[data-shifted-by-bar="true"]').forEach(function(el) {
+          el.style.setProperty('top', '0', 'important');
+          el.style.setProperty('max-height', '100vh', 'important');
+        });
       }
       return;
     }
+    // --- USUŃ całą logikę manipulującą paddingiem headera z tego miejsca (już ustawione wyżej) ---
 
     // Przy ładowaniu strony: zawsze bez animacji
     if (position === 'above-header') {
@@ -770,25 +830,25 @@ function getCustomerCurrency() {
     function fadeOutBar(callback, animateHeader = false) {
       console.log('🎬 fadeOutBar called, position:', position);
       if (position === 'above-header') {
+        window.freeDeliveryBarHiding = true; // Ustaw flagę blokującą przesuwanie
+        document.body.style.transition = '';
+        document.body.style.paddingTop = '0px';
+        document.documentElement.style.transition = '';
+        document.documentElement.style.paddingTop = '0px';
         const header = document.querySelector('header');
         if (header) {
-          if (animateHeader) {
-            header.style.transition = 'padding-top 0.6s cubic-bezier(0.4,0,0.2,1)';
-            setTimeout(() => {
-              header.style.paddingTop = '0px';
-              console.log('🔧 Removed header padding (fadeOutBar, animated)');
-            }, 10);
-          } else {
-            header.style.transition = '';
-            header.style.paddingTop = '0px';
-            console.log('🔧 Removed header padding (fadeOutBar, instant)');
-          }
+          header.style.paddingTop = '0px';
         }
+        document.querySelectorAll('[data-shifted-by-bar="true"]').forEach(function(el) {
+          el.style.top = '0px';
+          el.style.maxHeight = '100vh';
+        });
       }
       deliveryBar.classList.add('fade-out');
       setTimeout(() => {
         deliveryBar.classList.add('hidden');
         deliveryBar.classList.remove('fade-out');
+        window.freeDeliveryBarHiding = false; // Zdejmij blokadę po zakończeniu animacji
         if (callback) callback();
       }, 1000);
     }
@@ -797,19 +857,14 @@ function getCustomerCurrency() {
       deliveryBar.classList.add('fade-out');
       deliveryBar.classList.remove('hidden');
       if (position === 'above-header') {
+        // Przywróć style przesuniętych elementów do domyślnych
+        if (window.shiftFixedElementsIfBarVisible) {
+          window.shiftFixedElementsIfBarVisible();
+        }
+        // Przywróć paddingTop headera
         const header = document.querySelector('header');
         if (header) {
-          if (animateHeader) {
-            header.style.transition = 'padding-top 0.2s cubic-bezier(0.4,0,0.2,1)';
-            setTimeout(() => {
-              header.style.paddingTop = barHeight + 'px';
-              console.log('🔧 Restored header padding (fadeInBar, animated):', barHeight + 'px');
-            }, 10);
-          } else {
-            header.style.transition = '';
-            header.style.paddingTop = barHeight + 'px';
-            console.log('🔧 Restored header padding (fadeInBar, instant):', barHeight + 'px');
-          }
+          header.style.paddingTop = barHeight + 'px';
         }
       }
       deliveryBar.offsetHeight;
@@ -818,15 +873,38 @@ function getCustomerCurrency() {
       }, 10);
     }
 
+    // Uniwersalna funkcja do aktualizacji przesunięcia elementów
+    window.updateShiftedElements = function() {
+      const bar = document.querySelector('.free-delivery-bar');
+      const barHeight = {{ settings.bar_height | default: 40 }};
+      const isBarVisible = bar && !bar.classList.contains('hidden');
+      const selector = [
+        '[data-shifted-by-bar="true"]'
+      ].join(',');
+
+      document.querySelectorAll(selector).forEach(function(el) {
+        if (isBarVisible) {
+          el.style.top = barHeight + 'px';
+          el.style.maxHeight = 'calc(100vh - ' + barHeight + 'px)';
+        } else {
+          el.style.top = '0px';
+          el.style.maxHeight = '100vh';
+        }
+      });
+    };
+
+    // Po inicjalizacji ustaw przesunięcie
+    if ("{{ settings.position | default: 'above-header' }}" === "above-header") {
+      updateShiftedElements();
+    }
+
+   
+
     if (closeButton) {
       closeButton.addEventListener('click', function() {
         if (position === 'above-header') {
-          const header = document.querySelector('header');
-          if (header) {
-            header.style.transition = '';
-            header.style.paddingTop = '0px';
-            console.log('🔧 Removed header padding (closeButton, instant)');
-          }
+          document.documentElement.style.transition = '';
+          document.documentElement.style.paddingTop = '0px';
         }
         deliveryBar.classList.add('hidden');
         localStorage.setItem('deliveryBarClosed', 'true');
@@ -1049,12 +1127,10 @@ function getCustomerCurrency() {
     
     // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
     if (savedBarState === 'hidden' && position === 'above-header') {
-      const header = document.querySelector('header');
-      if (header) {
-        header.style.transition = '';
-        header.style.paddingTop = '0px';
-        console.log('🔧 Hiding header padding on init - bar state was hidden (instant)');
-      }
+      document.body.style.transition = '';
+      document.body.style.paddingTop = '0px';
+      document.documentElement.style.transition = '';
+      document.documentElement.style.paddingTop = '0px';
     }
     
     // Initialize timer if enabled
@@ -1066,18 +1142,6 @@ function getCustomerCurrency() {
     setTimeout(() => {
       updateDeliveryMessage();
     }, 100);
-
-    // --- DODAJ PONIŻEJ ---
-    // Wymuś natychmiastowe odświeżenie timera po załadowaniu strony, jeśli {timer} występuje w wiadomości
-    if (showTimer) {
-      setInterval(() => {
-        if (lastTimerMessage && lastTimerMessage.includes('{timer}')) {
-          // Nie animuj co sekundę, tylko podmień bez animacji
-          messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
-        }
-      }, 1000);
-    }
-    // --- KONIEC DODATKU ---
   }
   
   // Start initialization with country check
@@ -1190,7 +1254,7 @@ console.log('customerCurrency', getCustomerCurrency());
 
 {% schema %}
 {
-  "name": "Free Delivery Bar",
+  "name": "Free Shipping Bar",
   "target": "body",
   "settings": [
     {
@@ -1199,7 +1263,7 @@ console.log('customerCurrency', getCustomerCurrency());
     },
     {
       "type": "paragraph", 
-      "content": "To configure the bar, go to: Apps → Free Delivery → Settings"
+      "content": "To configure the bar, go to: Apps → Free Shipping Bar → Configuration"
     }
   ]
 }
