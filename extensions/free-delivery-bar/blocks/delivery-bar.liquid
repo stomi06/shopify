@@ -105,14 +105,20 @@
     {% else %}
       border: none;
     {% endif %}
-    {% if settings.shadow_blur and settings.shadow_blur > 0 %}
+    {% if settings.shadow_blur and settings.shadow_blur > 0 and settings.shadow_opacity and settings.shadow_opacity > 0 %}
       {% assign shadow_opacity = settings.shadow_opacity | default: 20 | divided_by: 100.0 %}
       {% assign shadow_distance = settings.shadow_distance | default: 2 %}
       {% assign shadow_blur = settings.shadow_blur | default: 4 %}
       {% assign shadow_color = settings.shadow_color | default: '#000000' | remove: '#' %}
-      {% assign r = shadow_color | slice: 0,2 | prepend: '0x' | plus: 0 %}
-      {% assign g = shadow_color | slice: 2,2 | prepend: '0x' | plus: 0 %}
-      {% assign b = shadow_color | slice: 4,2 | prepend: '0x' | plus: 0 %}
+      {% if shadow_color.size == 3 %}
+        {% assign r = shadow_color | slice: 0,1 | prepend: '0x' | plus: 0 | times: 17 %}
+        {% assign g = shadow_color | slice: 1,1 | prepend: '0x' | plus: 0 | times: 17 %}
+        {% assign b = shadow_color | slice: 2,1 | prepend: '0x' | plus: 0 | times: 17 %}
+      {% else %}
+        {% assign r = shadow_color | slice: 0,2 | prepend: '0x' | plus: 0 %}
+        {% assign g = shadow_color | slice: 2,2 | prepend: '0x' | plus: 0 %}
+        {% assign b = shadow_color | slice: 4,2 | prepend: '0x' | plus: 0 %}
+      {% endif %}
       box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba({{ r }}, {{ g }}, {{ b }}, {{ shadow_opacity }});
     {% else %}
       box-shadow: none;
