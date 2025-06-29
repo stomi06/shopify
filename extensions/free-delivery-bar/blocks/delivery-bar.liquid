@@ -89,8 +89,6 @@
     transition: opacity 0.4s ease;
     left: 0;
     right: 0;
-    width: 100vw !important;
-    margin-top: 0 !important;
     box-sizing: border-box;
     font-display: swap;
     {% if settings.transparent_bg == true %}
@@ -122,12 +120,13 @@
       right: 0;
       width: 100vw !important;
       z-index: 2147483647 !important;
+      width: 100vw !important;
       margin-top: 0 !important;
       box-sizing: border-box;
       /* Usuń left: 50% i transform */
-    {% elsif settings.position == 'always_visible' %}
+    {% elsif settings.position == 'always-visible' %}
       position: fixed;
-      z-index: 100;
+      z-index: 2;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
@@ -135,7 +134,7 @@
       max-width: 100vw;
     {% else %}
       position: absolute;
-      z-index: 2147483647 !important;
+      z-index: 2 !important;
       margin-top: {{ settings.margin_top }}px;
       left: 50%;
       transform: translateX(-50%);
