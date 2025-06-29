@@ -109,7 +109,11 @@
       {% assign shadow_opacity = settings.shadow_opacity | default: 20 | divided_by: 100.0 %}
       {% assign shadow_distance = settings.shadow_distance | default: 2 %}
       {% assign shadow_blur = settings.shadow_blur | default: 4 %}
-      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba(0, 0, 0, {{ shadow_opacity }});
+      {% assign shadow_color = settings.shadow_color | default: '#000000' | remove: '#' %}
+      {% assign r = shadow_color | slice: 0,2 | prepend: '0x' | plus: 0 %}
+      {% assign g = shadow_color | slice: 2,2 | prepend: '0x' | plus: 0 %}
+      {% assign b = shadow_color | slice: 4,2 | prepend: '0x' | plus: 0 %}
+      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba({{ r }}, {{ g }}, {{ b }}, {{ shadow_opacity }});
     {% else %}
       box-shadow: none;
     {% endif %}
