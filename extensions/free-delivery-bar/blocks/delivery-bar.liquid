@@ -243,6 +243,9 @@
     opacity: 1;
     transition: opacity 0.28s cubic-bezier(0.4,0,0.2,1);
   }
+  .delivery-bar-content-no-anim {
+    transition: none !important;
+  }
 </style>
 
 <div class="free-delivery-bar" 
@@ -268,7 +271,7 @@
      data-currency-mode="{{ settings.currency_mode | default: 'shop' }}"
      data-shop-currency="{{ shop.currency | default: 'USD' }}"
 >
-  <div class="delivery-bar-content">
+  <div class="delivery-bar-content delivery-bar-content-no-anim">
     {% if settings.show_icon %}
       <img class="delivery-icon" 
            src="{{ settings.icon_image }}" 
@@ -294,16 +297,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const bar = document.querySelector('.free-delivery-bar');
     if (!bar) return;
 
+    // DODAJ TO:
+    const showTimer = bar.getAttribute('data-show-timer') === 'true';
+
     document.body.appendChild(bar);
 
     const header = document.querySelector('header');
-    // --- FIX: Replace invalid Liquid comparison with a valid boolean assignment ---
     const deliveryMessageEl = document.getElementById('delivery-message');
-    {% if settings.show_timer == true %}
-      const showTimer = true;
-    {% else %}
-      const showTimer = false;
-    {% endif %}
     // Helper for formatting timer string
     function getInitialTimerString() {
       const timerLimit = parseInt(bar.getAttribute('data-timer-limit')) || 24;
@@ -475,6 +475,9 @@ function getCustomerCurrency() {
   const closeButton = document.getElementById('close-delivery-bar');
   const deliveryBarContent = document.querySelector('.delivery-bar-content');
   
+  // PRZENIEŚ TO TU:
+  const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
+
   if (!deliveryBar) {
     console.error('Nie znaleziono elementu free-delivery-bar');
     return;
@@ -506,7 +509,6 @@ function getCustomerCurrency() {
   const showProgress = deliveryBar.getAttribute('data-show-progress') === 'true';  const progressMessage = deliveryBar.getAttribute('data-progress-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
   const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
-  const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
   const timerStart = deliveryBar.getAttribute('data-timer-start'); // NEW
   const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
@@ -639,6 +641,13 @@ function getCustomerCurrency() {
     let timerInterval = null;
     let timerEndTime = null;
 
+    if (showTimer && messageElement && messageElement.textContent.includes('{timer}')) {
+      // Ustaw lastTimerMessage na aktualną wiadomość
+      lastTimerMessage = messageElement.textContent;
+      // Podmień {timer} na aktualny czas
+      messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
+    }
+
     function initTimer() {
       if (!showTimer) return;
 
@@ -724,7 +733,8 @@ function getCustomerCurrency() {
     }
 
     // Update delivery message based on cart value
-    function updateDeliveryMessage() {
+    function updateDeliveryMessage(options = {}) {
+      // options: { skipAnimation: true/false }
       // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
       if (isUpdatingDeliveryMessage) {
         console.log('⚠️ updateDeliveryMessage already running, skipping...');
@@ -749,13 +759,24 @@ function getCustomerCurrency() {
           if (wasBarVisible && !willBeVisible) animateHeader = true; // znika przez przekrocenie progu
           if (!wasBarVisible && willBeVisible) animateHeader = true; // pojawia się przez spadek poniżej progu
 
+          // Determine message type for animation logic
+          let messageType = 'general';
+          if (cartTotal >= threshold && showSuccess) {
+            messageType = 'success';
+          } else if (cartTotal >= threshold && !showSuccess && hideBarAfterThreshold) {
+            messageType = 'hidden';
+          } else if (cartTotal > 0 && showProgress) {
+            messageType = 'progress';
+          }
+
           let finalMessage = generalMessage;
           if (cartTotal >= threshold) {
             // THRESHOLD REACHED
             if (showSuccess) {
               // Pokaż success message
               if (!isBarVisible) {
-                fadeInBar(animateHeader);
+                if (options.skipAnimation) deliveryBar.classList.remove('hidden');
+                else fadeInBar(animateHeader);
               }
               isBarVisible = true;
               localStorage.setItem('deliveryBarState', 'visible');
@@ -770,7 +791,7 @@ function getCustomerCurrency() {
               // Podmień {remaining} i {amount} także w success message
               finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
               lastTimerMessage = finalMessage;
-              setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
+              setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
                 
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -780,7 +801,10 @@ function getCustomerCurrency() {
               console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
               // Ukryj pasek całkowicie
               console.log('🚫 Hide bar after threshold is enabled - hiding bar');
-              if (isBarVisible) {
+              if (isBarVisible && options.skipAnimation) {
+                deliveryBar.classList.add('hidden');
+                localStorage.setItem('deliveryBarState', 'hidden');
+              } else if (isBarVisible) {
                 fadeOutBar(() => {
                   localStorage.setItem('deliveryBarState', 'hidden');
                 }, animateHeader);
@@ -790,7 +814,8 @@ function getCustomerCurrency() {
             } else {
               // Pokaż general message  
               if (!isBarVisible) {
-                fadeInBar(animateHeader);
+                if (options.skipAnimation) deliveryBar.classList.remove('hidden');
+                else fadeInBar(animateHeader);
               }
               isBarVisible = true;
               localStorage.setItem('deliveryBarState', 'visible');
@@ -798,7 +823,7 @@ function getCustomerCurrency() {
               // Podmień {remaining} i {amount} także w general message
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
               lastTimerMessage = finalMessage;
-              setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
+              setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
               
               if (!transparentBg) {
                 deliveryBar.style.backgroundColor = bgColor;
@@ -810,7 +835,8 @@ function getCustomerCurrency() {
             // PRÓG NIE OSIĄGNIĘTY
             // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
             if (!isBarVisible) {
-              fadeInBar(animateHeader);
+              if (options.skipAnimation) deliveryBar.classList.remove('hidden');
+              else fadeInBar(animateHeader);
             }
             isBarVisible = true;
             localStorage.setItem('deliveryBarState', 'visible');
@@ -828,7 +854,7 @@ function getCustomerCurrency() {
 
 
             lastTimerMessage = finalMessage; // <- zapisz oryginalny tekst z {timer}
-            setMessageWithFade(replaceTimerInMessage(lastTimerMessage));
+            setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
             
             // Przywróć oryginalny kolor
             if (!transparentBg) {
@@ -858,9 +884,22 @@ function getCustomerCurrency() {
     }
 
     // Helper: animowana zmiana zawartości delivery-bar-content (ikona + tekst)
-    function setMessageWithFade(newText) {
+    function setMessageWithFade(newText, animate = true) {
       if (!deliveryBarContent || !messageElement) return;
       if (messageElement.textContent === newText) return;
+
+      // Jeśli jest klasa blokująca animację, nie animuj i usuń ją (tylko przy pierwszym wywołaniu)
+      if (deliveryBarContent.classList.contains('delivery-bar-content-no-anim')) {
+        animate = false;
+        deliveryBarContent.classList.remove('delivery-bar-content-no-anim');
+      }
+
+      if (!animate) {
+        messageElement.textContent = newText;
+        deliveryBarContent.classList.remove('delivery-bar-content-fade-in');
+        deliveryBarContent.classList.remove('delivery-bar-content-fade-out');
+        return;
+      }
 
       deliveryBarContent.classList.remove('delivery-bar-content-fade-in');
       deliveryBarContent.classList.add('delivery-bar-content-fade-out');
@@ -1149,18 +1188,25 @@ function getCustomerCurrency() {
     });
 
     // Fallback polling only as last resort - much less frequent
-    let lastCartTotal = null;
+    // Remove let lastCartTotal = null; from here, now declared above
     function fallbackCartCheck() {
       fetch('/cart.js')
         .then(response => response.json())
         .then(cart => {
           const currentTotal = cart.total_price / 100;
-          
-          // Only update if value changed
-          if (currentTotal !== lastCartTotal) {
-            lastCartTotal = currentTotal;
-            console.log('🔔 Fallback polling detected cart change:', currentTotal);
-            updateDeliveryMessage();
+          // Only update if value changed or message type changed
+          let messageType = 'general';
+          if (currentTotal >= threshold && showSuccess) {
+            messageType = 'success';
+          } else if (currentTotal >= threshold && !showSuccess && hideBarAfterThreshold) {
+            messageType = 'hidden';
+          } else if (currentTotal > 0 && showProgress) {
+            messageType = 'progress';
+          }
+          if (currentTotal !== lastCartTotal || messageType !== lastMessageType) {
+            updateDeliveryMessage({ skipAnimation: false });
+          } else {
+            updateDeliveryMessage({ skipAnimation: true });
           }
         })
         .catch(() => {
@@ -1192,7 +1238,7 @@ function getCustomerCurrency() {
 
     // Initial update on page load - ONLY after country check
     setTimeout(() => {
-      updateDeliveryMessage();
+      updateDeliveryMessage({ skipAnimation: true });
     }, 100);
   }
   
@@ -1258,44 +1304,11 @@ function getCustomerCurrency() {
         style: 'currency',
         currency: currency,
         minimumFractionDigits: isInt ? 0 : 2,
-        maximumFractionDigits: isInt ? 0 : 2
       }).format(roundedAmount);
     } catch (e) {
       return currency + ' ' + roundedAmount;
     }
   }
-
-  // Zmień replaceAmountPlaceholders, aby przeliczać kwoty jeśli trzeba
-  function replaceAmountPlaceholders(message, remaining, threshold) {
-    let targetCurrency = shopCurrency;
-    let remainingConv = remaining;
-    let thresholdConv = threshold;
-    if (useCustomerCurrency && exchangeRates) {
-      targetCurrency = getCustomerCurrency();
-      if (targetCurrency !== shopCurrency && exchangeRates[targetCurrency]) {
-        remainingConv = convertAmount(remaining, targetCurrency);
-        thresholdConv = convertAmount(threshold, targetCurrency);
-      }
-    }
-    const formattedRemaining = formatCurrency(remainingConv, targetCurrency);
-    const formattedThreshold = formatCurrency(thresholdConv, targetCurrency);
-    return message
-      .replace(/\[remaining\]/g, formattedRemaining)
-      .replace(/{remaining}/g, formattedRemaining)
-      .replace(/{amount}/g, formattedThreshold);
-  }
-
-  // --- DODAJ PONIŻEJ ---
-  // Wymuś natychmiastowe odświeżenie timera po załadowaniu strony, jeśli {timer} występuje w wiadomości
-  if (showTimer) {
-    setInterval(() => {
-      if (lastTimerMessage && lastTimerMessage.includes('{timer}')) {
-        // Nie animuj co sekundę, tylko podmień bez animacji
-        messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
-      }
-    }, 1000);
-  }
-  // --- KONIEC DODATKU ---
 })();
 
 console.log('useCustomerCurrency', useCustomerCurrency);
