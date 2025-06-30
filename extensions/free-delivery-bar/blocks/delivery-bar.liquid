@@ -297,6 +297,37 @@ document.addEventListener("DOMContentLoaded", function () {
     document.body.appendChild(bar);
 
     const header = document.querySelector('header');
+    // --- FIX: Replace invalid Liquid comparison with a valid boolean assignment ---
+    const deliveryMessageEl = document.getElementById('delivery-message');
+    {% if settings.show_timer == true %}
+      const showTimer = true;
+    {% else %}
+      const showTimer = false;
+    {% endif %}
+    // Helper for formatting timer string
+    function getInitialTimerString() {
+      const timerLimit = parseInt(bar.getAttribute('data-timer-limit')) || 24;
+      const timerStart = bar.getAttribute('data-timer-start');
+      let startTime = null;
+      if (timerStart && !isNaN(Date.parse(timerStart))) {
+        startTime = Date.parse(timerStart);
+      } else if (timerStart && !isNaN(Number(timerStart))) {
+        startTime = Number(timerStart);
+      }
+      if (!startTime) return '00:00:00';
+      const timerEndTime = startTime + (timerLimit * 60 * 60 * 1000);
+      const now = new Date().getTime();
+      const timeLeft = timerEndTime - now;
+      if (timeLeft <= 0) return '00:00:00';
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+      return [hours, minutes, seconds].map(unit => unit.toString().padStart(2, '0')).join(':');
+    }
+    if (showTimer && deliveryMessageEl && deliveryMessageEl.textContent.includes('{timer}')) {
+      deliveryMessageEl.textContent = deliveryMessageEl.textContent.replace(/{timer}/g, getInitialTimerString());
+    }
+    // --- END BLOCK ---
 
     // --- USTAW STYLOWANIE ELEMENTÓW OD RAZU NA PODSTAWIE STANU PASKA ---
     const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
@@ -630,8 +661,9 @@ function getCustomerCurrency() {
     function startTimer() {
       if (!showTimer || !timerEndTime) return;
       if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(updateTimerDisplay, 1000);
-      updateTimerDisplay();
+      // --- update message immediately before starting interval ---
+      updateTimerDisplayAndMessage(true);
+      timerInterval = setInterval(updateTimerDisplayAndMessage, 1000);
     }
 
     function updateTimerDisplay() {
@@ -655,11 +687,22 @@ function getCustomerCurrency() {
 
     function replaceTimerInMessage(message) {
       if (!showTimer) return message;
-      
       const timerString = updateTimerDisplay();
       return message.replace(/{timer}/g, timerString);
     }
 
+    // --- updateTimerDisplayAndMessage now accepts forceImmediate argument ---
+    function updateTimerDisplayAndMessage(forceImmediate) {
+      if (showTimer && lastTimerMessage && lastTimerMessage.includes('{timer}')) {
+        if (messageElement) {
+          // Only update if value is different or if forced
+          const newText = replaceTimerInMessage(lastTimerMessage);
+          if (forceImmediate || messageElement.textContent !== newText) {
+            messageElement.textContent = newText;
+          }
+        }
+      }
+    }
     // Funkcja do podmiany {remaining} i {amount} w dowolnej wiadomości
     function replaceAmountPlaceholders(message, remaining, threshold) {
       let targetCurrency = shopCurrency;
@@ -1144,6 +1187,9 @@ function getCustomerCurrency() {
       initTimer();
     }
     
+    // --- REMOVE OLD setInterval FOR TIMER UPDATE ---
+    // --- Instead, timer updates are handled by updateTimerDisplayAndMessage in startTimer() ---
+
     // Initial update on page load - ONLY after country check
     setTimeout(() => {
       updateDeliveryMessage();
