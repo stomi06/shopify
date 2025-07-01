@@ -422,6 +422,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
+let lastMessageType = null;
 let lastTimerMessage = null;
 const useCustomerCurrency = {{ settings.use_customer_currency | default: false | json }};
 const shopCurrency = '{{ settings.shop_currency | default: shop.currency | escape }}';
@@ -734,32 +735,16 @@ function getCustomerCurrency() {
 
     // Update delivery message based on cart value
     function updateDeliveryMessage(options = {}) {
-      // options: { skipAnimation: true/false }
-      // 🔥 ZAPOBIEGAJ NIESKOŃCZONEJ PĘTLI
-      if (isUpdatingDeliveryMessage) {
-        console.log('⚠️ updateDeliveryMessage already running, skipping...');
-        return;
-      }
-      
+      if (isUpdatingDeliveryMessage) return;
       isUpdatingDeliveryMessage = true;
-      
+
       fetch('/cart.js')
         .then(response => response.json())
         .then(cart => {
           const cartTotal = cart.total_price / 100;
           const remaining = threshold - cartTotal;
-          console.log('🔄 Cart update - total:', cartTotal, 'threshold:', threshold);
-          
-          // Determine if we cross the threshold (for animation)
-          const wasBarVisible = isBarVisible;
-          const willBeVisible = cartTotal < threshold || (cartTotal >= threshold && showSuccess);
 
-          let animateHeader = false;
-          // Animuj tylko jeśli zmiana widoczności paska wynika z przekroceniem progu
-          if (wasBarVisible && !willBeVisible) animateHeader = true; // znika przez przekrocenie progu
-          if (!wasBarVisible && willBeVisible) animateHeader = true; // pojawia się przez spadek poniżej progu
-
-          // Determine message type for animation logic
+          // Określ typ wiadomości
           let messageType = 'general';
           if (cartTotal >= threshold && showSuccess) {
             messageType = 'success';
@@ -769,130 +754,52 @@ function getCustomerCurrency() {
             messageType = 'progress';
           }
 
+          // Animuj TYLKO jeśli typ wiadomości się zmienił
+          let animate = lastMessageType !== null && lastMessageType !== messageType;
+          if (options.skipAnimation) animate = false;
+
+          lastMessageType = messageType;
+
           let finalMessage = generalMessage;
           if (cartTotal >= threshold) {
-            // THRESHOLD REACHED
             if (showSuccess) {
-              // Pokaż success message
-              if (!isBarVisible) {
-                if (options.skipAnimation) deliveryBar.classList.remove('hidden');
-                else fadeInBar(animateHeader);
-              }
-              isBarVisible = true;
-              localStorage.setItem('deliveryBarState', 'visible');
-                
-              if (successMessage && successMessage.trim() !== '') {
-                finalMessage = successMessage;
-              } else {
-                finalMessage = '🎉 You have free delivery!';
-              }
-              
-
-              // Podmień {remaining} i {amount} także w success message
+              finalMessage = successMessage && successMessage.trim() !== '' ? successMessage : '🎉 You have free delivery!';
               finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
-              lastTimerMessage = finalMessage;
-              setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
-                
-              if (!transparentBg) {
-                deliveryBar.style.backgroundColor = bgColor;
-              }
-              
-
-              console.log('✅ Showing success message');          } else if (hideBarAfterThreshold) {
-              // Ukryj pasek całkowicie
-              console.log('🚫 Hide bar after threshold is enabled - hiding bar');
-              if (isBarVisible && options.skipAnimation) {
-                deliveryBar.classList.add('hidden');
-                localStorage.setItem('deliveryBarState', 'hidden');
-              } else if (isBarVisible) {
-                fadeOutBar(() => {
-                  localStorage.setItem('deliveryBarState', 'hidden');
-                }, animateHeader);
-              }
-              isBarVisible = false;
+            } else if (hideBarAfterThreshold) {
+              // Ukryj pasek
               return;
             } else {
-              // Pokaż general message  
-              if (!isBarVisible) {
-                if (options.skipAnimation) deliveryBar.classList.remove('hidden');
-                else fadeInBar(animateHeader);
-              }
-              isBarVisible = true;
-              localStorage.setItem('deliveryBarState', 'visible');
-              
-              // Podmień {remaining} i {amount} także w general message
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
-              lastTimerMessage = finalMessage;
-              setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
-              
-              if (!transparentBg) {
-                deliveryBar.style.backgroundColor = bgColor;
-              }
-              
-
-              console.log('📋 Showing general message after threshold');
-            }        } else {
-            // PRÓG NIE OSIĄGNIĘTY
-            // 🔥 ANIMUJ TYLKO JEŚLI PASEK BYŁ UKRYTY
-            if (!isBarVisible) {
-              if (options.skipAnimation) deliveryBar.classList.remove('hidden');
-              else fadeInBar(animateHeader);
             }
-            isBarVisible = true;
-            localStorage.setItem('deliveryBarState', 'visible');
-              if (cartTotal === 0) {
-              // Koszyk pusty - pokaż ogólną wiadomość z podmianą {remaining}
+          } else {
+            if (cartTotal === 0) {
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             } else if (showProgress) {
-              // Koszyk niepusty i progress włączony - pokaż progress message
               finalMessage = replaceAmountPlaceholders(progressMessage, remaining, threshold);
             } else {
-              // Koszyk niepusty ale progress wyłączony - pokaż general message z podmianą {remaining}
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             }
-            
-
-
-            lastTimerMessage = finalMessage; // <- zapisz oryginalny tekst z {timer}
-            setMessageWithFade(replaceTimerInMessage(lastTimerMessage), options.skipAnimation);
-            
-            // Przywróć oryginalny kolor
-            if (!transparentBg) {
-              deliveryBar.style.backgroundColor = bgColor;
-            }
-            
-
-
-            console.log('📊 Cart total:', cartTotal, 'Message type:', cartTotal === 0 ? 'general' : (showProgress ? 'progress' : 'general'));
           }
-          
-          // 🔥 ZAPISZ W LOCALSTORAGE
+
+          lastTimerMessage = finalMessage;
+          setMessageWithFade(replaceTimerInMessage(lastTimerMessage), animate);
+
           localStorage.setItem('deliveryBarMessage', finalMessage);
         })
         .catch((error) => {
-          console.error('❌ Cart fetch error:', error);
-          // Fallback
-          deliveryBar.classList.remove('hidden');
           let message = generalMessage || 'Free delivery available!';
-          setMessageWithFade(message);
+          setMessageWithFade(message, false);
           lastTimerMessage = message;
         })
         .finally(() => {
-          // 🔥 ZWOLNIJ FLAGĘ
           isUpdatingDeliveryMessage = false;
         });
     }
 
     // Helper: animowana zmiana zawartości delivery-bar-content (ikona + tekst)
-    function setMessageWithFade(newText, animate = true) {
+    function setMessageWithFade(newText, animate = false) {
       if (!deliveryBarContent || !messageElement) return;
       if (messageElement.textContent === newText) return;
-
-      // Jeśli jest klasa blokująca animację, nie animuj i usuń ją (tylko przy pierwszym wywołaniu)
-      if (deliveryBarContent.classList.contains('delivery-bar-content-no-anim')) {
-        animate = false;
-        deliveryBarContent.classList.remove('delivery-bar-content-no-anim');
-      }
 
       if (!animate) {
         messageElement.textContent = newText;
