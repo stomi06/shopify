@@ -761,13 +761,38 @@ function getCustomerCurrency() {
           lastMessageType = messageType;
 
           let finalMessage = generalMessage;
+          
+          // Logika ukrywania/pokazywania paska
+          if (cartTotal >= threshold && hideBarAfterThreshold) {
+            if (!deliveryBar.classList.contains('hidden')) {
+              console.log('🎯 Hiding bar - threshold reached and hideBarAfterThreshold enabled');
+              fadeOutBar(() => {
+                localStorage.setItem('deliveryBarState', 'hidden');
+                isBarVisible = false;
+              });
+              localStorage.setItem('deliveryBarMessage', 'Hidden - threshold reached');
+              isUpdatingDeliveryMessage = false;
+              return;
+            } else {
+              // Pasek już ukryty, nie rób nic
+              isUpdatingDeliveryMessage = false;
+              return;
+            }
+          } else if (cartTotal < threshold && hideBarAfterThreshold) {
+            // Jeśli wartość koszyka spadła poniżej limitu, pokaż pasek ponownie
+            if (deliveryBar.classList.contains('hidden')) {
+              console.log('🎯 Showing bar - cart value below threshold');
+              fadeInBar();
+              localStorage.setItem('deliveryBarState', 'visible');
+              isBarVisible = true;
+            }
+          }
+
+          // Ustaw wiadomość na podstawie stanu koszyka
           if (cartTotal >= threshold) {
             if (showSuccess) {
               finalMessage = successMessage && successMessage.trim() !== '' ? successMessage : '🎉 You have free delivery!';
               finalMessage = replaceAmountPlaceholders(finalMessage, 0, threshold);
-            } else if (hideBarAfterThreshold) {
-              // Ukryj pasek
-              return;
             } else {
               finalMessage = replaceAmountPlaceholders(generalMessage, remaining, threshold);
             }
