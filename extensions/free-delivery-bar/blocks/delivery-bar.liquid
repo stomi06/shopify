@@ -44,13 +44,6 @@
   {% endcase %}
 {% endif %}
 {% assign shadow_color = settings.shadow_color | default: '#000000' %}
-{% assign shadow_color = shadow_color | remove: '#' %}
-{% assign r = shadow_color | slice: 0,2 | upcase %}
-{% assign g = shadow_color | slice: 2,2 | upcase %}
-{% assign b = shadow_color | slice: 4,2 | upcase %}
-{% assign r = r | times: 1 %}
-{% assign g = g | times: 1 %}
-{% assign b = b | times: 1 %}
 <style>
   .free-delivery-bar {
     {% case settings.font_family %}
@@ -116,7 +109,7 @@
       {% assign shadow_opacity = settings.shadow_opacity | default: 20 | divided_by: 100.0 %}
       {% assign shadow_distance = settings.shadow_distance | default: 2 %}
       {% assign shadow_blur = settings.shadow_blur | default: 4 %}
-      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px rgba({{ r }}, {{ g }}, {{ b }}, {{ shadow_opacity }});
+      box-shadow: 0 {{ shadow_distance }}px {{ shadow_blur }}px {{ shadow_color | color_modify: 'alpha', shadow_opacity }};
     {% else %}
       box-shadow: none;
     {% endif %}
