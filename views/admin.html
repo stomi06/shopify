@@ -1111,7 +1111,7 @@
           bar.style.boxShadow = 'none';
         }
       });
-        // Success bar ma takie same style jak inne
+        // Success bar ma takie same styles jak inne
       const successBar = document.getElementById('previewBarSuccess');
       if (successBar && !transparentBg) {
         successBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
@@ -1537,11 +1537,39 @@
       updatePreview();
     });
 
-    // Załaduj ustawienia przy starcie
+    // Ukrywanie pól dla "above-header"
+    function toggleFieldsForPosition() {
+      const position = document.getElementById('position').value;
+      // Pobierz grupy/form-groupy
+      const widthGroup = document.getElementById('width').closest('.form-group');
+      const marginTopGroup = document.getElementById('marginTop').closest('.form-group');
+      const opacityGroup = document.getElementById('opacity').closest('.form-group');
+      const transparentBgGroup = document.getElementById('transparentBg').closest('.form-group');
+      if (position === 'above-header') {
+        widthGroup.style.display = 'none';
+        marginTopGroup.style.display = 'none';
+        opacityGroup.style.display = 'none';
+        transparentBgGroup.style.display = 'none';
+      } else {
+        widthGroup.style.display = '';
+        marginTopGroup.style.display = '';
+        opacityGroup.style.display = '';
+        transparentBgGroup.style.display = '';
+      }
+    }
+
+    // Nasłuchiwacz na zmianę pozycji
+    document.getElementById('position').addEventListener('change', function() {
+      toggleFieldsForPosition();
+      updatePreview();
+    });
+
+    // Wywołaj na starcie (po załadowaniu ustawień)
     document.addEventListener('DOMContentLoaded', function() {
       loadSettings();
       updatePreview();
       setCurrencyInMinAmountHelp();
+      toggleFieldsForPosition();
     });
 
     // Dodaj nasłuchiwacz dla checkbox'a:
