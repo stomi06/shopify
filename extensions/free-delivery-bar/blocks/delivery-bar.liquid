@@ -250,7 +250,7 @@
      data-progress-message="{{ settings.progress_message | default: 'Add $[remaining] more for free delivery!' }}"
      data-success-message="{{ settings.success_message | default: 'Congratulations! You have free delivery!' }}"
      data-show-success="{% if settings.show_success_message == false %}false{% else %}true{% endif %}"
-     data-hide-bar-after-threshold="{% if settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
+     data-hide-bar-after-threshold="{% if settings.show_success_message == true %}false{% elsif settings.hide_bar_after_threshold == true %}true{% else %}false{% endif %}"
      data-show-timer="{% if settings.show_timer == true %}true{% else %}false{% endif %}"
      data-timer-limit="{{ settings.timer_limit | default: 24 }}"
      data-timer-start="{{ settings.timer_start_time | default: '' }}"
@@ -503,7 +503,11 @@ function getCustomerCurrency() {
   const generalMessage = deliveryBar.getAttribute('data-general-message');
   const showProgress = deliveryBar.getAttribute('data-show-progress') === 'true';  const progressMessage = deliveryBar.getAttribute('data-progress-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
-  const hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
+  let hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
+  // Wymuś hideBarAfterThreshold na false jeśli showSuccess jest true
+  if (showSuccess) {
+    hideBarAfterThreshold = false;
+  }
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
   const timerStart = deliveryBar.getAttribute('data-timer-start'); // NEW
   const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
@@ -757,9 +761,10 @@ function getCustomerCurrency() {
           let finalMessage = generalMessage;
           
           // Logika ukrywania/pokazywania paska
-          if (cartTotal >= threshold && hideBarAfterThreshold) {
+          // ZMODYFIKOWANE: Ukrywaj pasek TYLKO jeśli hideBarAfterThreshold == true ORAZ showSuccess == false
+          if (cartTotal >= threshold && hideBarAfterThreshold && !showSuccess) {
             if (!deliveryBar.classList.contains('hidden')) {
-              console.log('🎯 Hiding bar - threshold reached and hideBarAfterThreshold enabled');
+              console.log('🎯 Hiding bar - threshold reached and hideBarAfterThreshold enabled (showSuccess is false)');
               fadeOutBar(() => {
                 localStorage.setItem('deliveryBarState', 'hidden');
                 isBarVisible = false;
