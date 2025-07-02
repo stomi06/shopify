@@ -125,12 +125,13 @@
       top: 0;
       left: 0;
       right: 0;
-      width: 100vw !important;
+      left: 50%;
+      transform: translateX(-50%);
+      width: {% if settings.width and settings.width < 100 %}{{ settings.width }}vw{% else %}100vw{% endif %};
       z-index: 2147483647 !important;
-      width: 100vw !important;
       margin-top: 0 !important;
+      max-width: 100vw;
       box-sizing: border-box;
-      /* Usuń left: 50% i transform */
     {% elsif settings.position == 'always-visible' %}
       position: fixed;
       z-index: 2;
@@ -611,7 +612,7 @@ function getCustomerCurrency() {
         if (header) header.style.paddingTop = '0px';
         document.querySelectorAll('[data-shifted-by-bar="true"]').forEach(function(el) {
           el.style.setProperty('top', '0', 'important');
-          el.style.setProperty('max-height', '100vh', 'important');
+          el.style.setProperty('max-height', '100vh');
         });
       }
       return;
