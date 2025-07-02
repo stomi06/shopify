@@ -1541,17 +1541,15 @@
     function toggleFieldsForPosition() {
       const position = document.getElementById('position').value;
       // Pobierz grupy/form-groupy
-      const widthGroup = document.getElementById('width').closest('.form-group');
+      // NIE ukrywaj widthGroup!
       const marginTopGroup = document.getElementById('marginTop').closest('.form-group');
       const opacityGroup = document.getElementById('opacity').closest('.form-group');
       const transparentBgGroup = document.getElementById('transparentBg').closest('.form-group');
       if (position === 'above-header') {
-        widthGroup.style.display = 'none';
         marginTopGroup.style.display = 'none';
         opacityGroup.style.display = 'none';
         transparentBgGroup.style.display = 'none';
       } else {
-        widthGroup.style.display = '';
         marginTopGroup.style.display = '';
         opacityGroup.style.display = '';
         transparentBgGroup.style.display = '';
