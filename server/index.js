@@ -56,15 +56,16 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1); 
 
 // Simple Express session configuration
+// Konfiguracja sesji dla aplikacji OSADZONEJ
 app.use(session({
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: process.env.NODE_ENV === 'production',
+    secure: true,               // MUSI być true dla sameSite: 'none'
     httpOnly: true,
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: 'none',           // ZMIEŃ na 'none' dla aplikacji osadzonych
+    maxAge: 24 * 60 * 60 * 1000 
   }
 }));
 
@@ -86,7 +87,7 @@ const pool = new Pool({
 
 const viewsPath = path.join(__dirname, '..', 'views');
 
-// Middleware: sprawdza czy użytkownik jest zalogowany przez Shopify OAuth
+// Middleware
 function requireShopifyAuth(req, res, next) {
   if (req.session && req.session.shop) {
     return next();
@@ -98,12 +99,10 @@ function requireShopifyAuth(req, res, next) {
   return res.status(401).send('Unauthorized: Please access the app from your Shopify admin.');
 }
 
-// Panel admina tylko po autoryzacji
 app.get("/admin", requireShopifyAuth, (req, res) => {
   res.sendFile(path.join(viewsPath, "admin.html"));
 });
 
-// (Opcjonalnie) Strona główna też tylko po autoryzacji lub przekierowanie
 app.get("/", requireShopifyAuth, (req, res) => {
   res.sendFile(path.join(viewsPath, "admin.html"));
 });
@@ -194,7 +193,7 @@ const shopify = shopifyApi({
   apiSecretKey: process.env.SHOPIFY_API_SECRET,
   scopes: process.env.SCOPES.split(","),
   hostName: process.env.HOST.replace(/^https?:\/\//, ""),
-  isEmbeddedApp: false,
+  isEmbeddedApp: true,
   apiVersion: LATEST_API_VERSION,
   sessionStorage,
 });
@@ -206,9 +205,24 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Add CORS middleware
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  const shopifyAdmin = req.headers.origin && 
+                      (req.headers.origin.includes('myshopify.com') || 
+                       req.headers.origin.includes('shopify.com'));
+  
+  if (shopifyAdmin) {
+    res.setHeader('Access-Control-Allow-Origin', req.headers.origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
   next();
 });
 
