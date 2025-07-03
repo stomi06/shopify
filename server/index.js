@@ -69,6 +69,17 @@ const pool = new Pool({
   query_timeout: 30000,
 });
 
+app.get("/admin", (req, res) => {
+  const shop = req.query.shop;
+  if (!shop) {
+    return res.status(400).send("Missing shop parameter");
+  }
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
+});
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "admin.html"));
+});
 app.use('/views', express.static(path.join(__dirname, 'views')));
 
 // Simple Express session configuration
