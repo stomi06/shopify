@@ -737,7 +737,7 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
       `INSERT INTO client_currencies (shop_id, currency, use_customer_currency, created_at) VALUES ($1, $2, $3, NOW())`,
       [shop, currency, useCustomerCurrency]
     );
-    console.log(`✅ Added currency ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} to client_currencies`);
+    console.log(`Added currency ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} to client_currencies`);
   } else {
     if (
       result.rows[0].currency !== currency ||
@@ -747,11 +747,10 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
         `UPDATE client_currencies SET currency = $2, use_customer_currency = $3, created_at = NOW() WHERE shop_id = $1`,
         [shop, currency, useCustomerCurrency]
       );
-      console.log(`✅ Updated currency to ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} in client_currencies`);
+      console.log(`Updated currency to ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} in client_currencies`);
     } else {
-      console.log(`ℹ️ Shop ${shop} currency already up to date (${currency}, use_customer_currency=${useCustomerCurrency})`);
+      console.log(`ℹShop ${shop} currency already up to date (${currency}, use_customer_currency=${useCustomerCurrency})`);
     }
   }
 }
-
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
