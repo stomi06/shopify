@@ -69,6 +69,8 @@ const pool = new Pool({
   query_timeout: 30000,
 });
 
+app.use('/views', express.static(path.join(__dirname, 'views')));
+
 // Simple Express session configuration
 app.use(session({
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
