@@ -259,8 +259,16 @@ app.get("/auth", async (req, res) => {
       return res.status(400).send("Missing shop parameter");
     }
 
-    console.log("Starting auth for shop:", shop);
+    console.log("Auth request for shop:", shop);
+    
+    const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
+    
+    if (sessionResult.rows.length > 0 && sessionResult.rows[0].access_token) {
+      console.log("Shop already authorized, redirecting to admin panel");
+      return res.redirect(`/admin?shop=${shop}`);
+    }
 
+    console.log("Starting OAuth for shop:", shop);
     req.session.shop = shop;
     const state = crypto.randomBytes(16).toString('hex');
     req.session.state = state;
@@ -401,33 +409,7 @@ app.get("/auth/callback", async (req, res) => {
 
     // Redirect to success page
     console.log("Redirecting to success page");
-    return res.send(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>App installed successfully</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-          .success { color: green; font-size: 24px; margin-bottom: 20px; }
-          .info { color: #666; margin-bottom: 20px; }
-          .button { 
-            background: #5c6ac4; 
-            color: white; 
-            padding: 12px 24px; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            display: inline-block;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="success">The app was installed successfully!</div>
-        <div class="info">Shop: ${shop}</div>
-        <div class="info">You can now manage the app from the admin panel.</div>
-        <a href="https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}" class="button">Open the app</a>
-      </body>
-      </html>
-    `);
+    return res.redirect(`https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`);
   } catch (err) {
     console.error("Authorization error:", err);
     res.status(500).send("Authorization error");
