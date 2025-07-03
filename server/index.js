@@ -69,18 +69,21 @@ const pool = new Pool({
   query_timeout: 30000,
 });
 
+const viewsPath = path.join(__dirname, '..', 'views');
+
 app.get("/admin", (req, res) => {
   const shop = req.query.shop;
   if (!shop) {
     return res.status(400).send("Missing shop parameter");
   }
-  res.sendFile(path.join(__dirname, "views", "admin.html"));
+  res.sendFile(path.join(viewsPath, "admin.html"));
 });
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "views", "admin.html"));
+  res.sendFile(path.join(viewsPath, "admin.html"));
 });
-app.use('/views', express.static(path.join(__dirname, 'views')));
+
+app.use('/views', express.static(viewsPath));
 
 // Simple Express session configuration
 app.use(session({
