@@ -53,6 +53,8 @@ const APP_URL = process.env.HOST;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.set('trust proxy', 1); 
+
 // Simple Express session configuration
 app.use(session({
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
