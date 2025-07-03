@@ -71,15 +71,25 @@ const pool = new Pool({
 
 const viewsPath = path.join(__dirname, '..', 'views');
 
-app.get("/admin", (req, res) => {
-  const shop = req.query.shop;
-  if (!shop) {
-    return res.status(400).send("Missing shop parameter");
+// Middleware: sprawdza czy użytkownik jest zalogowany przez Shopify OAuth
+function requireShopifyAuth(req, res, next) {
+  if (req.session && req.session.shop) {
+    return next();
   }
+  const shop = req.query.shop;
+  if (shop) {
+    return res.redirect(`/auth?shop=${shop}`);
+  }
+  return res.status(401).send('Unauthorized: Please access the app from your Shopify admin.');
+}
+
+// Panel admina tylko po autoryzacji
+app.get("/admin", requireShopifyAuth, (req, res) => {
   res.sendFile(path.join(viewsPath, "admin.html"));
 });
 
-app.get("/", (req, res) => {
+// (Opcjonalnie) Strona główna też tylko po autoryzacji lub przekierowanie
+app.get("/", requireShopifyAuth, (req, res) => {
   res.sendFile(path.join(viewsPath, "admin.html"));
 });
 
@@ -409,20 +419,8 @@ app.get("/auth/callback", async (req, res) => {
   }
 });
 
-app.get("/admin", (req, res) => {
-  const shop = req.query.shop;
-  if (!shop) {
-    return res.status(400).send("Missing shop parameter");
-  }
-  res.sendFile(path.resolve("views/admin.html"));
-});
-
-app.get("/", (req, res) => {
-  res.sendFile(path.resolve("views/admin.html"));
-});
-
 // API endpoint to save settings to Metafields
-app.post('/api/settings', async (req, res) => {
+app.post('/api/settings', requireShopifyAuth, async (req, res) => {
   try {
     const { shop, settings } = req.body;
     console.log('Saving settings to metafields for shop:', shop);
@@ -563,7 +561,7 @@ app.post('/api/settings', async (req, res) => {
 });
 
 // API endpoint to get settings from Metafields
-app.get('/api/settings/:shop', async (req, res) => {
+app.get('/api/settings/:shop', requireShopifyAuth, async (req, res) => {
   try {
     const { shop } = req.params;
     console.log('Getting settings from metafields for shop:', shop);
