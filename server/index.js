@@ -93,8 +93,26 @@ function requireShopifyAuth(req, res, next) {
   }
   const shop = req.query.shop;
   if (shop) {
-    return res.redirect(`/auth?shop=${shop}`);
+    return pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop])
+      .then(result => {
+        if (result.rows.length > 0) {
+          req.session.shop = shop;
+          return new Promise((resolve) => {
+            req.session.save(err => {
+              if (err) console.error("Error saving session:", err);
+              resolve(next());
+            });
+          });
+        } else {
+          return res.redirect(`/auth?shop=${shop}`);
+        }
+      })
+      .catch(err => {
+        console.error("Error checking shop authorization:", err);
+        return res.status(500).send("Server error");
+      });
   }
+  
   return res.status(401).send('Unauthorized: Please access the app from your Shopify admin.');
 }
 
