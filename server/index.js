@@ -56,15 +56,14 @@ const PORT = process.env.PORT || 3000;
 app.set('trust proxy', 1); 
 
 // Simple Express session configuration
-// Konfiguracja sesji dla aplikacji OSADZONEJ
 app.use(session({
   secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: true,               // MUSI być true dla sameSite: 'none'
+    secure: true,
     httpOnly: true,
-    sameSite: 'none',           // ZMIEŃ na 'none' dla aplikacji osadzonych
+    sameSite: 'none',
     maxAge: 24 * 60 * 60 * 1000 
   }
 }));
