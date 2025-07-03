@@ -53,6 +53,19 @@ const APP_URL = process.env.HOST;
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Simple Express session configuration
+app.use(session({
+  secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { 
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: process.env.DB_PORT,
@@ -94,19 +107,6 @@ app.get("/", requireShopifyAuth, (req, res) => {
 });
 
 app.use('/views', express.static(viewsPath));
-
-// Simple Express session configuration
-app.use(session({
-  secret: process.env.COOKIE_SECRET || 'shopify_app_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { 
-    secure: false,
-    httpOnly: false,
-    sameSite: 'lax',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
 
 // CustomSessionStorage implementation with improved error handling
 const sessionStorage = {  
