@@ -367,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
             el.setAttribute('data-shifted-by-bar', 'true');
             if (!bar.classList.contains('hidden')) {
               el.style.top = barHeight + 'px';
-              el.style.maxHeight = 'calc(100vh - ' + barHeight + 'px)';
+              el.style.maxHeight = 'calc(100dvh - ' + barHeight + 'px)';
             } else {
               el.style.top = '0px';
               el.style.maxHeight = '100vh';
