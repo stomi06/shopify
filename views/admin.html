@@ -28,8 +28,8 @@
       width: 100%;
       display: flex;
       flex-direction: row;
-      gap: 24px;
-      padding: 24px;
+      gap: 20px;
+      padding: 20px;
       max-width: 1100px;
       margin: 0 auto;
     }
@@ -886,7 +886,7 @@
         updatePreview();
       });
     }    
-    // Inicjalizacja zakresów
+  
     updateRangeValue('opacity', 'opacityValue', '%');
     updateRangeValue('borderWidth', 'borderWidthValue', 'px');
     updateRangeValue('borderRadius', 'borderRadiusValue', 'px');
@@ -899,7 +899,6 @@
     updateRangeValue('iconSize', 'iconSizeValue', 'px');
     updateRangeValue('iconGap', 'iconGapValue', 'px');
 
-    // Obsługa ikon
     document.getElementById('showIcon').addEventListener('change', function() {
       const iconOptionsGroup = document.getElementById('iconOptionsGroup');
       const iconSizeGroup = document.getElementById('iconSizeGroup');
@@ -917,7 +916,6 @@
       updatePreview();
     });
 
-    // Obsługa wyboru typu ikony
     document.querySelectorAll('input[name="iconChoice"]').forEach(radio => {
       radio.addEventListener('change', function() {
         const customUpload = document.getElementById('customIconUpload');
@@ -926,7 +924,6 @@
       });
     });
 
-    // Upload własnej ikony
     document.getElementById('deliveryImage').addEventListener('change', function() {
       const file = this.files[0];
       const preview = document.getElementById('imagePreview');
@@ -939,27 +936,23 @@
           preview.style.display = 'block';
           preview.classList.add('has-image');
           preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">Image loaded</div>';
-          
-          // Automatycznie zaznacz custom option
           document.getElementById('useCustomIcon').checked = true;
           updatePreview();
         };
         reader.readAsDataURL(file);
       }
-    });    // Funkcja aktualizacji podglądu
+    });
     function updatePreview() {
-      // Pobierz walutę sklepu do podglądu (jeśli jest dostępna w span)
       let currency = 'USD';
       const currencySpan = document.getElementById('currencySpan');
       if (currencySpan && currencySpan.textContent) {
         const match = currencySpan.textContent.match(/\((Currency: ([A-Z]+))\)/);
         if (match && match[2]) currency = match[2];
       }
-      
+
       const previewGeneralMessage = document.getElementById('previewGeneralMessage');
       const previewProgressMessage = document.getElementById('previewProgressMessage');
       const previewSuccessMessage = document.getElementById('previewSuccessMessage');
-        // Pobierz wszystkie wartości
       const generalMessage = document.getElementById('generalMessage').value || 'Free shipping from $100';
       const showProgressMessage = document.getElementById('showProgressMessage').checked;
       const progressMessage = document.getElementById('progressMessage').value || 'Add {remaining} more for free shipping!';
@@ -985,20 +978,17 @@
       const shadowOpacity = document.getElementById('shadowOpacity').value / 100;
       const shadowBlur = document.getElementById('shadowBlur').value;
       const shadowDistance = document.getElementById('shadowDistance').value;
-      // Opcje ikon
       const showIcon = document.getElementById('showIcon').checked;
       const iconChoice = document.querySelector('input[name="iconChoice"]:checked')?.value;
       const iconSize = document.getElementById('iconSize').value;
       const iconGap = document.getElementById('iconGap').value;
       
-      // Konwertuj hex na rgba dla przezroczystości
       function hexToRgba(hex, alpha) {
         const r = parseInt(hex.slice(1, 3), 16);
         const g = parseInt(hex.slice(3, 5), 16);
         const b = parseInt(hex.slice(5, 7), 16);
         return `rgba(${r}, ${g}, ${b}, ${alpha})`;      }
       
-      // Get font family CSS value
       function getFontFamilyCSS(fontFamily) {
         const fontMap = {
           'system': '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
@@ -1020,13 +1010,11 @@
         return fontMap[fontFamily] || fontMap['system'];
       }
       
-      // Load Google Fonts for preview
       function loadGoogleFontForPreview(fontFamily) {
         const googleFonts = ['roboto', 'open-sans', 'lato', 'montserrat', 'poppins', 'source-sans', 'nunito', 'raleway'];
         
         if (!googleFonts.includes(fontFamily)) return;
         
-        // Check if font is already loaded
         const existingLink = document.querySelector(`link[data-font="${fontFamily}"]`);
         if (existingLink) return;
         
@@ -1047,23 +1035,17 @@
           link.href = fontUrls[fontFamily];
           link.setAttribute('data-font', fontFamily);
           document.head.appendChild(link);
-          
-          console.log('🔤 Loading Google Font for preview:', fontFamily);
         }
       }
       
-      // Funkcja do zastąpienia {timer} przykładowym timerem
       function replaceTimerPlaceholder(message) {
         if (!showTimer) return message;
-        
-        // Przykładowy timer dla podglądu
         const sampleTimer = '23:45:30';
         return message.replace(/{timer}/g, sampleTimer);
       }
       
       let finalMessage = generalMessage;
       
-      // Obsługa ikony
       let iconHtml = '';
       if (showIcon) {
         if (iconChoice === 'default' && DEFAULT_DELIVERY_ICON) {
@@ -1074,7 +1056,7 @@
             iconHtml = `<img src="${customImage}" style="width: ${iconSize}px; height: ${iconSize}px; margin-right: ${iconGap}px; vertical-align: middle; object-fit: contain;"> `;
           }
         }
-      }      // Zaktualizuj wszystkie podglądy
+      }
       const allPreviewBars = [
         document.getElementById('previewBarEmpty'),
         document.getElementById('previewBarProgress'), 
@@ -1084,7 +1066,6 @@
       allPreviewBars.forEach(bar => {
         if (!bar) return;
         
-        // Load Google Font if needed
         loadGoogleFontForPreview(fontFamily);
         
         if (transparentBg) {
@@ -1108,7 +1089,6 @@
         bar.style.opacity = opacity;
         bar.style.marginTop = marginTop + 'px';
         
-        // Cień
         if (shadowBlur > 0 || shadowDistance > 0) {
           const shadowRgba = hexToRgba(shadowColor, shadowOpacity);
           bar.style.boxShadow = `0 ${shadowDistance}px ${shadowBlur}px ${shadowRgba}`;
@@ -1116,46 +1096,39 @@
           bar.style.boxShadow = 'none';
         }
       });
-        // Success bar ma takie same styles jak inne
+
       const successBar = document.getElementById('previewBarSuccess');
       if (successBar && !transparentBg) {
         successBar.style.backgroundColor = hexToRgba(backgroundColor, opacity);
       }
       
-      // Aktualizuj treści wiadomości z podmianą {remaining}, {amount}, {timer}
       if (previewGeneralMessage) {
-        // Pusty koszyk: remaining = minAmount
         let msg = replaceAmountPlaceholders(generalMessage, minAmount, minAmount, currency);
         msg = replaceTimerPlaceholder(msg);
         previewGeneralMessage.innerHTML = iconHtml + msg;
       }
       if (previewProgressMessage) {
-        // Progress: remaining = 25, threshold = minAmount
         let msg = replaceAmountPlaceholders(progressMessage, 25, minAmount, currency);
         msg = replaceTimerPlaceholder(msg);
         previewProgressMessage.innerHTML = iconHtml + msg;
       }
       if (previewSuccessMessage) {
-        // Success: remaining = 0, threshold = minAmount
         let msg = replaceAmountPlaceholders(successMessage, 0, minAmount, currency);
         msg = replaceTimerPlaceholder(msg);
         previewSuccessMessage.innerHTML = iconHtml + msg;
       }
     }
 
-    // Nasłuchiwacze dla wszystkich pól
     document.querySelectorAll('input, select, textarea').forEach(element => {
       element.addEventListener('input', updatePreview);
       element.addEventListener('change', updatePreview);
     });
 
-    // Funkcja pobierania shop z URL
     function getShopFromUrl() {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get('shop') || 'freedelivery-test.myshopify.com';
-    }    // Funkcja zapisywania ustawień
+    }
     async function saveSettings() {
-      // Sprawdź czy elementy istnieją przed użyciem
       const iconChoiceElement = document.querySelector('input[name="iconChoice"]:checked');
       const iconChoice = iconChoiceElement ? iconChoiceElement.value : 'default';
       
@@ -1165,7 +1138,7 @@
         if (preview) {
           iconImage = preview.getAttribute('data-image');
         }
-      }      // Pobierz tryb waluty
+      }
       const currencyMode = document.querySelector('input[name="currencyMode"]:checked')?.value || 'shop';
       
       function normalizeHex(hex) {
@@ -1214,17 +1187,9 @@
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
         
-        // Ustawienia waluty
         currency_mode: currencyMode
       };      
-      console.log('💾 Saving complete settings object:', settings);
-      console.log('📏 Bar height being saved:', settings.bar_height);
-      console.log('🔒 Closeable being saved:', settings.closeable);
-      
-      try {
-        // TEST: Wymuś błąd na potrzeby testu powiadomienia
-        //throw new Error('Testowy błąd zapisu (symulacja)');
-        
+      try { 
         const shop = getShopFromUrl();
         const response = await fetch('/api/settings', {
           method: 'POST',
@@ -1240,7 +1205,7 @@
       } catch (err) {
         showNotification('Error saving settings: ' + err.message, 'error');
       }
-    }    // Funkcja ładowania ustawień
+    }
     async function loadSettings() {
       try {
         const shop = getShopFromUrl();
@@ -1253,7 +1218,6 @@
           document.getElementById('showTimer').checked = false;
           document.getElementById('timerLimit').value = 24;
           
-          // Ukryj pole timer limit przy defaultach
           document.getElementById('timerLimitGroup').style.display = 'none';
           
           document.getElementById('closeable').checked = true;
@@ -1278,11 +1242,9 @@
           document.getElementById('barHeight').value = 40;
           document.getElementById('excludedCountries').value = "";
           
-          // Zresetuj walutę w help text
           var currencySpan = document.getElementById('currencySpan');
           if (currencySpan) currencySpan.textContent = '';
           
-          // Zaktualizuj wyświetlane wartości
           document.getElementById('opacityValue').textContent = '100%';
           document.getElementById('borderWidthValue').textContent = '0px';
           document.getElementById('borderRadiusValue').textContent = '0px';
@@ -1291,30 +1253,29 @@
           document.getElementById('shadowDistanceValue').textContent = '0px';
           document.getElementById('widthValue').textContent = '100%';
           document.getElementById('marginTopValue').textContent = '0px';
-          document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+          document.getElementById('barHeightValue').textContent = '40px';
           document.getElementById('showIcon').checked = true;
           document.getElementById('useDefaultIcon').checked = true;
           document.getElementById('useCustomIcon').checked = false;
           document.getElementById('iconSize').value = 30;
           document.getElementById('iconGap').value = 10;
           
-          // Wyczyść podgląd
           const preview = document.getElementById('imagePreview');
           preview.removeAttribute('data-image');
           preview.style.backgroundImage = '';
           preview.style.display = 'none';
           preview.classList.remove('has-image');
           preview.innerHTML = '';
-            // Pokaż/ukryj sekcje - UKRYJ ikony na początku przy defaultach
+
           document.getElementById('iconOptionsGroup').style.display = 'none';
           document.getElementById('iconSizeGroup').style.display = 'none';
           document.getElementById('iconGapGroup').style.display = 'none';
           document.getElementById('customIconUpload').style.display = 'none';
-            // Zaktualizuj wyświetlane wartości
+
           document.getElementById('iconSizeValue').textContent = '30px';          
           document.getElementById('iconGapValue').textContent = '10px';
           
-          // Pokaż sekcje ikon na początku przy resecie
+
           document.getElementById('iconOptionsGroup').style.display = 'block';
           document.getElementById('iconSizeGroup').style.display = 'block';
           document.getElementById('iconGapGroup').style.display = 'block';
@@ -1329,8 +1290,8 @@
         const settings = await response.json();
 
         if (!DEFAULT_DELIVERY_ICON) {
-          DEFAULT_DELIVERY_ICON = settings.icon_image; // To będzie Base64!
-        }        // Załaduj podstawowe ustawienia
+          DEFAULT_DELIVERY_ICON = settings.icon_image;
+        }
         document.getElementById('generalMessage').value = settings.general_message || "Free shipping from {amount}";
         document.getElementById('showProgressMessage').checked = settings.show_progress_message !== false;
         document.getElementById('progressMessage').value = settings.progress_message || "Add {remaining} more for free shipping!";
@@ -1338,7 +1299,6 @@
         document.getElementById('showTimer').checked = settings.show_timer || false;
         document.getElementById('timerLimit').value = settings.timer_limit || 24;
         
-        // Pokaż/ukryj pole timer limit
         const timerLimitGroup = document.getElementById('timerLimitGroup');
         timerLimitGroup.style.display = settings.show_timer ? 'block' : 'none';
         
@@ -1351,7 +1311,6 @@
         document.getElementById('transparentBg').checked = settings.transparent_bg || false;
         document.getElementById('position').value = settings.position || "above-header";
         
-        // Załaduj nowe ustawienia z domyślnymi wartościami
         document.getElementById('opacity').value = settings.opacity || 100;
         document.getElementById('fontFamily').value = settings.font_family || "system";
         document.getElementById('fontSize').value = settings.font_size || 14;
@@ -1365,7 +1324,7 @@
         document.getElementById('shadowDistance').value = settings.shadow_distance || 0;
         document.getElementById('width').value = settings.width || 100;
         document.getElementById('marginTop').value = settings.margin_top || 0;
-        document.getElementById('barHeight').value = settings.bar_height || 40; // Nowe        // Zaktualizuj wyświetlane wartości zakresów
+        document.getElementById('barHeight').value = settings.bar_height || 40;
         document.getElementById('opacityValue').textContent = (settings.opacity || 100) + '%';
         document.getElementById('borderWidthValue').textContent = (settings.border_width || 0) + 'px';
         document.getElementById('borderRadiusValue').textContent = (settings.border_radius || 0) + 'px';
@@ -1374,15 +1333,14 @@
         document.getElementById('shadowDistanceValue').textContent = (settings.shadow_distance || 0) + 'px';
         document.getElementById('widthValue').textContent = (settings.width || 100) + '%';
         document.getElementById('marginTopValue').textContent = (settings.margin_top || 0) + 'px';
-        document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px'; // Nowe        // Opcje ikon
-        document.getElementById('showIcon').checked = settings.show_icon !== false; // Poprawione - domyślnie true
+        document.getElementById('barHeightValue').textContent = (settings.bar_height || 40) + 'px';
+        document.getElementById('showIcon').checked = settings.show_icon !== false;
         const iconChoice = settings.icon_type || 'default';
         const radioToCheck = document.querySelector(`input[name="iconChoice"][value="${iconChoice}"]`);
         if (radioToCheck) {
           radioToCheck.checked = true;
         }
         
-        // Jeśli jest custom image, załaduj ją
         if (settings.icon_image && iconChoice === 'custom') {
           const preview = document.getElementById('imagePreview');
           preview.setAttribute('data-image', settings.icon_image);
@@ -1391,26 +1349,23 @@
           preview.classList.add('has-image');
           preview.innerHTML = '<div style="padding: 20px; color: #6d7175;">✅ Image loaded</div>';
         }
-          document.getElementById('iconSize').value = settings.icon_size || 30;
+        document.getElementById('iconSize').value = settings.icon_size || 30;
         document.getElementById('iconGap').value = settings.icon_gap || 10;
-          // Pokaż/ukryj sekcje ikon
-        const showIcon = settings.show_icon !== false; // Poprawione - domyślnie true
+        const showIcon = settings.show_icon !== false;
         document.getElementById('iconOptionsGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconSizeGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('iconGapGroup').style.display = showIcon ? 'block' : 'none';
         document.getElementById('customIconUpload').style.display = iconChoice === 'custom' ? 'block' : 'none';
-          // Zaktualizuj wyświetlane wartości zakresów ikon
         document.getElementById('iconSizeValue').textContent = (settings.icon_size || 30) + 'px';
-        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 10) + 'px';        // Pokaż/ukryj pole komunikatu sukcesu
+        document.getElementById('iconGapValue').textContent = (settings.icon_gap || 10) + 'px';
         toggleSuccessMessageField();
         toggleProgressMessageField();
         
         updatePreview();
-        console.log('Settings loaded:', settings);
       } catch (err) {
-        console.error('Error loading settings:', err);
+        
       }
-    }    // Funkcja resetowania ustawień
+    }
     function resetSettings() {     
         document.getElementById('generalMessage').value = "Free shipping from {amount}";
         document.getElementById('showProgressMessage').checked = true;
@@ -1419,7 +1374,6 @@
         document.getElementById('showTimer').checked = false;
         document.getElementById('timerLimit').value = 24;
         
-        // Ukryj pole timer limit przy resecie
         document.getElementById('timerLimitGroup').style.display = 'none';
         
         document.getElementById('closeable').checked = true;
@@ -1445,7 +1399,6 @@
         document.getElementById('barHeight').value = 40;
         document.getElementById('excludedCountries').value = "";
         
-        // Zaktualizuj wyświetlane wartości
         document.getElementById('opacityValue').textContent = '100%';
         document.getElementById('borderWidthValue').textContent = '0px';
         document.getElementById('borderRadiusValue').textContent = '0px';
@@ -1454,38 +1407,35 @@
         document.getElementById('shadowDistanceValue').textContent = '0px';
         document.getElementById('widthValue').textContent = '100%';
         document.getElementById('marginTopValue').textContent = '0px';
-        document.getElementById('barHeightValue').textContent = '40px';        // Reset ikon - IKONY WŁĄCZONE jak w defaultach
+        document.getElementById('barHeightValue').textContent = '40px';
         document.getElementById('showIcon').checked = true;
         document.getElementById('useDefaultIcon').checked = true;
         document.getElementById('useCustomIcon').checked = false;
         document.getElementById('iconSize').value = 30;
         document.getElementById('iconGap').value = 10;
         
-        // Wyczyść podgląd
         const preview = document.getElementById('imagePreview');
         preview.removeAttribute('data-image');
         preview.style.backgroundImage = '';
         preview.style.display = 'none';
-        preview.classList.remove('has-image');        preview.innerHTML = '';
+        preview.classList.remove('has-image');        
+        preview.innerHTML = '';
         
-        // Pokaż/ukryj sekcje - POKAŻ ikony przy resecie
         document.getElementById('iconOptionsGroup').style.display = 'block';
         document.getElementById('iconSizeGroup').style.display = 'block';
         document.getElementById('iconGapGroup').style.display = 'block';
         document.getElementById('customIconUpload').style.display = 'none';
         
-        // Zaktualizuj wyświetlane wartości
         document.getElementById('iconSizeValue').textContent = '30px';
         document.getElementById('iconGapValue').textContent = '10px';
 
-        // Domyślnie shop currency
         document.getElementById('currencyModeShop').checked = true;
         document.getElementById('currencyModeCustomer').checked = false;
 
         toggleSuccessMessageField();
         toggleProgressMessageField();
         updatePreview();
-    }// NOWA FUNKCJA - pokaż/ukryj pole komunikatu sukcesu
+    }
     function toggleSuccessMessageField() {
       const checkbox = document.getElementById('showSuccessMessage');
       const messageGroup = document.getElementById('successMessageGroup');
@@ -1500,7 +1450,6 @@
       }
     }
 
-    // NOWA FUNKCJA - pokaż/ukryj pole progress message
     function toggleProgressMessageField() {
       const checkbox = document.getElementById('showProgressMessage');
       const messageGroup = document.getElementById('progressMessageGroup');
@@ -1510,7 +1459,7 @@
       } else {
         messageGroup.style.display = 'none';
       }
-    }    // Dodaj nasłuchiwacze
+    }
     document.getElementById('showSuccessMessage').addEventListener('change', function() {
       toggleSuccessMessageField();
       updatePreview();
@@ -1522,7 +1471,6 @@
     });
 
     document.getElementById('closeable').addEventListener('change', function() {
-      console.log('🔄 Closeable changed to:', this.checked);
       updatePreview();
     });    
     document.getElementById('successMessage').addEventListener('input', updatePreview);
@@ -1530,7 +1478,6 @@
     document.getElementById('progressMessage').addEventListener('input', updatePreview);
     document.getElementById('hideBarAfterThreshold').addEventListener('change', updatePreview);
 
-    // Obsługa pokazywania/ukrywania pola timer limit
     document.getElementById('showTimer').addEventListener('change', function() {
       const timerLimitGroup = document.getElementById('timerLimitGroup');
       
@@ -1542,7 +1489,6 @@
       updatePreview();
     });
 
-    // Ukrywanie pól dla "above-header"
     function toggleFieldsForPosition() {
       const position = document.getElementById('position').value;
       const marginTopGroup = document.getElementById('marginTop').closest('.form-group');
@@ -1559,13 +1505,11 @@
       }
     }
 
-    // Nasłuchiwacz na zmianę pozycji
     document.getElementById('position').addEventListener('change', function() {
       toggleFieldsForPosition();
       updatePreview();
     });
 
-    // Wywołaj na starcie (po załadowaniu ustawień)
     document.addEventListener('DOMContentLoaded', function() {
       loadSettings();
       updatePreview();
@@ -1573,22 +1517,17 @@
       toggleFieldsForPosition();
     });
 
-    // Dodaj nasłuchiwacz dla checkbox'a:
     document.getElementById('transparentBg').addEventListener('change', updatePreview);
     
-    // Funkcja do przełączania zakładek
     function switchTab(tabName) {
-      // Ukryj wszystkie zakładki
       document.getElementById('generalTab').classList.remove('active');
       document.getElementById('apperanceTab').classList.remove('active');
       document.getElementById('advancedTab').classList.remove('active');
       
-      // Usuń aktywną klasę ze wszystkich buttonów
       document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
       });
       
-      // Pokaż wybraną zakładkę
       if (tabName === 'general') {
         document.getElementById('generalTab').classList.add('active');
         document.querySelector('button[onclick="switchTab(\'general\')"]').classList.add('active');
@@ -1602,7 +1541,6 @@
       }
     }
 
-    // Dodaj funkcję przełączania zakładek w help-panel
     function switchHelpTab(tabName) {
       document.getElementById('gettingStartedTab').classList.remove('active');
       document.getElementById('contactTab').classList.remove('active');
@@ -1622,7 +1560,6 @@
       }
     }
 
-    // Pobierz walutę sklepu i ustaw w opisie
     async function setCurrencyInMinAmountHelp() {
       try {
         const shop = getShopFromUrl();
@@ -1630,22 +1567,19 @@
         if (response.ok) {
           const data = await response.json();
           if (data.currency) {
-            // Przenieś walutę do labela
             const label = document.getElementById('minAmountLabel');
             if (label) {
               label.textContent = `Minimum Amount (Currency: ${data.currency})`;
             }
-            // Usuń z help-text jeśli istnieje
             const span = document.getElementById('currencySpan');
             if (span) span.textContent = '';
           }
         }
       } catch (e) {
-        // fallback: nie ustawiaj waluty
+
       }
     }
 
-    // Mapowanie najważniejszych walut na locale z symbolem
     const currencyLocaleMap = {
       USD: 'en-US',
       EUR: 'de-DE',
@@ -1679,13 +1613,10 @@
       SAR: 'ar-SA',
       AED: 'ar-AE',
       ILS: 'he-IL'
-      // ...najważniejsze waluty, reszta fallbackuje do 'en'
     };
 
-    // Funkcja formatowania kwoty (z fallbackiem na 'en') - poprawiona logika zer
     function formatCurrency(amount, currency = 'USD') {
       const mappedLocale = currencyLocaleMap[currency] || 'en';
-      // Sprawdź czy amount jest liczbą całkowitą
       const isInt = Number.isInteger(amount) || (typeof amount === 'number' && Math.floor(amount) === amount);
       try {
         return new Intl.NumberFormat(mappedLocale, {
@@ -1699,7 +1630,6 @@
       }
     }
 
-    // Funkcja do podmiany {remaining} i {amount}
     function replaceAmountPlaceholders(message, remaining, threshold, currency) {
       const formattedRemaining = formatCurrency(remaining, currency);
       const formattedThreshold = formatCurrency(threshold, currency);
@@ -1709,7 +1639,6 @@
         .replace(/{amount}/g, formattedThreshold);
     }
 
-    // Notification function
     function showNotification(message, type = 'success') {
       const container = document.getElementById('notification-container');
       container.innerHTML = `<div style="

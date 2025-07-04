@@ -99,7 +99,9 @@ function requireShopifyAuth(req, res, next) {
           req.session.shop = shop;
           return new Promise((resolve) => {
             req.session.save(err => {
-              if (err) console.error("Error saving session:", err);
+              if (err) {
+                return res.status(500).send("Error saving session");
+              }
               resolve(next());
             });
           });
@@ -108,7 +110,6 @@ function requireShopifyAuth(req, res, next) {
         }
       })
       .catch(err => {
-        console.error("Error checking shop authorization:", err);
         return res.status(500).send("Server error");
       });
   }
@@ -131,8 +132,6 @@ const sessionStorage = {
   storeSession: async (session) => {
     const client = await pool.connect();
     try {
-      console.log("🔄 Attempting to store session for:", session.shop);
-      console.log("🔄 Session data:", JSON.stringify(session, null, 2));
       const query = `
         INSERT INTO shopify_sessions (id, shop, state, is_online, access_token, scope, expires_at, session_data)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
@@ -155,16 +154,9 @@ const sessionStorage = {
         session.expires ? new Date(session.expires) : null,
         JSON.stringify(session),
       ];
-      console.log("🔄 SQL values:", values);
       await client.query(query, values);
-      console.log("✅ Session stored successfully");
       return true;
     } catch (err) {
-      console.error("❌ Error while saving session:", {
-        message: err.message,
-        stack: err.stack,
-        code: err.code
-      });
       throw err;
     } finally {
       client.release();
@@ -188,7 +180,6 @@ const sessionStorage = {
       }
       return undefined;
     } catch (err) {
-      console.error("Error while loading session:", err);
       return undefined;
     }
   },
@@ -198,7 +189,6 @@ const sessionStorage = {
       await pool.query(query, [id]);
       return true;
     } catch (err) {
-      console.error("Error while deleting session:", err);
       return false;
     }
   },
@@ -249,9 +239,6 @@ app.use(express.static("public"));
 
 // Debugging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.url}`);
-  console.log("All cookies:", req.cookies);
-  console.log("Headers:", req.headers);
   next();
 });
 
@@ -277,63 +264,47 @@ app.get("/auth", async (req, res) => {
       return res.status(400).send("Missing shop parameter");
     }
 
-    console.log("Auth request for shop:", shop);
-    
     const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
     
     if (sessionResult.rows.length > 0 && sessionResult.rows[0].access_token) {
-      console.log("Shop already authorized, redirecting to admin panel");
       return res.redirect(`/admin?shop=${shop}`);
     }
 
-    console.log("Starting OAuth for shop:", shop);
     req.session.shop = shop;
     const state = crypto.randomBytes(16).toString('hex');
     req.session.state = state;
 
-    console.log("Session data saved:", { shop: req.session.shop, state: req.session.state });
-
     req.session.save((err) => {
       if (err) {
-        console.error("Error saving session:", err);
         return res.status(500).send("Error saving session");
       }
 
       const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY}&scope=${process.env.SCOPES}&redirect_uri=${process.env.HOST}/auth/callback&state=${state}`;
-      console.log("Redirecting to:", authUrl);
       res.redirect(authUrl);
     });
   } catch (err) {
-    console.error("Error in /auth:", err);
     res.status(500).send("Error during OAuth initialization");
   }
 });
 
 app.get("/auth/callback", async (req, res) => {
   try {
-    console.log("Session in callback:", req.session);
-    console.log("Query params:", req.query);
-    
     const { code, hmac, state, shop } = req.query;
     
     if (!req.session) {
-      console.error("No session in callback");
       return res.status(500).send("Session not found");
     }
 
     if (req.session.state && state !== req.session.state) {
-      console.error("State mismatch:", { sessionState: req.session.state, queryState: state });
       return res.status(403).send("Request origin cannot be verified");
     }
 
     if (req.session.shop && shop !== req.session.shop) {
-      console.error("Shop mismatch:", { sessionShop: req.session.shop, queryShop: shop });
       return res.status(403).send("Shop parameter does not match");
     }
 
     if (!req.session.shop) {
       req.session.shop = shop;
-      console.log("Set shop from query params:", shop);
     }
 
     if (!verifyHmac(req.query)) {
@@ -351,10 +322,8 @@ app.get("/auth/callback", async (req, res) => {
     });
 
     const accessTokenData = await accessTokenResponse.json();    
-    console.log("Access token data:", accessTokenData);
 
     if (!accessTokenData.access_token) {
-      console.error("No access_token received:", accessTokenData);
       return res.status(500).send("Failed to obtain access token");
     }
     const session = {
@@ -366,21 +335,8 @@ app.get("/auth/callback", async (req, res) => {
       scope: accessTokenData.scope,
     };
     try {
-      console.log("🔄 Trying to store session:", {
-        id: session.id,
-        shop: session.shop,
-        isOnline: session.isOnline,
-        hasAccessToken: !!session.accessToken,
-        scope: session.scope
-      });
       await sessionStorage.storeSession(session);
-      console.log("✅ Session stored in database");
     } catch (error) {
-      console.error("❌ Detailed session storage error:", {
-        message: error.message,
-        stack: error.stack,
-        session: session
-      });
     }
 
     // Register app/uninstalled webhook
@@ -400,9 +356,7 @@ app.get("/auth/callback", async (req, res) => {
         })
       });
       const webhookData = await webhookResp.json();
-      console.log('✅ Registered webhook app/uninstalled:', webhookData);
     } catch (err) {
-      console.error('❌ Error registering app/uninstalled webhook:', err);
     }
 
     // --- GET SHOP CURRENCY AND SAVE TO client_currencies ---
@@ -421,15 +375,12 @@ app.get("/auth/callback", async (req, res) => {
         }
       }
     } catch (err) {
-      console.error('❌ Error fetching/saving shop currency:', err);
     }
     // --- END CURRENCY BLOCK ---
 
     // Redirect to success page
-    console.log("Redirecting to success page");
     return res.redirect(`https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`);
   } catch (err) {
-    console.error("Authorization error:", err);
     res.status(500).send("Authorization error");
   }
 });
@@ -438,8 +389,6 @@ app.get("/auth/callback", async (req, res) => {
 app.post('/api/settings', requireShopifyAuth, async (req, res) => {
   try {
     const { shop, settings } = req.body;
-    console.log('Saving settings to metafields for shop:', shop);
-    console.log('Settings:', settings);
     
     // Get access token for this shop
     const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
@@ -467,7 +416,6 @@ app.post('/api/settings', requireShopifyAuth, async (req, res) => {
         }
       }
     } catch (e) {
-      // ignore, fallback to null
     }
 
     // If timer enabled and no timer_start_time, set to now
@@ -561,16 +509,13 @@ app.post('/api/settings', requireShopifyAuth, async (req, res) => {
     
     if (!response.ok) {
       const error = await response.text();
-      console.error('Shopify API error:', error);
       return res.status(500).json({ error: 'Error saving to Shopify' });
     }
     
     const result = await response.json();
-    console.log('✅ Settings saved to metafields:', result);
     
     res.json({ success: true, metafield: result });
   } catch (err) {
-    console.error('❌ Error saving settings:', err.message);
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
@@ -579,7 +524,6 @@ app.post('/api/settings', requireShopifyAuth, async (req, res) => {
 app.get('/api/settings/:shop', requireShopifyAuth, async (req, res) => {
   try {
     const { shop } = req.params;
-    console.log('Getting settings from metafields for shop:', shop);
     
     // Get access token for this shop
     const sessionResult = await pool.query('SELECT access_token FROM shopify_sessions WHERE shop = $1', [shop]);
@@ -596,7 +540,6 @@ app.get('/api/settings/:shop', requireShopifyAuth, async (req, res) => {
       }
     });
     if (!response.ok) {
-      console.log('⚠️ No metafields, returning default settings');
       return res.json({
         ...DEFAULT_SETTINGS,
         app_url: APP_URL,
@@ -611,10 +554,8 @@ app.get('/api/settings/:shop', requireShopifyAuth, async (req, res) => {
       if (!settings.icon_image) {
         settings.icon_image = DEFAULT_DELIVERY_ICON;
       }
-      console.log('✅ Found settings in metafields:', settings);
       res.json(settings);
     } else {
-      console.log('⚠️ Empty metafield, returning default');
       res.json({
         ...DEFAULT_SETTINGS,
         app_url: APP_URL,
@@ -622,7 +563,6 @@ app.get('/api/settings/:shop', requireShopifyAuth, async (req, res) => {
       });
     }
   } catch (err) {
-    console.error('❌ Error getting settings:', err.message);
     res.status(500).json({ error: 'Server error: ' + err.message });  
   }
 });
@@ -668,28 +608,20 @@ app.get('/api/shop-currency', async (req, res) => {
 
     res.json({ currency });
   } catch (err) {
-    console.error('❌ Error getting shop currency:', err.message);
     res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
 app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
-  console.log('🔔 Received webhook app-uninstalled!');
-  console.log('Headers:', req.headers);
-  console.log('Body:', req.body);
   const shop = req.headers['x-shopify-shop-domain'];
   if (!shop) {
-    console.error('Missing x-shopify-shop-domain header');
     return res.status(400).send('Missing shop domain');
   }
   try {
     await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop]);
-    console.log(`✅ Deleted session data for shop: ${shop}`);
     await pool.query('DELETE FROM client_currencies WHERE shop_id = $1', [shop]);
-    console.log(`✅ Deleted shop currency from client_currencies: ${shop}`);
     res.status(200).send('OK');
   } catch (err) {
-    console.error('❌ Error deleting session:', err);
     res.status(500).send('Error');
   }
 });
@@ -720,23 +652,19 @@ function shopifyWebhookMiddleware(req, res, next) {
 
 // customers/data_request webhook (you do not store customer data)
 app.post('/webhooks/customers/data_request', shopifyWebhookMiddleware, (req, res) => {
-  console.log('🔔 customers/data_request webhook:', req.body);
   res.status(200).send('OK');
 });
 
 // customers/redact webhook (you do not store customer data)
 app.post('/webhooks/customers/redact', shopifyWebhookMiddleware, (req, res) => {
-  console.log('🔔 customers/redact webhook:', req.body);
   res.status(200).send('OK');
 });
 
 // shop/redact webhook (delete shop data from database)
 app.post('/webhooks/shop/redact', shopifyWebhookMiddleware, async (req, res) => {
   const { shop_domain } = req.body;
-  console.log('🔔 shop/redact webhook for shop:', shop_domain);
   if (shop_domain) {
     await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop_domain]);
-    // If you have other tables with shop data, delete them here
   }
   res.status(200).send('OK');
 });
@@ -750,7 +678,6 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
       `INSERT INTO client_currencies (shop_id, currency, use_customer_currency, created_at) VALUES ($1, $2, $3, NOW())`,
       [shop, currency, useCustomerCurrency]
     );
-    console.log(`Added currency ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} to client_currencies`);
   } else {
     if (
       result.rows[0].currency !== currency ||
@@ -760,10 +687,7 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
         `UPDATE client_currencies SET currency = $2, use_customer_currency = $3, created_at = NOW() WHERE shop_id = $1`,
         [shop, currency, useCustomerCurrency]
       );
-      console.log(`Updated currency to ${currency} (use_customer_currency=${useCustomerCurrency}) for shop ${shop} in client_currencies`);
-    } else {
-      console.log(`ℹShop ${shop} currency already up to date (${currency}, use_customer_currency=${useCustomerCurrency})`);
     }
   }
 }
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {});

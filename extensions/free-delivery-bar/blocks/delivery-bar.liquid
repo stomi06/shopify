@@ -291,7 +291,6 @@ document.addEventListener("DOMContentLoaded", function () {
     const bar = document.querySelector('.free-delivery-bar');
     if (!bar) return;
 
-    // DODAJ TO:
     const showTimer = bar.getAttribute('data-show-timer') === 'true';
 
     document.body.appendChild(bar);
@@ -321,14 +320,11 @@ document.addEventListener("DOMContentLoaded", function () {
     if (showTimer && deliveryMessageEl && deliveryMessageEl.textContent.includes('{timer}')) {
       deliveryMessageEl.textContent = deliveryMessageEl.textContent.replace(/{timer}/g, getInitialTimerString());
     }
-    // --- END BLOCK ---
 
-    // --- USTAW STYLOWANIE ELEMENTÓW OD RAZU NA PODSTAWIE STANU PASKA ---
-    const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
+    const savedBarState = localStorage.getItem('deliveryBarState');
     const deliveryBarClosed = localStorage.getItem('deliveryBarClosed') === 'true';
     const isBarHidden = bar.classList.contains('hidden') || savedBarState === 'hidden' || deliveryBarClosed;
 
-    // Funkcja do przesuwania elementów fixed/top:0
     function updateShiftedElements() {
       const bar = document.querySelector('.free-delivery-bar');
       const barHeight = {{ settings.bar_height | default: 40 }};
@@ -344,15 +340,11 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
 
-    // --- KONIEC DODATKU ---
 
-    // Usuń manipulację paddingiem headera!
-    // Przesuwaj elementy fixed/top:0 (poza paskiem)
+
     if ("{{ settings.position | default: 'above-header' }}" === "above-header") {
       function shiftFixedElements() {
-        // Dodaj warunek blokujący przesuwanie podczas ukrywania paska
         if (window.freeDeliveryBarHiding) return;
-        // Przesuwaj tylko elementy, które wyglądają na menu/drawery/header/popup/cart
         const selector = [
           '[class*="drawer"]',
           '[class*="menu"]',
@@ -373,7 +365,6 @@ document.addEventListener("DOMContentLoaded", function () {
             parseInt(window.getComputedStyle(el).top) === 0
           ) {
             el.setAttribute('data-shifted-by-bar', 'true');
-            // Przesuwaj tylko jeśli pasek jest widoczny
             if (!bar.classList.contains('hidden')) {
               el.style.top = barHeight + 'px';
               el.style.maxHeight = 'calc(100vh - ' + barHeight + 'px)';
@@ -386,7 +377,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
       shiftFixedElements();
 
-      // MutationObserver na dodawanie elementów i zmiany atrybutów (class/style)
       const observer = new MutationObserver(function(mutations) {
         let needsShift = false;
         mutations.forEach(function(mutation) {
@@ -399,17 +389,14 @@ document.addEventListener("DOMContentLoaded", function () {
             needsShift = true;
           }
         });
-        // Dodaj warunek blokujący przesuwanie podczas ukrywania paska
         if (!window.freeDeliveryBarHiding && needsShift) shiftFixedElements();
       });
       observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style'] });
 
-      // Dodatkowo: shift po każdym kliknięciu (np. otwarcie menu przez JS)
       document.addEventListener('click', function() {
         setTimeout(shiftFixedElements, 0);
       });
 
-      // Shift także po resize (czasem menu pojawia się po zmianie rozmiaru)
       window.addEventListener('resize', function() {
         setTimeout(shiftFixedElements, 0);
       });
@@ -423,21 +410,16 @@ const shopCurrency = '{{ settings.shop_currency | default: shop.currency | escap
 const exchangeRates = {{ settings.exchange_rates | default: null | json }};
 
 function getCustomerCurrency() {
-  // 1. Sprawdź window.userCurrency
   if (window.userCurrency && typeof window.userCurrency === 'string') return window.userCurrency;
 
-  // 2. Sprawdź window.detectedCurrency
   if (window.detectedCurrency && typeof window.detectedCurrency === 'string') return window.detectedCurrency;
 
-  // 3. Sprawdź localStorage userCurrency
   const lsCurrency = localStorage.getItem('userCurrency');
   if (lsCurrency && typeof lsCurrency === 'string') return lsCurrency;
 
-  // 4. Sprawdź geolokalizację z ipapi.co (jeśli już pobrana)
   const ipapiCurrency = localStorage.getItem('userCurrencyFromIpapi');
   if (ipapiCurrency && typeof ipapiCurrency === 'string') return ipapiCurrency;
 
-  // 5. Jeśli nie ma, spróbuj pobrać z ipapi.co i zapisać do localStorage
   if (!localStorage.getItem('userCurrencyIpapiChecked')) {
     fetch('https://ipapi.co/json/')
       .then(resp => resp.json())
@@ -445,7 +427,6 @@ function getCustomerCurrency() {
         if (data && data.currency) {
           localStorage.setItem('userCurrencyFromIpapi', data.currency);
           localStorage.setItem('userCurrencyIpapiChecked', '1');
-          // Po pobraniu wymuś reload paska (tylko raz)
           window.location.reload();
         }
       })
@@ -454,12 +435,10 @@ function getCustomerCurrency() {
       });
   }
 
-  // 6. Fallback na walutę sklepu
   return shopCurrency;
 }
 
 (function() {
-  // Zabezpieczenie przed wielokrotnym uruchomieniem
   if (window.freeDeliveryBarInitialized) {
     return;
   }
@@ -470,63 +449,45 @@ function getCustomerCurrency() {
   const closeButton = document.getElementById('close-delivery-bar');
   const deliveryBarContent = document.querySelector('.delivery-bar-content');
   
-  // PRZENIEŚ TO TU:
   const showTimer = deliveryBar.getAttribute('data-show-timer') === 'true';
 
   if (!deliveryBar) {
-    console.error('Nie znaleziono elementu free-delivery-bar');
     return;
   }
   
-  // 🔥 TERAZ odczytaj zapisaną wiadomość (po zdefiniowaniu messageElement)
   const savedMessage = localStorage.getItem('deliveryBarMessage');
-  const savedBarState = localStorage.getItem('deliveryBarState'); // hidden/visible
+  const savedBarState = localStorage.getItem('deliveryBarState');
 
-  // 🧹 WYCZYŚĆ LOCALSTORAGE Z IKON - może zawierać stare HTML z ikonami
   if (savedMessage && (savedMessage.includes('<img') || savedMessage.includes('delivery-icon'))) {
-    console.log('🧹 Clearing localStorage - contains old icon HTML');
     localStorage.removeItem('deliveryBarMessage');
   } else if (savedMessage) {
-    messageElement.textContent = savedMessage; // ← textContent zamiast innerHTML!
-    console.log('📱 Restored message from localStorage:', savedMessage);
+    messageElement.textContent = savedMessage;
   }
 
-  // Ustaw stan paska na podstawie zapisanego stanu
   if (savedBarState === 'hidden') {
     deliveryBar.classList.add('hidden');
-    console.log('📱 Restored bar state: hidden');
   } else if (savedBarState === 'visible') {
     deliveryBar.classList.remove('hidden');
-    console.log('📱 Restored bar state: visible');
   }
   const threshold = parseInt(deliveryBar.getAttribute('data-threshold'));
   const generalMessage = deliveryBar.getAttribute('data-general-message');
   const showProgress = deliveryBar.getAttribute('data-show-progress') === 'true';  const progressMessage = deliveryBar.getAttribute('data-progress-message');
   const successMessage = deliveryBar.getAttribute('data-success-message');  const showSuccess = deliveryBar.getAttribute('data-show-success') === 'true';
   let hideBarAfterThreshold = deliveryBar.getAttribute('data-hide-bar-after-threshold') === 'true';
-  // Wymuś hideBarAfterThreshold na false jeśli showSuccess jest true
   if (showSuccess) {
     hideBarAfterThreshold = false;
   }
   const timerLimit = parseInt(deliveryBar.getAttribute('data-timer-limit')) || 24;
-  const timerStart = deliveryBar.getAttribute('data-timer-start'); // NEW
+  const timerStart = deliveryBar.getAttribute('data-timer-start');
   const excludedCountries = deliveryBar.getAttribute('data-excluded-countries') || '';
   const position = deliveryBar.getAttribute('data-position') || 'above-header';
   const bgColor = deliveryBar.getAttribute('data-bg-color');
   const width = parseInt(deliveryBar.getAttribute('data-width')) || 90;  const marginTop = parseInt(deliveryBar.getAttribute('data-margin-top'));
   const barHeight = parseInt(deliveryBar.getAttribute('data-bar-height')) || 40;
-  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  console.log('=== FREE DELIVERY BAR INIT ===');
-  console.log('Threshold:', threshold);
-  console.log('Position:', position);
-  console.log('Bar height:', barHeight);
-  console.log('Show timer:', showTimer);
-  console.log('Timer limit:', timerLimit, 'hours');
-  console.log('Excluded countries:', excludedCountries);
-  
+  const transparentBg = deliveryBar.getAttribute('data-transparent-bg') === 'true';  
   // Check if current country is excluded
   async function checkCountryExclusion() {
     if (!excludedCountries || excludedCountries.trim() === '') {
-      console.log('✅ No country exclusions configured');
       return false; // No exclusions, show everywhere
     }
     
@@ -541,10 +502,8 @@ function getCustomerCurrency() {
       
       if (cachedCountry && cacheTime && (currentTime - parseInt(cacheTime)) < cacheExpiry) {
         userCountry = cachedCountry;
-        console.log('🔄 Using cached country:', userCountry);
       } else {
         // Fetch country from API
-        console.log('🌍 Fetching country from API...');
         const response = await fetch('https://ipapi.co/json/');
         const data = await response.json();
         
@@ -553,13 +512,9 @@ function getCustomerCurrency() {
         // Cache the result
         localStorage.setItem('userCountryCode', userCountry);
         localStorage.setItem('userCountryCacheTime', currentTime.toString());
-        
-        console.log('🌍 Detected country from API:', userCountry);
-        console.log('💱 Currency:', data.currency);
       }
       
       if (!userCountry) {
-        console.log('⚠️ Could not detect user country, showing bar by default');
         return false; // If we can't detect country, show the bar
       }
       
@@ -571,30 +526,19 @@ function getCustomerCurrency() {
       
       const isExcluded = excludedList.includes(userCountry.toUpperCase());
       
-      if (isExcluded) {
-        console.log('🚫 Country', userCountry, 'is in excluded list:', excludedList);
-      } else {
-        console.log('✅ Country', userCountry, 'is not excluded. Excluded list:', excludedList);
-      }
-      
       return isExcluded;
       
     } catch (error) {
-      console.error('❌ Error checking country:', error);
-      return false; // On error, show the bar by default
+      return false;
     }
   }
   
   // Initialize the bar with country check
   async function initializeBar() {
-    // Dodaj na początku initializeBar:
-    // Usuń let lastTimerMessage = null; z wnętrza initializeBar (jeśli tam jest)
 
     const isCountryExcluded = await checkCountryExclusion();
     if (isCountryExcluded) {
-      console.log('🌍 Bar hidden due to country exclusion');
       deliveryBar.style.display = 'none';
-      // Przywróć padding-top body do 0 jeśli pasek ukryty
       if (position === 'above-header') {
         document.body.style.paddingTop = '0px';
         document.documentElement.style.paddingTop = '0px';
@@ -603,7 +547,6 @@ function getCustomerCurrency() {
     }
     if (localStorage.getItem('deliveryBarClosed') === 'true') {
       deliveryBar.classList.add('hidden');
-      // --- DODANE: Przywróć style elementów od razu ---
       if (position === 'above-header') {
         const header = document.querySelector('header');
         if (header) header.style.paddingTop = '0px';
@@ -614,9 +557,7 @@ function getCustomerCurrency() {
       }
       return;
     }
-    // --- USUŃ całą logikę manipulującą paddingiem headera z tego miejsca (już ustawione wyżej) ---
 
-    // Przy ładowaniu strony: zawsze bez animacji
     if (position === 'above-header') {
       const header = document.querySelector('header');
       if (header) {
@@ -624,41 +565,34 @@ function getCustomerCurrency() {
         setTimeout(() => {
           if (deliveryBar.classList.contains('hidden')) {
             header.style.paddingTop = '0px';
-            console.log('🔧 Fixed header padding on page load - bar was hidden (instant)');
           } else {
             header.style.paddingTop = barHeight + 'px';
-            console.log('🔧 Fixed header padding on page load - bar was visible (instant)');
           }
         }, 10);
       }
     }
     
     let isBarVisible = !deliveryBar.classList.contains('hidden');
-    let isUpdatingDeliveryMessage = false; // 🔥 DODAJ FLAGĘ
+    let isUpdatingDeliveryMessage = false;
 
     // Timer functionality
     let timerInterval = null;
     let timerEndTime = null;
 
     if (showTimer && messageElement && messageElement.textContent.includes('{timer}')) {
-      // Ustaw lastTimerMessage na aktualną wiadomość
       lastTimerMessage = messageElement.textContent;
-      // Podmień {timer} na aktualny czas
       messageElement.textContent = replaceTimerInMessage(lastTimerMessage);
     }
 
     function initTimer() {
       if (!showTimer) return;
 
-      // Użyj globalnego czasu startu z Liquid/metafieldów
       let startTime = null;
       if (timerStart && !isNaN(Date.parse(timerStart))) {
         startTime = Date.parse(timerStart);
       } else if (timerStart && !isNaN(Number(timerStart))) {
         startTime = Number(timerStart);
       } else {
-        // BRAK globalnego czasu startu – nie pokazuj timera
-        console.warn('[FreeDeliveryBar] timer_start_time nie ustawiony w metafieldzie!');
         return;
       }
       timerEndTime = startTime + (timerLimit * 60 * 60 * 1000); // ms
@@ -681,7 +615,6 @@ function getCustomerCurrency() {
 
       if (timeLeft <= 0) {
         clearInterval(timerInterval);
-        // Nie resetuj timera, po prostu wyświetl 00:00:00
         return '00:00:00';
       }
       const hours = Math.floor(timeLeft / (1000 * 60 * 60));
@@ -699,7 +632,6 @@ function getCustomerCurrency() {
       return message.replace(/{timer}/g, timerString);
     }
 
-    // --- updateTimerDisplayAndMessage now accepts forceImmediate argument ---
     function updateTimerDisplayAndMessage(forceImmediate) {
       if (showTimer && lastTimerMessage && lastTimerMessage.includes('{timer}')) {
         if (messageElement) {
@@ -711,7 +643,7 @@ function getCustomerCurrency() {
         }
       }
     }
-    // Funkcja do podmiany {remaining} i {amount} w dowolnej wiadomości
+
     function replaceAmountPlaceholders(message, remaining, threshold) {
       let targetCurrency = shopCurrency;
       let remainingConv = remaining;
@@ -742,7 +674,6 @@ function getCustomerCurrency() {
           const cartTotal = cart.total_price / 100;
           const remaining = threshold - cartTotal;
 
-          // Określ typ wiadomości
           let messageType = 'general';
           if (cartTotal >= threshold && showSuccess) {
             messageType = 'success';
@@ -752,7 +683,6 @@ function getCustomerCurrency() {
             messageType = 'progress';
           }
 
-          // Animuj TYLKO jeśli typ wiadomości się zmienił
           let animate = lastMessageType !== null && lastMessageType !== messageType;
           if (options.skipAnimation) animate = false;
 
@@ -760,11 +690,8 @@ function getCustomerCurrency() {
 
           let finalMessage = generalMessage;
           
-          // Logika ukrywania/pokazywania paska
-          // ZMODYFIKOWANE: Ukrywaj pasek TYLKO jeśli hideBarAfterThreshold == true ORAZ showSuccess == false
           if (cartTotal >= threshold && hideBarAfterThreshold && !showSuccess) {
             if (!deliveryBar.classList.contains('hidden')) {
-              console.log('🎯 Hiding bar - threshold reached and hideBarAfterThreshold enabled (showSuccess is false)');
               fadeOutBar(() => {
                 localStorage.setItem('deliveryBarState', 'hidden');
                 isBarVisible = false;
@@ -773,21 +700,17 @@ function getCustomerCurrency() {
               isUpdatingDeliveryMessage = false;
               return;
             } else {
-              // Pasek już ukryty, nie rób nic
               isUpdatingDeliveryMessage = false;
               return;
             }
           } else if (cartTotal < threshold && hideBarAfterThreshold) {
-            // Jeśli wartość koszyka spadła poniżej limitu, pokaż pasek ponownie
             if (deliveryBar.classList.contains('hidden')) {
-              console.log('🎯 Showing bar - cart value below threshold');
               fadeInBar();
               localStorage.setItem('deliveryBarState', 'visible');
               isBarVisible = true;
             }
           }
 
-          // Ustaw wiadomość na podstawie stanu koszyka
           if (cartTotal >= threshold) {
             if (showSuccess) {
               finalMessage = successMessage && successMessage.trim() !== '' ? successMessage : '🎉 You have free delivery!';
@@ -820,7 +743,6 @@ function getCustomerCurrency() {
         });
     }
 
-    // Helper: animowana zmiana zawartości delivery-bar-content (ikona + tekst)
     function setMessageWithFade(newText, animate = false) {
       if (!deliveryBarContent || !messageElement) return;
       if (messageElement.textContent === newText) return;
@@ -845,11 +767,9 @@ function getCustomerCurrency() {
       }, 220);
     }
 
-    // Funkcje animacji
     function fadeOutBar(callback, animateHeader = false) {
-      console.log('🎬 fadeOutBar called, position:', position);
       if (position === 'above-header') {
-        window.freeDeliveryBarHiding = true; // Ustaw flagę blokującą przesuwanie
+        window.freeDeliveryBarHiding = true;
         document.body.style.transition = '';
         document.body.style.paddingTop = '0px';
         document.documentElement.style.transition = '';
@@ -867,7 +787,7 @@ function getCustomerCurrency() {
       setTimeout(() => {
         deliveryBar.classList.add('hidden');
         deliveryBar.classList.remove('fade-out');
-        window.freeDeliveryBarHiding = false; // Zdejmij blokadę po zakończeniu animacji
+        window.freeDeliveryBarHiding = false;
         if (callback) callback();
       }, 1000);
     }
@@ -876,11 +796,9 @@ function getCustomerCurrency() {
       deliveryBar.classList.add('fade-out');
       deliveryBar.classList.remove('hidden');
       if (position === 'above-header') {
-        // Przywróć style przesuniętych elementów do domyślnych
         if (window.shiftFixedElementsIfBarVisible) {
           window.shiftFixedElementsIfBarVisible();
         }
-        // Przywróć paddingTop headera
         const header = document.querySelector('header');
         if (header) {
           header.style.paddingTop = barHeight + 'px';
@@ -892,7 +810,6 @@ function getCustomerCurrency() {
       }, 10);
     }
 
-    // Uniwersalna funkcja do aktualizacji przesunięcia elementów
     window.updateShiftedElements = function() {
       const bar = document.querySelector('.free-delivery-bar');
       const barHeight = {{ settings.bar_height | default: 40 }};
@@ -912,7 +829,6 @@ function getCustomerCurrency() {
       });
     };
 
-    // Po inicjalizacji ustaw przesunięcie
     if ("{{ settings.position | default: 'above-header' }}" === "above-header") {
       updateShiftedElements();
     }
@@ -927,15 +843,11 @@ function getCustomerCurrency() {
         }
         deliveryBar.classList.add('hidden');
         localStorage.setItem('deliveryBarClosed', 'true');
-        console.log('Bar closed by user');
       });
-    } else {
-      console.log('Close button not found - closeable setting is disabled');
     }
 
     // === CART EVENT LISTENERS ===
     
-    // Standard Shopify cart events
     const cartEvents = [
       'cart:updated',
       'cart:changed', 
@@ -953,18 +865,14 @@ function getCustomerCurrency() {
 
     cartEvents.forEach(eventName => {
       document.addEventListener(eventName, function(event) {
-        console.log('🔔 Cart event detected:', eventName, event.detail);
-        setTimeout(() => updateDeliveryMessage(), 100); // Small delay to ensure cart is updated
+        setTimeout(() => updateDeliveryMessage(), 100);
       });
     });
 
-    // Window-level cart events
     window.addEventListener('cart:updated', function(event) {
-      console.log('🔔 Window cart event:', event);
       setTimeout(() => updateDeliveryMessage(), 100);
     });
 
-    // Theme-specific events (Dawn, Impulse, Brooklyn, etc.)
     const themeEvents = [
       'theme:cart:change',
       'theme:cart:updated', 
@@ -978,18 +886,14 @@ function getCustomerCurrency() {
 
     themeEvents.forEach(eventName => {
       document.addEventListener(eventName, function(event) {
-        console.log('🔔 Theme cart event:', eventName);
         setTimeout(() => updateDeliveryMessage(), 100);
       });
     });
 
-    // Custom event for manual triggering
     window.addEventListener('freeDeliveryBar:update', function() {
-      console.log('🔔 Manual update triggered');
       updateDeliveryMessage();
     });
 
-    // Enhanced fetch interception for cart endpoints
     const originalFetch = window.fetch;
     window.fetch = function(...args) {
       const promise = originalFetch.apply(this, args);
@@ -1004,24 +908,20 @@ function getCustomerCurrency() {
         url.endsWith('/cart')
       );
       
-      // 🔥 WYKLUCZ /cart.js Z INTERCEPTORA
       const isCartJsRequest = typeof url === 'string' && url.includes('/cart.js');
       
       if (isCartRequest && !isCartJsRequest) {
         promise.then((response) => {
           if (response.ok) {
-            console.log('🔔 Cart fetch intercepted:', url);
             setTimeout(() => updateDeliveryMessage(), 150);
           }
         }).catch(() => {
-          console.error('Cart error:', error);
         });
       }
       
       return promise;
     };
 
-    // Intercept XMLHttpRequest for older implementations
     const originalXHROpen = XMLHttpRequest.prototype.open;
     const originalXHRSend = XMLHttpRequest.prototype.send;
 
@@ -1045,7 +945,6 @@ function getCustomerCurrency() {
       if (isCartRequest) {
         xhr.addEventListener('readystatechange', function() {
           if (xhr.readyState === 4 && xhr.status >= 200 && xhr.status < 300) {
-            console.log('🔔 XHR cart request intercepted:', xhr._url);
             setTimeout(() => updateDeliveryMessage(), 150);
           }
         });
@@ -1054,21 +953,18 @@ function getCustomerCurrency() {
       return originalXHRSend.call(this, ...args);
     };
 
-    // Listen for form submissions to cart
     document.addEventListener('submit', function(event) {
       const form = event.target;
       if (form && form.action && (
         form.action.includes('/cart/add') ||
         form.action.includes('/cart/update') ||
         form.action.includes('/cart') ||
-        form.querySelector('input[name="id"]') // Product form
+        form.querySelector('input[name="id"]')
       )) {
-        console.log('🔔 Cart form submission detected');
         setTimeout(() => updateDeliveryMessage(), 200);
       }
     });
 
-    // Listen for clicks on cart buttons (add to cart, quantity changes)
     document.addEventListener('click', function(event) {
       const target = event.target;
       const button = target.closest('button');
@@ -1083,7 +979,6 @@ function getCustomerCurrency() {
         button.name === 'update' ||
         button.getAttribute('data-action') === 'add-to-cart'
       )) {
-        console.log('🔔 Cart button clicked');
         setTimeout(() => updateDeliveryMessage(), 300);
       }
     });
@@ -1104,7 +999,6 @@ function getCustomerCurrency() {
           
           cartSelectors.forEach(selector => {
             if (mutation.target.matches && mutation.target.matches(selector)) {
-              console.log('🔔 Cart DOM change detected');
               setTimeout(() => updateDeliveryMessage(), 100);
             }
           });
@@ -1118,8 +1012,7 @@ function getCustomerCurrency() {
       attributes: false
     });
 
-    // Fallback polling only as last resort - much less frequent
-    // Remove let lastCartTotal = null; from here, now declared above
+
     function fallbackCartCheck() {
       fetch('/cart.js')
         .then(response => response.json())
@@ -1141,17 +1034,13 @@ function getCustomerCurrency() {
           }
         })
         .catch(() => {
-          // Ignore errors in background
+          
         });
     }
 
-    // Reduced polling frequency - only as backup every 10 seconds
     setInterval(fallbackCartCheck, 10000);
 
-    // Inicjalizacja
-    console.log('🚀 Initializing...');
     
-    // NAJPIERW sprawdź czy pasek powinien być ukryty na podstawie savedBarState
     if (savedBarState === 'hidden' && position === 'above-header') {
       document.body.style.transition = '';
       document.body.style.paddingTop = '0px';
@@ -1159,24 +1048,17 @@ function getCustomerCurrency() {
       document.documentElement.style.paddingTop = '0px';
     }
     
-    // Initialize timer if enabled
     if (showTimer) {
       initTimer();
     }
-    
-    // --- REMOVE OLD setInterval FOR TIMER UPDATE ---
-    // --- Instead, timer updates are handled by updateTimerDisplayAndMessage in startTimer() ---
 
-    // Initial update on page load - ONLY after country check
     setTimeout(() => {
       updateDeliveryMessage({ skipAnimation: true });
     }, 100);
   }
   
-  // Start initialization with country check
   initializeBar();
   
-  // Mapowanie najważniejszych walut na locale z symbolem
   const currencyLocaleMap = {
     USD: 'en-US',
     EUR: 'de-DE',
@@ -1210,12 +1092,9 @@ function getCustomerCurrency() {
     SAR: 'ar-SA',
     AED: 'ar-AE',
     ILS: 'he-IL'
-    // ...najważniejsze waluty, reszta fallbackuje do 'en'
   };
 
-  // Pobierz ustawienia walutowe z metafields
 
-  // Przelicz kwotę na walutę klienta jeśli trzeba
   function convertAmount(amount, targetCurrency) {
     if (!useCustomerCurrency || !exchangeRates || !targetCurrency || targetCurrency === shopCurrency) return amount;
     const rate = exchangeRates[targetCurrency];
@@ -1223,11 +1102,9 @@ function getCustomerCurrency() {
     return amount * rate;
   }
 
-  // Nadpisz formatCurrency, aby obsługiwać walutę klienta
   function formatCurrency(amount, currencyOverride) {
     let currency = currencyOverride || shopCurrency;
     const mappedLocale = currencyLocaleMap[currency] || 'en';
-    // Zaokrąglij do 2 miejsc po przecinku (niektóre kursy mogą mieć dużo miejsc)
     let roundedAmount = Math.round((amount + Number.EPSILON) * 100) / 100;
     const isInt = Number.isInteger(roundedAmount) || (typeof roundedAmount === 'number' && Math.floor(roundedAmount) === roundedAmount);
     try {
@@ -1242,10 +1119,6 @@ function getCustomerCurrency() {
   }
 })();
 
-console.log('useCustomerCurrency', useCustomerCurrency);
-console.log('shopCurrency', shopCurrency);
-console.log('exchangeRates', exchangeRates);
-console.log('customerCurrency', getCustomerCurrency());
 </script>
 
 {% schema %}
