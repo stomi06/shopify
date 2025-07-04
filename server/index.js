@@ -357,6 +357,7 @@ app.get("/auth/callback", async (req, res) => {
       });
       const webhookData = await webhookResp.json();
     } catch (err) {
+      console.error('Uninstall error:', err);
     }
 
     // --- GET SHOP CURRENCY AND SAVE TO client_currencies ---
@@ -375,8 +376,8 @@ app.get("/auth/callback", async (req, res) => {
         }
       }
     } catch (err) {
+      console.error('Error fetching shop currency:', err);
     }
-    // --- END CURRENCY BLOCK ---
 
     // Redirect to success page
     return res.redirect(`https://${shop}/admin/apps/${process.env.SHOPIFY_API_KEY}`);
