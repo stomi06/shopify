@@ -9,7 +9,7 @@ import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import session from "express-session";
 import fs from 'fs';
-import { authenticateShopifyJWT } from '@shopify/shopify-api/dist/authenticate/session-token'; // jeśli używasz @shopify/shopify-api
+import jwt from 'jsonwebtoken';
 
 dotenv.config();
 
@@ -714,6 +714,24 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
         [shop, currency, useCustomerCurrency]
       );
     }
+  }
+}
+
+function verifySessionToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing session token' });
+  }
+  const token = authHeader.replace('Bearer ', '');
+  try {
+    const payload = jwt.verify(token, process.env.SHOPIFY_API_SECRET, {
+      algorithms: ['HS256'],
+      audience: process.env.SHOPIFY_API_KEY,
+    });
+    req.shop = payload.dest.replace('https://', '');
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid session token' });
   }
 }
 
