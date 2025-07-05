@@ -890,6 +890,19 @@
     }
 
     let DEFAULT_DELIVERY_ICON = null;
+    (async function loadDefaultIcon() {
+      try {
+        const res = await fetch('/default-icon');
+        if (res.ok) {
+          const svg = await res.text();
+          DEFAULT_DELIVERY_ICON = 'data:image/svg+xml;base64,' + btoa(svg);
+          updatePreview();
+        }
+      } catch (e) {
+        console.error('Could not load default icon');
+      }
+    })();
+
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
       const valueSpan = document.getElementById(valueId);
