@@ -651,12 +651,12 @@ function shopifyWebhookMiddleware(req, res, next) {
   });
 }
 
-// customers/data_request webhook (you do not store customer data)
+// customers/data_request webhook (do not store customer data)
 app.post('/webhooks/customers/data_request', shopifyWebhookMiddleware, (req, res) => {
   res.status(200).send('OK');
 });
 
-// customers/redact webhook (you do not store customer data)
+// customers/redact webhook (do not store customer data)
 app.post('/webhooks/customers/redact', shopifyWebhookMiddleware, (req, res) => {
   res.status(200).send('OK');
 });

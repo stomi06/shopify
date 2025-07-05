@@ -1,6 +1,6 @@
 name = "Free Shipping Bar"
 client_id = "7fb3c15b431478143eac521f8700d4f0"
-application_url = "https://shopify-ige3.onrender.com"
+application_url = "https://devowave.com"
 embedded = true
 
 [access_scopes]
@@ -8,15 +8,19 @@ scopes = "read_products,write_script_tags"
 
 [auth]
 redirect_urls = [
-  "https://shopify-ige3.onrender.com/auth/callback"
+  "https://devowave.com/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-01"
 
+[[webhooks.subscriptions]]
+compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+uri = "https://devowave.com/webhooks"
+
 [web]
-privacy_policy_url = "https://shopify-ige3.onrender.com/views/privacy-policy.html"
-terms_of_service_url = "https://shopify-ige3.onrender.com/views/terms-of-service.html"
+privacy_policy_url = "https://devowave.com/views/privacy-policy.html"
+terms_of_service_url = "https://devowave.com/views/terms-of-service.html"
 
 [pos]
 embedded = false
