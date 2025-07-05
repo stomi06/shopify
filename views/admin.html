@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Free Shipping Bar - Management Panel</title>
-  <meta name="shopify-api-key" content="7fb3c15b431478143eac521f8700d4f0" />
-  <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+  <script src="https://unpkg.com/@shopify/app-bridge-utils"></script>
+  <script src="https://unpkg.com/@shopify/app-bridge@3"></script>
   <style>
     * {
       margin: 0;
@@ -878,8 +878,12 @@
   </div>
 
   <script>
-    const app = shopify.createApp({
+    const AppBridge = window['app-bridge'];
+    const createApp = AppBridge.default;
+    const app = createApp({
       apiKey: '7fb3c15b431478143eac521f8700d4f0',
+      host: new URLSearchParams(window.location.search).get('host'),
+      forceRedirect: true,
     });
 
     let DEFAULT_DELIVERY_ICON = null;
