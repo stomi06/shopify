@@ -887,7 +887,7 @@
 
     async function getSessionToken() {
       const actions = AppBridge.actions;
-      const sessionToken = await actions.SessionToken.create(app).getSessionToken();
+      const sessionToken = await actions.SessionToken.create(app);
       return sessionToken;
     }
 
