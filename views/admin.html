@@ -1193,17 +1193,16 @@
         shadow_blur: parseInt(document.getElementById('shadowBlur').value),
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         excluded_countries: document.getElementById('excludedCountries').value,
-        
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
         icon_type: iconChoice,
         icon_image: iconImage || DEFAULT_DELIVERY_ICON,
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
-        
         currency_mode: currencyMode
       };      
       try { 
         const shop = getShopFromUrl();
+        const token = await getSessionToken();
         const response = await fetch('/api/settings', {
           method: 'POST',
           headers: { 
