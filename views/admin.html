@@ -886,9 +886,7 @@
     });
 
     async function getSessionToken() {
-      const actions = AppBridge.actions;
-      const sessionToken = await actions.SessionToken.create(app);
-      return sessionToken;
+      return await app.getSessionToken();
     }
 
     let DEFAULT_DELIVERY_ICON = null;
