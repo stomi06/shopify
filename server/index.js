@@ -250,10 +250,6 @@ app.post('/webhooks/app-uninstalled', express.raw({ type: '*/*' }), shopifyWebho
     return res.status(400).send('Missing shop domain');
   }
   try {
-    console.log('Webhook app-uninstalled:', {
-      headers: req.headers,
-      body: req.body.toString()
-    });
     await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop]);
     await pool.query('DELETE FROM client_currencies WHERE shop_id = $1', [shop]);
     res.status(200).send('OK');
