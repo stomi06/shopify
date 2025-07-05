@@ -6,7 +6,6 @@
   <title>Free Shipping Bar - Management Panel</title>
   <script src="https://unpkg.com/@shopify/app-bridge-utils"></script>
   <script src="https://unpkg.com/@shopify/app-bridge@3"></script>
-  <script src="https://unpkg.com/@shopify/app-bridge-session-token"></script>
   <style>
     * {
       margin: 0;
@@ -887,10 +886,6 @@
       forceRedirect: true,
     });
 
-    async function getSessionToken() {
-      return await window['app-bridge-session-token'].createAppSessionToken(app);
-    }
-
     let DEFAULT_DELIVERY_ICON = null;
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
@@ -1200,25 +1195,19 @@
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
         currency_mode: currencyMode
       };      
-      try { 
-        const shop = getShopFromUrl();
-        const token = await getSessionToken();
+      try {
         const response = await fetch('/api/settings', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ shop, settings })
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shop: getShopFromUrl(), settings })
         });
-
         if (response.ok) {
-          showNotification('Settings saved successfully!', 'success');
+          showNotification('Settings saved!', 'success');
         } else {
-          throw new Error('Error while saving');
+          showNotification('Error saving settings', 'error');
         }
       } catch (err) {
-        showNotification('Error saving settings: ' + err.message, 'error');
+        showNotification('Error saving settings', 'error');
       }
     }
     async function loadSettings() {
