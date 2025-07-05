@@ -878,12 +878,10 @@
   </div>
 
   <script>
-    const AppBridge = window['app-bridge'];
-    const createApp = AppBridge.default;
-    const app = createApp({
+    const app = shopify.createApp({
       apiKey: '7fb3c15b431478143eac521f8700d4f0',
       host: new URLSearchParams(window.location.search).get('host'),
-      forceRedirect: true,
+      forceRedirect: true
     });
 
     let DEFAULT_DELIVERY_ICON = null;
