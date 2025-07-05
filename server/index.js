@@ -233,6 +233,18 @@ app.use((req, res, next) => {
   next();
 });
 
+app.post('/webhooks/:topic', express.raw({ type: '*/*' }), (req, res) => {
+  const shopifyHmac = req.headers['x-shopify-hmac-sha256'];
+  const secret = process.env.SHOPIFY_API_SECRET;
+  const body = req.body;
+  const calculatedHmac = crypto.createHmac('sha256', secret).update(body).digest('base64');
+  const valid = shopifyHmac && crypto.timingSafeEqual(Buffer.from(calculatedHmac), Buffer.from(shopifyHmac));
+  if (!valid) {
+    return res.status(401).send('HMAC validation failed.');
+  }
+  res.status(200).send('OK');
+});
+
 app.use(bodyParser.urlencoded({ extended: true, limit: '2mb' }));
 app.use(bodyParser.json({ limit: '2mb' }));
 app.use(express.static("public"));
