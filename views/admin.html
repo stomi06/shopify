@@ -878,7 +878,8 @@
   </div>
 
   <script>
-    const app = shopify.createApp({
+    const AppBridge = window['app-bridge'];
+    const app = AppBridge.createApp({
       apiKey: '7fb3c15b431478143eac521f8700d4f0',
       host: new URLSearchParams(window.location.search).get('host'),
       forceRedirect: true
