@@ -878,57 +878,11 @@
   </div>
 
   <script>
-    console.log('window.shopify:', window.shopify);
-    console.log('window["app-bridge"]:', window['app-bridge']);
-    console.log('window.AppBridge:', window.AppBridge);
-    console.log('window.Shopify:', window.Shopify);
-    console.log('All window properties starting with "shop":', Object.keys(window).filter(key => key.toLowerCase().includes('shop')));
-    console.log('All window properties starting with "app":', Object.keys(window).filter(key => key.toLowerCase().includes('app')));
-
-    // Spróbujmy różnych możliwości
-    let app = null;
-    
-    // Opcja 1: shopify.createApp
-    if (window.shopify && window.shopify.createApp) {
-      try {
-        app = shopify.createApp({
-          apiKey: '7fb3c15b431478143eac521f8700d4f0'
-        });
-        console.log('SUCCESS: shopify.createApp worked');
-      } catch (e) {
-        console.log('FAILED: shopify.createApp error:', e);
-      }
-    }
-    
-    // Opcja 2: window['app-bridge']
-    if (!app && window['app-bridge']) {
-      try {
-        const AppBridge = window['app-bridge'];
-        app = AppBridge.createApp({
-          apiKey: '7fb3c15b431478143eac521f8700d4f0',
-          host: new URLSearchParams(window.location.search).get('host'),
-          forceRedirect: true
-        });
-        console.log('SUCCESS: window["app-bridge"].createApp worked');
-      } catch (e) {
-        console.log('FAILED: window["app-bridge"].createApp error:', e);
-      }
-    }
-    
-    // Opcja 3: Shopify z wielkiej litery
-    if (!app && window.Shopify && window.Shopify.createApp) {
-      try {
-        app = Shopify.createApp({
-          apiKey: '7fb3c15b431478143eac521f8700d4f0'
-        });
-        console.log('SUCCESS: Shopify.createApp worked');
-      } catch (e) {
-        console.log('FAILED: Shopify.createApp error:', e);
-      }
-    }
-
-    if (!app) {
-      console.error('NONE of the App Bridge initialization methods worked!');
+    if (window.shopify) {
+      console.log('✅ Aplikacja działa w środowisku Shopify:', window.shopify);
+      // Możesz korzystać z window.shopify jeśli potrzebujesz danych kontekstowych
+    } else {
+      console.error('❌ To nie jest środowisko Shopify!');
     }
 
     let DEFAULT_DELIVERY_ICON = null;
