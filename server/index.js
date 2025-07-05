@@ -665,15 +665,12 @@ function verifyShopifyWebhook(req, res, buf) {
 
 // Middleware to verify HMAC for webhooks
 function shopifyWebhookMiddleware(req, res, next) {
-  let data = '';
-  req.on('data', chunk => { data += chunk; });
-  req.on('end', () => {
-    if (!verifyShopifyWebhook(req, res, data)) {
-      return res.status(401).send('Unauthorized');
-    }
-    req.rawBody = data;
-    next();
-  });
+  const rawBody = req.body;
+  if (!verifyShopifyWebhook(req, res, rawBody)) {
+    return res.status(401).send('Unauthorized');
+  }
+  req.rawBody = rawBody;
+  next();
 }
 
 // customers/data_request webhook (do not store customer data)
