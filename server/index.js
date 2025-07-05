@@ -613,7 +613,7 @@ app.get('/api/shop-currency', async (req, res) => {
   }
 });
 
-app.post('/webhooks/app-uninstalled', bodyParser.json(), async (req, res) => {
+app.post('/webhooks/app-uninstalled', shopifyWebhookMiddleware, async (req, res) => {
   const shop = req.headers['x-shopify-shop-domain'];
   if (!shop) {
     return res.status(400).send('Missing shop domain');
