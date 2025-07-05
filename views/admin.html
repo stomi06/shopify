@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Free Shipping Bar - Management Panel</title>
+  <script src="https://unpkg.com/@shopify/app-bridge@3"></script>
   <style>
     * {
       margin: 0;
@@ -876,6 +877,20 @@
   </div>
 
   <script>
+    const AppBridge = window['app-bridge'];
+    const createApp = AppBridge.default;
+    const app = createApp({
+      apiKey: '7fb3c15b431478143eac521f8700d4f0',
+      host: new URLSearchParams(window.location.search).get('host'),
+      forceRedirect: true,
+    });
+
+    async function getSessionToken() {
+      const actions = AppBridge.actions;
+      const sessionToken = await actions.SessionToken.create(app).getSessionToken();
+      return sessionToken;
+    }
+
     let DEFAULT_DELIVERY_ICON = null;
     function updateRangeValue(rangeId, valueId, suffix = '') {
       const range = document.getElementById(rangeId);
@@ -1179,10 +1194,9 @@
         shadow_distance: parseInt(document.getElementById('shadowDistance').value),
         excluded_countries: document.getElementById('excludedCountries').value,
         
-        // Opcje ikon
         show_icon: document.getElementById('showIcon') ? document.getElementById('showIcon').checked : false,
         icon_type: iconChoice,
-        icon_image: iconImage || DEFAULT_DELIVERY_ICON, // 👈 DOMYŚLNA JEŚLI BRAK CUSTOM
+        icon_image: iconImage || DEFAULT_DELIVERY_ICON,
         icon_size: document.getElementById('iconSize') ? parseInt(document.getElementById('iconSize').value) : 20,
         icon_gap: document.getElementById('iconGap') ? parseInt(document.getElementById('iconGap').value) : 8,
         
@@ -1192,7 +1206,10 @@
         const shop = getShopFromUrl();
         const response = await fetch('/api/settings', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
           body: JSON.stringify({ shop, settings })
         });
 

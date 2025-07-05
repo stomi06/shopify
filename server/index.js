@@ -9,6 +9,7 @@ import cookieParser from "cookie-parser";
 import crypto from "crypto";
 import session from "express-session";
 import fs from 'fs';
+import { authenticateShopifyJWT } from '@shopify/shopify-api/dist/authenticate/session-token'; // jeśli używasz @shopify/shopify-api
 
 dotenv.config();
 
@@ -715,4 +716,7 @@ async function upsertClientCurrency(shop, currency, useCustomerCurrency = false)
     }
   }
 }
+
+app.use('/api', verifySessionToken);
+
 app.listen(PORT, () => {});
