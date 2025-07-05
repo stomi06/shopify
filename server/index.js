@@ -119,6 +119,11 @@ function requireShopifyAuth(req, res, next) {
   return res.status(401).send('Unauthorized: Please access the app from your Shopify admin.');
 }
 
+app.use(['/admin', '/'], (req, res, next) => {
+  res.removeHeader('x-frame-options');
+  next();
+});
+
 app.get("/admin", requireShopifyAuth, (req, res) => {
   res.sendFile(path.join(viewsPath, "admin.html"));
 });
