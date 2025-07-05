@@ -639,11 +639,24 @@ app.get('/api/shop-currency', async (req, res) => {
 });
 
 app.post('/webhooks/app-uninstalled', express.raw({ type: '*/*' }), shopifyWebhookMiddleware, async (req, res) => {
-  const shop = req.headers['x-shopify-shop-domain'];
+  let shop = req.headers['x-shopify-shop-domain'];
+  // Jeśli nie ma nagłówka, spróbuj z body
+  if (!shop) {
+    try {
+      const body = JSON.parse(req.body.toString());
+      shop = body.shop_domain || body.myshopify_domain || body.domain;
+    } catch (e) {
+      // ignoruj błąd
+    }
+  }
   if (!shop) {
     return res.status(400).send('Missing shop domain');
   }
   try {
+    console.log('Webhook app-uninstalled:', {
+      headers: req.headers,
+      body: req.body.toString()
+    });
     await pool.query('DELETE FROM shopify_sessions WHERE shop = $1', [shop]);
     await pool.query('DELETE FROM client_currencies WHERE shop_id = $1', [shop]);
     res.status(200).send('OK');
